@@ -2,8 +2,10 @@ build/
 .gradle/
 node_modules/
 app/build/
-*.png
 tmp/
 Notes/
 .idea/
 local.properties
+.DS_Store
+screen_*.png
+current_ui*.png
