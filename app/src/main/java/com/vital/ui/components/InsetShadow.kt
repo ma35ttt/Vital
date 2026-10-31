@@ -3,13 +3,12 @@ package com.vital.ui.components
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.RoundRect
-import androidx.compose.ui.graphics.Stroke
+import androidx.compose.ui.geometry.RoundRect
+import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.geometry.Size
-import androidx.compose.ui.graphics.drawscope.drawRoundRect
+import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 
@@ -24,14 +23,21 @@ fun Modifier.insetShadow(
     dy: Dp = 4.dp,
     shape: androidx.compose.ui.graphics.Shape = RoundedCornerShape(16.dp)
 ): Modifier = drawBehind {
-    val density = LocalDensity.current
+    // In drawBehind (DrawScope), we have access to density directly
     val radiusPx = radius.toPx()
     val dxPx = dx.toPx()
     val dyPx = dy.toPx()
 
+    // Get the corner radius from the shape
+    // For RoundedCornerShape, we can extract the corner size
+    val cornerRadiusPx = when (shape) {
+        is RoundedCornerShape -> shape.cornerSize.toPx()
+        else -> radiusPx
+    }
+
     val roundRect = RoundRect(
         Rect(0f, 0f, size.width, size.height),
-        shape.getRoundingRect(Size(size.width, size.height))
+        CornerRadius(cornerRadiusPx)
     )
 
     // Draw inner shadow by clipping to the shape and drawing a blurred offset rect
@@ -39,14 +45,11 @@ fun Modifier.insetShadow(
     // or a more sophisticated inner shadow technique
     drawRoundRect(
         color = color,
-        topLeftRadiusX = roundRect.getCornerRadius(RoundRect.Corner.TopLeft).x,
-        topLeftRadiusY = roundRect.getCornerRadius(RoundRect.Corner.TopLeft).y,
-        topRightRadiusX = roundRect.getCornerRadius(RoundRect.Corner.TopRight).x,
-        topRightRadiusY = roundRect.getCornerRadius(RoundRect.Corner.TopRight).y,
-        bottomRightRadiusX = roundRect.getCornerRadius(RoundRect.Corner.BottomRight).x,
-        bottomRightRadiusY = roundRect.getCornerRadius(RoundRect.Corner.BottomRight).y,
-        bottomLeftRadiusX = roundRect.getCornerRadius(RoundRect.Corner.BottomLeft).x,
-        bottomLeftRadiusY = roundRect.getCornerRadius(RoundRect.Corner.BottomLeft).y,
+        topLeft = roundRect.topLeft,
+        topRight = roundRect.topRight,
+        bottomRight = roundRect.bottomRight,
+        bottomLeft = roundRect.bottomLeft,
+        cornerRadius = roundRect.cornerRadius,
         style = Stroke(width = radiusPx * 2),
         alpha = 0.15f
     )
