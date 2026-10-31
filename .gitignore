@@ -1,0 +1,9 @@
+build/
+.gradle/
+node_modules/
+app/build/
+*.png
+tmp/
+Notes/
+.idea/
+local.properties

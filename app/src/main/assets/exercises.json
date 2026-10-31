@@ -1,0 +1,340 @@
+{
+  "exercises": [
+    {
+      "name": "Barbell Bench Press",
+      "muscleGroup": "CHEST",
+      "isBarbell": true,
+      "equipment": "BARBELL",
+      "instructions": "Lie on bench, grip bar slightly wider than shoulders, lower to chest, press up."
+    },
+    {
+      "name": "Incline Barbell Bench Press",
+      "muscleGroup": "CHEST",
+      "isBarbell": true,
+      "equipment": "BARBELL",
+      "instructions": "Set bench to 30-45 degrees, grip bar wider than shoulders, lower to upper chest, press up."
+    },
+    {
+      "name": "Dumbbell Bench Press",
+      "muscleGroup": "CHEST",
+      "isBarbell": false,
+      "equipment": "DUMBBELL",
+      "instructions": "Lie on bench, dumbbells at chest level, press up and slightly together."
+    },
+    {
+      "name": "Incline Dumbbell Press",
+      "muscleGroup": "CHEST",
+      "isBarbell": false,
+      "equipment": "DUMBBELL",
+      "instructions": "Set bench to 30-45 degrees, press dumbbells up and together."
+    },
+    {
+      "name": "Dumbbell Fly",
+      "muscleGroup": "CHEST",
+      "isBarbell": false,
+      "equipment": "DUMBBELL",
+      "instructions": "Lie on bench, arms extended with slight bend, lower in arc until chest stretch, bring together."
+    },
+    {
+      "name": "Push-Up",
+      "muscleGroup": "CHEST",
+      "isBarbell": false,
+      "equipment": "BODYWEIGHT",
+      "instructions": "Hands shoulder-width, lower chest to floor, push up keeping body straight."
+    },
+    {
+      "name": "Dip",
+      "muscleGroup": "CHEST",
+      "isBarbell": false,
+      "equipment": "BODYWEIGHT",
+      "instructions": "Support on parallel bars, lean forward, lower until shoulders below elbows, push up."
+    },
+    {
+      "name": "Cable Crossover",
+      "muscleGroup": "CHEST",
+      "isBarbell": false,
+      "equipment": "CABLE",
+      "instructions": "High pulleys, step forward, bring hands together in front of chest."
+    },
+    {
+      "name": "Pec Deck",
+      "muscleGroup": "CHEST",
+      "isBarbell": false,
+      "equipment": "MACHINE",
+      "instructions": "Sit, elbows at 90 degrees, bring pads together in front of chest."
+    },
+    {
+      "name": "Barbell Squat",
+      "muscleGroup": "LEGS",
+      "isBarbell": true,
+      "equipment": "BARBELL",
+      "instructions": "Bar on upper back, feet shoulder-width, squat until thighs parallel, drive up."
+    },
+    {
+      "name": "Front Squat",
+      "muscleGroup": "LEGS",
+      "isBarbell": true,
+      "equipment": "BARBELL",
+      "instructions": "Bar on front delts, elbows up, squat keeping torso upright."
+    },
+    {
+      "name": "Deadlift",
+      "muscleGroup": "BACK",
+      "isBarbell": true,
+      "equipment": "BARBELL",
+      "instructions": "Feet hip-width, grip bar outside legs, drive through heels, stand tall."
+    },
+    {
+      "name": "Romanian Deadlift",
+      "muscleGroup": "LEGS",
+      "isBarbell": true,
+      "equipment": "BARBELL",
+      "instructions": "Slight knee bend, hinge at hips, lower bar to shin level, squeeze glutes up."
+    },
+    {
+      "name": "Leg Press",
+      "muscleGroup": "LEGS",
+      "isBarbell": false,
+      "equipment": "MACHINE",
+      "instructions": "Feet shoulder-width on platform, lower until 90 degrees, press without locking knees."
+    },
+    {
+      "name": "Lunge",
+      "muscleGroup": "LEGS",
+      "isBarbell": false,
+      "equipment": "DUMBBELL",
+      "instructions": "Step forward, lower until both knees 90 degrees, push back to start."
+    },
+    {
+      "name": "Bulgarian Split Squat",
+      "muscleGroup": "LEGS",
+      "isBarbell": false,
+      "equipment": "DUMBBELL",
+      "instructions": "Rear foot elevated, lower front knee toward floor, drive through front heel."
+    },
+    {
+      "name": "Leg Extension",
+      "muscleGroup": "LEGS",
+      "isBarbell": false,
+      "equipment": "MACHINE",
+      "instructions": "Sit, pad on shins, extend legs fully, control down."
+    },
+    {
+      "name": "Leg Curl",
+      "muscleGroup": "LEGS",
+      "isBarbell": false,
+      "equipment": "MACHINE",
+      "instructions": "Lie/seat, pad on heels, curl toward glutes, control down."
+    },
+    {
+      "name": "Calf Raise",
+      "muscleGroup": "LEGS",
+      "isBarbell": false,
+      "equipment": "MACHINE",
+      "instructions": "Balls of feet on platform, lower heels, raise as high as possible."
+    },
+    {
+      "name": "Hip Thrust",
+      "muscleGroup": "LEGS",
+      "isBarbell": false,
+      "equipment": "BARBELL",
+      "instructions": "Upper back on bench, bar on hips, drive hips up, squeeze glutes at top."
+    },
+    {
+      "name": "Pull-Up",
+      "muscleGroup": "BACK",
+      "isBarbell": false,
+      "equipment": "BODYWEIGHT",
+      "instructions": "Hang from bar, pull until chin over bar, lower with control."
+    },
+    {
+      "name": "Chin-Up",
+      "muscleGroup": "BACK",
+      "isBarbell": false,
+      "equipment": "BODYWEIGHT",
+      "instructions": "Supinated grip, pull until chin over bar, lower with control."
+    },
+    {
+      "name": "Barbell Row",
+      "muscleGroup": "BACK",
+      "isBarbell": true,
+      "equipment": "BARBELL",
+      "instructions": "Hinge at hips, pull bar to lower ribs, squeeze shoulder blades."
+    },
+    {
+      "name": "Dumbbell Row",
+      "muscleGroup": "BACK",
+      "isBarbell": false,
+      "equipment": "DUMBBELL",
+      "instructions": "One knee on bench, pull dumbbell to hip, keep elbow close."
+    },
+    {
+      "name": "Seated Cable Row",
+      "muscleGroup": "BACK",
+      "isBarbell": false,
+      "equipment": "CABLE",
+      "instructions": "Sit, pull handle to lower ribs, squeeze shoulder blades together."
+    },
+    {
+      "name": "Lat Pulldown",
+      "muscleGroup": "BACK",
+      "isBarbell": false,
+      "equipment": "MACHINE",
+      "instructions": "Wide grip, pull bar to upper chest, lean back slightly."
+    },
+    {
+      "name": "Face Pull",
+      "muscleGroup": "BACK",
+      "isBarbell": false,
+      "equipment": "CABLE",
+      "instructions": "Rope at face height, pull toward face, separate hands, squeeze rear delts."
+    },
+    {
+      "name": "T-Bar Row",
+      "muscleGroup": "BACK",
+      "isBarbell": false,
+      "equipment": "MACHINE",
+      "instructions": "Chest on pad, pull handle to chest, squeeze shoulder blades."
+    },
+    {
+      "name": "Overhead Press",
+      "muscleGroup": "SHOULDERS",
+      "isBarbell": true,
+      "equipment": "BARBELL",
+      "instructions": "Bar at shoulders, press overhead, lock out, lower to shoulders."
+    },
+    {
+      "name": "Dumbbell Shoulder Press",
+      "muscleGroup": "SHOULDERS",
+      "isBarbell": false,
+      "equipment": "DUMBBELL",
+      "instructions": "Seated or standing, press dumbbells overhead, lower to ear level."
+    },
+    {
+      "name": "Lateral Raise",
+      "muscleGroup": "SHOULDERS",
+      "isBarbell": false,
+      "equipment": "DUMBBELL",
+      "instructions": "Slight bend in elbows, raise arms to shoulder height, lower slowly."
+    },
+    {
+      "name": "Rear Delt Fly",
+      "muscleGroup": "SHOULDERS",
+      "isBarbell": false,
+      "equipment": "DUMBBELL",
+      "instructions": "Bent over, raise arms out to sides, squeeze rear delts."
+    },
+    {
+      "name": "Arnold Press",
+      "muscleGroup": "SHOULDERS",
+      "isBarbell": false,
+      "equipment": "DUMBBELL",
+      "instructions": "Start palms facing you, press up rotating palms forward."
+    },
+    {
+      "name": "Upright Row",
+      "muscleGroup": "SHOULDERS",
+      "isBarbell": true,
+      "equipment": "BARBELL",
+      "instructions": "Narrow grip, pull bar to chin height, elbows higher than wrists."
+    },
+    {
+      "name": "Shrug",
+      "muscleGroup": "SHOULDERS",
+      "isBarbell": false,
+      "equipment": "DUMBBELL",
+      "instructions": "Hold dumbbells, shrug shoulders to ears, hold, lower."
+    },
+    {
+      "name": "Barbell Curl",
+      "muscleGroup": "ARMS",
+      "isBarbell": true,
+      "equipment": "BARBELL",
+      "instructions": "Supinated grip, curl bar to shoulders, lower with control."
+    },
+    {
+      "name": "Dumbbell Curl",
+      "muscleGroup": "ARMS",
+      "isBarbell": false,
+      "equipment": "DUMBBELL",
+      "instructions": "Supinated grip, curl dumbbells, supinate at top, lower."
+    },
+    {
+      "name": "Hammer Curl",
+      "muscleGroup": "ARMS",
+      "isBarbell": false,
+      "equipment": "DUMBBELL",
+      "instructions": "Neutral grip, curl dumbbells to shoulders, lower."
+    },
+    {
+      "name": "Preacher Curl",
+      "muscleGroup": "ARMS",
+      "isBarbell": false,
+      "equipment": "MACHINE",
+      "instructions": "Arms on pad, curl weight up, lower slowly."
+    },
+    {
+      "name": "Tricep Pushdown",
+      "muscleGroup": "ARMS",
+      "isBarbell": false,
+      "equipment": "CABLE",
+      "instructions": "Rope or bar, elbows at sides, push down, squeeze triceps."
+    },
+    {
+      "name": "Overhead Tricep Extension",
+      "muscleGroup": "ARMS",
+      "isBarbell": false,
+      "equipment": "DUMBBELL",
+      "instructions": "Dumbbell overhead, lower behind head, extend up."
+    },
+    {
+      "name": "Skull Crusher",
+      "muscleGroup": "ARMS",
+      "isBarbell": false,
+      "equipment": "BARBELL",
+      "instructions": "Lie on bench, lower bar to forehead, extend up."
+    },
+    {
+      "name": "Diamond Push-Up",
+      "muscleGroup": "ARMS",
+      "isBarbell": false,
+      "equipment": "BODYWEIGHT",
+      "instructions": "Hands close forming diamond, lower chest to hands, push up."
+    },
+    {
+      "name": "Plank",
+      "muscleGroup": "CORE",
+      "isBarbell": false,
+      "equipment": "BODYWEIGHT",
+      "instructions": "Forearms on ground, body straight, hold position."
+    },
+    {
+      "name": "Hanging Leg Raise",
+      "muscleGroup": "CORE",
+      "isBarbell": false,
+      "equipment": "BODYWEIGHT",
+      "instructions": "Hang from bar, raise legs to 90 degrees or higher, lower slowly."
+    },
+    {
+      "name": "Russian Twist",
+      "muscleGroup": "CORE",
+      "isBarbell": false,
+      "equipment": "DUMBBELL",
+      "instructions": "Sit, lean back, rotate torso side to side with weight."
+    },
+    {
+      "name": "Ab Wheel Rollout",
+      "muscleGroup": "CORE",
+      "isBarbell": false,
+      "equipment": "OTHER",
+      "instructions": "Kneel, roll wheel forward keeping core tight, pull back."
+    },
+    {
+      "name": "Cable Crunch",
+      "muscleGroup": "CORE",
+      "isBarbell": false,
+      "equipment": "CABLE",
+      "instructions": "Kneel, rope behind head, crunch down bringing elbows to knees."
+    }
+  ]
+}

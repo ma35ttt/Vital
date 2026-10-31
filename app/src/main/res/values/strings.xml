@@ -1,0 +1,177 @@
+<resources>
+    <string name="app_name">Vital</string>
+
+    <!-- Tabs -->
+    <string name="tab_today">TDY</string>
+    <string name="tab_meals">MLS</string>
+    <string name="tab_lift">LFT</string>
+    <string name="tab_cardio">CRD</string>
+    <string name="tab_weeks">WKS</string>
+    <string name="tab_settings">SET</string>
+
+    <!-- Common -->
+    <string name="show_more">SHOW MORE</string>
+    <string name="save">SAVE</string>
+    <string name="cancel">CANCEL</string>
+    <string name="delete">DELETE</string>
+    <string name="edit">EDIT</string>
+    <string name="add">ADD</string>
+    <string name="done">DONE</string>
+    <string name="back">BACK</string>
+    <string name="next">NEXT</string>
+    <string name="loading">LOADING…</string>
+    <string name="error">ERROR</string>
+    <string name="retry">RETRY</string>
+    <string name="offline">OFFLINE</string>
+    <string name="no_data">NO DATA</string>
+
+    <!-- Auth -->
+    <string name="enter_pin">ENTER PIN</string>
+    <string name="create_pin">CREATE PIN</string>
+    <string name="confirm_pin">CONFIRM PIN</string>
+    <string name="pin_mismatch">PINS DO NOT MATCH</string>
+    <string name="pin_too_short">PIN MUST BE 4-8 DIGITS</string>
+    <string name="biometric_prompt">USE BIOMETRIC TO UNLOCK</string>
+    <string name="biometric_fallback">USE PIN</string>
+    <string name="auth_failed">AUTHENTICATION FAILED</string>
+    <string name="too_many_attempts">TOO MANY ATTEMPTS. TRY AGAIN LATER.</string>
+
+    <!-- Today -->
+    <string name="today_title">TODAY</string>
+    <string name="kcal_remaining">KCAL REMAINING</string>
+    <string name="workouts">WORKOUTS</string>
+    <string name="cardio">CARDIO</string>
+    <string name="now">NOW</string>
+    <string name="kcal_unit">KCAL</string>
+    <string name="protein">PROTEIN</string>
+    <string name="carbs">CARBS</string>
+    <string name="fat">FAT</string>
+
+    <!-- Meals -->
+    <string name="meals_title">MEALS</string>
+    <string name="add_food">ADD FOOD</string>
+    <string name="search_food">SEARCH FOODS</string>
+    <string name="smart_text_hint">e.g., chicken breast cooked 200g, rice 150g</string>
+    <string name="scan_food">SCAN FOOD</string>
+    <string name="create_recipe">CREATE RECIPE</string>
+    <string name="log_recipe">LOG RECIPE</string>
+    <string name="raw_or_cooked">RAW OR COOKED?</string>
+    <string name="meal_breakfast">BREAKFAST</string>
+    <string name="meal_lunch">LUNCH</string>
+    <string name="meal_dinner">DINNER</string>
+    <string name="meal_snack">SNACK</string>
+
+    <!-- Lift -->
+    <string name="lift_title">LIFT</string>
+    <string name="start_workout">START WORKOUT</string>
+    <string name="log_exercise">LOG EXERCISE</string>
+    <string name="plate_calculator">PLATE CALCULATOR</string>
+    <string name="rest_timer">REST TIMER</string>
+    <string name="weight">WEIGHT (KG)</string>
+    <string name="reps">REPS</string>
+    <string name="rpe">RPE</string>
+    <string name="set_number">SET %1$d</string>
+    <string name="warmup">WARMUP</string>
+    <string name="working">WORKING</string>
+    <string name="bar_weight">BAR WEIGHT</string>
+    <string name="target_weight">TARGET WEIGHT</string>
+    <string name="plates_per_side">PLATES PER SIDE</string>
+    <string name="nearest_loadable">NEAREST LOADABLE: %1$.1f KG</string>
+
+    <!-- Cardio -->
+    <string name="cardio_title">CARDIO</string>
+    <string name="log_cardio">LOG CARDIO</string>
+    <string name="scan_treadmill">SCAN TREADMILL</string>
+    <string name="duration">DURATION</string>
+    <string name="distance">DISTANCE</string>
+    <string name="speed">SPEED</string>
+    <string name="incline">INCLINE</string>
+    <string name="calories">CALORIES</string>
+    <string name="acsm_estimate">ACSM ESTIMATE (valid ≤ 6 km/h)</string>
+    <string name="cardio_type_running">RUNNING</string>
+    <string name="cardio_type_walking">WALKING</string>
+    <string name="cardio_type_cycling">CYCLING</string>
+    <string name="cardio_type_rowing">ROWING</string>
+    <string name="cardio_type_other">OTHER</string>
+
+    <!-- Weeks -->
+    <string name="weeks_title">WEEKS</string>
+    <string name="weekly_summary">WEEKLY SUMMARY</string>
+    <string name="volume">VOLUME</string>
+    <string name="prs">PRS</string>
+    <string name="body_weight_weeks">BODY WEIGHT</string>
+
+    <!-- Settings -->
+    <string name="settings_title">SETTINGS</string>
+    <string name="profile">PROFILE</string>
+    <string name="name">NAME</string>
+    <string name="email">EMAIL</string>
+    <string name="targets">TARGETS</string>
+    <string name="kcal_target">KCAL TARGET</string>
+    <string name="protein_target">PROTEIN TARGET (G)</string>
+    <string name="carbs_target">CARBS TARGET (G)</string>
+    <string name="fat_target">FAT TARGET (G)</string>
+    <string name="body_weight">BODY WEIGHT (KG)</string>
+    <string name="ai_settings">AI SETTINGS</string>
+    <string name="ai_provider">AI PROVIDER</string>
+    <string name="ai_api_key">API KEY</string>
+    <string name="gemini">GEMINI 1.5 FLASH</string>
+    <string name="openrouter">OPENROUTER (FREE MODELS)</string>
+    <string name="appearance">APPEARANCE</string>
+    <string name="true_black">TRUE BLACK (#000000)</string>
+    <string name="theme_color">THEME COLOR</string>
+    <string name="notifications">NOTIFICATIONS</string>
+    <string name="enable_notifications">ENABLE NOTIFICATIONS</string>
+    <string name="meal_reminders">MEAL REMINDERS</string>
+    <string name="workout_reminders">WORKOUT REMINDERS</string>
+    <string name="water_reminders">WATER REMINDERS</string>
+    <string name="water_reminder_interval">WATER REMINDER INTERVAL (MIN)</string>
+    <string name="data">DATA</string>
+    <string name="export_json">EXPORT JSON</string>
+    <string name="import_json">IMPORT JSON</string>
+    <string name="security">SECURITY</string>
+    <string name="change_pin">CHANGE PIN</string>
+    <string name="biometric_auth">BIOMETRIC AUTHENTICATION</string>
+    <string name="widgets">WIDGETS</string>
+    <string name="configure_widgets">CONFIGURE WIDGETS</string>
+
+    <!-- Summary Dial -->
+    <string name="summary_dial_title">KCAL LEFT</string>
+    <string name="period_last_7d">L</string>
+    <string name="period_last_4w">M</string>
+    <string name="period_last_12w">H</string>
+    <string name="macro_protein">P</string>
+    <string name="macro_carbs">C</string>
+    <string name="macro_fat">F</string>
+
+    <!-- Coach Chat -->
+    <string name="coach_title">COACH</string>
+    <string name="ask_coach">ASK COACH</string>
+    <string name="coach_thinking">THINKING…</string>
+    <string name="new_chat">NEW CHAT</string>
+
+    <!-- Progress -->
+    <string name="progress_title">PROGRESS</string>
+    <string name="photos">PHOTOS</string>
+    <string name="measurements">MEASUREMENTS</string>
+    <string name="add_photo">ADD PHOTO</string>
+    <string name="add_measurement">ADD MEASUREMENT</string>
+    <string name="weight_trend">WEIGHT TREND</string>
+
+    <!-- Food Logging -->
+    <string name="food_name">FOOD NAME</string>
+    <string name="grams">GRAMS</string>
+    <string name="per_100g">PER 100G</string>
+    <string name="variant_raw">RAW</string>
+    <string name="variant_cooked">COOKED</string>
+    <string name="variant_none">N/A</string>
+    <string name="source_seed">SEED</string>
+    <string name="source_user">USER</string>
+    <string name="source_ai">AI</string>
+    <string name="source_off">OPEN FOOD FACTS</string>
+
+    <!-- Export/Import -->
+    <string name="export_success">EXPORTED TO DOWNLOADS/VITAL_EXPORT_%1$s.JSON</string>
+    <string name="import_success">IMPORTED SUCCESSFULLY</string>
+    <string name="import_failed">IMPORT FAILED: %1$s</string>
+</resources>

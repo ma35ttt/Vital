@@ -1,0 +1,13 @@
+{
+  "name": "vital",
+  "private": true,
+  "version": "1.0.0-debug",
+  "description": "Vital - local-first Android app. package.json exists only for repo tooling (icon generation).",
+  "scripts": {
+    "icons": "node scripts/build-icons.mjs assets/icons"
+  },
+  "devDependencies": {
+    "png-to-ico": "^2.1.2",
+    "sharp": "^0.34.3"
+  }
+}

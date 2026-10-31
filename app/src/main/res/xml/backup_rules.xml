@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<full-backup-content>
+    <exclude domain="database" path="vital.db" />
+    <exclude domain="sharedpref" path="vital_preferences.xml" />
+    <exclude domain="sharedpref" path="vital_encrypted_preferences.xml" />
+</full-backup-content>

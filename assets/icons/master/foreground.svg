@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 1024 1024">
+<defs>
+<filter id="ds" x="-20%" y="-20%" width="140%" height="150%" color-interpolation-filters="sRGB">
+<feGaussianBlur in="SourceAlpha" stdDeviation="16"/>
+<feOffset dy="16" result="b"/>
+<feFlood flood-color="#5a1c00" flood-opacity="0.6"/>
+<feComposite in2="b" operator="in" result="s"/>
+<feMerge><feMergeNode in="s"/><feMergeNode in="SourceGraphic"/></feMerge>
+</filter>
+<filter id="soft" x="-20%" y="-20%" width="140%" height="140%"><feGaussianBlur stdDeviation="7"/></filter>
+<mask id="shape" maskUnits="userSpaceOnUse" x="0" y="0" width="1024" height="1024">
+<rect width="1024" height="1024" fill="#fff"/><circle cx="302" cy="302" r="92" fill="#000"/><circle cx="512" cy="302" r="70" fill="#000"/><circle cx="722" cy="302" r="46" fill="#000"/><circle cx="302" cy="512" r="92" fill="#000"/><circle cx="512" cy="512" r="70" fill="#000"/><circle cx="722" cy="512" r="46" fill="#000"/><circle cx="302" cy="722" r="92" fill="#000"/><circle cx="512" cy="722" r="70" fill="#000"/><circle cx="722" cy="722" r="46" fill="#000"/>
+</mask>
+</defs>
+
+<g transform="translate(512 512) scale(0.72) translate(-512 -512)"><g filter="url(#ds)"><g mask="url(#shape)" fill="#FF4D00"><circle cx="302" cy="302" r="106" /><circle cx="512" cy="302" r="106" /><circle cx="722" cy="302" r="106" /><circle cx="302" cy="512" r="106" /><circle cx="512" cy="512" r="106" /><circle cx="722" cy="512" r="106" /><circle cx="302" cy="722" r="106" /><circle cx="512" cy="722" r="106" /><circle cx="722" cy="722" r="106" /></g></g>
+<g mask="url(#shape)"><g filter="url(#soft)" fill="none" stroke="#000" stroke-width="24"><g opacity="0.12"><circle cx="512" cy="302" r="70" /><circle cx="512" cy="512" r="70" /><circle cx="512" cy="722" r="70" /></g><g opacity="0.28"><circle cx="722" cy="302" r="46" /><circle cx="722" cy="512" r="46" /><circle cx="722" cy="722" r="46" /></g></g></g></g>
+</svg>
