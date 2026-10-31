@@ -1,0 +1,18 @@
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <!-- Background circle -->
+    <path
+        android:fillColor="#141414"
+        android:pathData="M54,54m-54,0a54,54 0,1,1 108,0a54,54 0,1,1 -108,0"/>
+    <!-- V letter in orange -->
+    <path
+        android:fillColor="#FF4D00"
+        android:pathData="M27,27 L42,81 L54,63 L66,81 L81,27 L68,27 L54,47 L40,27 Z"/>
+    <!-- Accent line -->
+    <path
+        android:fillColor="#FF4D00"
+        android:pathData="M27,32 L81,32 L81,35 L27,35 Z"/>
+</vector>
