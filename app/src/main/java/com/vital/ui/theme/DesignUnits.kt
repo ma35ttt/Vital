@@ -50,7 +50,7 @@ data class DesignUnits(val scale: Float) {
  * CompositionLocal for providing DesignUnits to the component tree.
  * The value is calculated from the screen width in dp.
  */
-val LocalDesignUnits: CompositionLocal<DesignUnits> = compositionLocalOf {
+val LocalDesignUnits = compositionLocalOf {
     DesignUnits(scale = 1f) // Fallback, will be overridden by DesignUnitsProvider
 }
 
@@ -58,7 +58,7 @@ val LocalDesignUnits: CompositionLocal<DesignUnits> = compositionLocalOf {
  * Static CompositionLocal for accessing the scale factor without recomposition.
  * Used for static calculations that don't need to observe changes.
  */
-val LocalDesignUnitsScale: CompositionLocal<Float> = staticCompositionLocalOf {
+val LocalDesignUnitsScale = staticCompositionLocalOf {
     1f // Fallback
 }
 
