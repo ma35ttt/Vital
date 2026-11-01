@@ -55,6 +55,10 @@ object VitalColors {
     val KnobOrange = Color(0xFFFD3F00)      // TEAL in knob.js but actually orange
     val KnobInk = Color(0xFF070707)         // Black ink for needle, pin, selector
 
+    // Icon colors
+    val FabIcon = KnobOrange                // FAB walk glyph (fab.js: var(--orange))
+    val ActivityFanIcon = KnobOrange        // Knob activity icons (knob.js: TEAL = #fd3f00)
+
     // Dial components (updated to match reference)
     val DialDarkDisk = Color(0xFF141414)
     val DialTickRing = Color(0xFF3D3D3D)

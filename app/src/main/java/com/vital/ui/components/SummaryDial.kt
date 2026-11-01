@@ -41,6 +41,7 @@ import com.vital.ui.theme.DesignUnitsProvider
 import com.vital.ui.theme.VitalColors
 import com.vital.ui.theme.VitalFonts
 import com.vital.ui.theme.designUnitsScale
+import com.vital.ui.components.ActivityGlyphs
 import kotlin.math.PI
 import kotlin.math.abs
 import kotlin.math.atan2
@@ -61,12 +62,23 @@ private const val KNOB_TIPS = 70.3f
 private const val KNOB_TEETH = 60
 private const val KNOB_TOOTH_DEPTH = 1.23f
 private const val KNOB_PIN = 11.31f
-private val ACTIVITY_ANGLES = listOf(16.3f, 31.25f, 46.2f, 61.15f, 76.1f) // steps, walk, run, bike, moto
+// 5 activities: steps, walk, run, bike, moto (from knob.js)
+private val ACTIVITY_ANGLES = listOf(16.3f, 31.25f, 46.2f, 61.15f, 76.1f)
 private val ACTIVITY_ICON_ANGLES = listOf(17.4f, 30.7f, 45.5f, 59.2f, 72.0f)
 private const val ARC_R_DU = 92.9f
 private const val SPOKE_LEN_DU = 17.9f
 private const val ICON_R_DU = 123.4f
 private const val ICON_SCALE = 0.66f
+
+// Needle rotation: (activityAngle - walkAngle) * 0.9
+// steps: (16.3 - 31.25) * 0.9 = -13.425°
+// walk: 0°
+// run: (46.2 - 31.25) * 0.9 = 13.425°
+// bike: (61.15 - 31.25) * 0.9 = 26.91°
+// moto: (76.1 - 31.25) * 0.9 = 40.365°
+private const val NEEDLE_MIN_DEG = -13.425f
+private const val NEEDLE_MAX_DEG = 40.365f
+private const val WALK_ANGLE_DEG = 31.25f
 
 @Composable
 fun SummaryDial(
@@ -94,6 +106,8 @@ fun SummaryDial(
         val density = LocalDensity.current.density
 
         var activityIndex by remember { mutableStateOf(1) } // walk
+        var dragNeedleAngle by remember { mutableStateOf(0f) }
+        var isDragging by remember { mutableStateOf(false) }
         val knobCenterPx = Offset(KNOB_X.du(density), KNOB_Y.du(density))
         val knobHitRadiusPx = (KNOB_OUTER + ICON_R_DU + 25f).du(density)
 
@@ -137,27 +151,55 @@ fun SummaryDial(
 
         Canvas(
             modifier = modifier.fillMaxSize().pointerInput(Unit) {
+
+                fun angleToActivityIndex(angleDeg: Float): Int {
+                    var best = 0
+                    var bestDiff = 360f
+                    ACTIVITY_ANGLES.forEachIndexed { i, a ->
+                        var d = abs(angleDeg - a)
+                        if (d > 180f) d = 360f - d
+                        if (d < bestDiff) { bestDiff = d; best = i }
+                    }
+                    return best
+                }
+
                 fun selectActivityAt(pos: Offset) {
                     val dx = pos.x - knobCenterPx.x
                     val dy = pos.y - knobCenterPx.y
                     if (sqrt(dx * dx + dy * dy) > knobHitRadiusPx) return
                     var deg = atan2(dy, dx) * 180f / PI.toFloat()
                     if (deg < 0f) deg += 360f
-                    var best = activityIndex
-                    var bestDiff = 360f
-                    ACTIVITY_ANGLES.forEachIndexed { i, a ->
-                        var d = abs(deg - a)
-                        if (d > 180f) d = 360f - d
-                        if (d < bestDiff) { bestDiff = d; best = i }
-                    }
-                    if (bestDiff <= 10f && best != activityIndex) {
-                        activityIndex = best
-                        onKnobProgressChange?.invoke(best.toFloat() / (ACTIVITY_ANGLES.size - 1))
+                    // Convert to needle angle: (activityAngle - walkAngle) * 0.9
+                    val needleDeg = (deg - WALK_ANGLE_DEG) * 0.9f
+                    val clamped = needleDeg.coerceIn(NEEDLE_MIN_DEG, NEEDLE_MAX_DEG)
+                    dragNeedleAngle = clamped
+                    if (!isDragging) {
+                        // Tap: snap immediately
+                        val idx = angleToActivityIndex(deg)
+                        if (idx != activityIndex) {
+                            activityIndex = idx
+                            onKnobProgressChange?.invoke(idx.toFloat() / (ACTIVITY_ANGLES.size - 1))
+                        }
                     }
                 }
+
                 detectDragGestures(
-                    onDragStart = { selectActivityAt(it) },
-                    onDrag = { change, _ -> selectActivityAt(change.position) }
+                    onDragStart = {
+                        isDragging = true
+                        selectActivityAt(it)
+                    },
+                    onDrag = { change, _ ->
+                        selectActivityAt(change.position)
+                    },
+                    onDragEnd = {
+                        isDragging = false
+                        // Snap to nearest activity
+                        val snappedIdx = angleToActivityIndex(WALK_ANGLE_DEG + dragNeedleAngle / 0.9f)
+                        if (snappedIdx != activityIndex) {
+                            activityIndex = snappedIdx
+                            onKnobProgressChange?.invoke(snappedIdx.toFloat() / (ACTIVITY_ANGLES.size - 1))
+                        }
+                    }
                 )
             }
         ) {
@@ -202,7 +244,8 @@ fun SummaryDial(
 
             // ===== KNURLED KNOB =====
             if (showKnob) {
-                drawKnurledKnob(density, scale, activityIndex)
+                val currentNeedleAngle = if (isDragging) dragNeedleAngle else (ACTIVITY_ANGLES[activityIndex] - WALK_ANGLE_DEG) * 0.9f
+                drawKnurledKnob(density, scale, currentNeedleAngle)
             }
 
             // ===== FAB (bottom-left teardrop, from fab.js) =====
@@ -283,7 +326,7 @@ private fun DrawScope.drawTickPathsWithColors(
  * Draw the knurled knob + activity selector from knob.js (all values du).
  * Needle rotates to the selected activity: (angle - walk) * 0.9 degrees.
  */
-private fun DrawScope.drawKnurledKnob(density: Float, scale: Float, activityIndex: Int) {
+private fun DrawScope.drawKnurledKnob(density: Float, scale: Float, needleAngleDeg: Float) {
     fun px(v: Float): Float = v * scale * density
     val knobX = px(KNOB_X)
     val knobY = px(KNOB_Y)
@@ -318,9 +361,8 @@ private fun DrawScope.drawKnurledKnob(density: Float, scale: Float, activityInde
     // Centre pin
     drawCircle(color = VitalColors.KnobInk, center = knobCenter, radius = knobPin)
 
-    // Needle (rotates with the selected activity)
-    val rot = (ACTIVITY_ANGLES[activityIndex] - ACTIVITY_ANGLES[1]) * 0.9f
-    withTransform({ rotate(rot, knobCenter) }) {
+    // Needle (rotates with the selected activity) - line from knob center offset (+29.1, +28.4) to (+41.0, +40.4) du at rotation 0
+    withTransform({ rotate(needleAngleDeg, knobCenter) }) {
         drawLine(
             color = VitalColors.KnobInk,
             start = Offset(knobX + px(29.1f), knobY + px(28.4f)),
@@ -351,32 +393,14 @@ private fun DrawScope.drawKnurledKnob(density: Float, scale: Float, activityInde
         )
     }
 
-    // Activity icons at ICON_R along each iconAngle
-    ACTIVITY_ANGLES.forEachIndexed { i, _ ->
-        val iconPos = polar(ICON_R_DU, ACTIVITY_ICON_ANGLES[i])
-        if (i == 0) {
-            // steps: two footprints (rounded rects from knob.js, unscaled glyph units)
-            withTransform({ translate(iconPos.x, iconPos.y) }) {
-                withTransform({ translate(px(-3.6f), px(1.8f)); rotate(-4f) }) {
-                    drawRoundRect(VitalColors.KnobOrange, Offset(px(-2.6f), px(-4f)), Size(px(5.2f), px(6.4f)), CornerRadius(px(2.6f)))
-                    drawRoundRect(VitalColors.KnobOrange, Offset(px(-2f), px(3f)), Size(px(4f), px(2.6f)), CornerRadius(px(1.3f)))
-                }
-                withTransform({ translate(px(3.6f), px(-1.4f)); rotate(-4f) }) {
-                    drawRoundRect(VitalColors.KnobOrange, Offset(px(-2.6f), px(-4f)), Size(px(5.2f), px(6.4f)), CornerRadius(px(2.6f)))
-                    drawRoundRect(VitalColors.KnobOrange, Offset(px(-2f), px(3f)), Size(px(4f), px(2.6f)), CornerRadius(px(1.3f)))
-                }
-            }
-        } else {
-            val icon = when (i) {
-                1 -> DialIcons.Walk
-                2 -> DialIcons.Run
-                3 -> DialIcons.Bike
-                else -> DialIcons.Moto
-            }
-            val s = px(ICON_SCALE)
-            withTransform({ translate(iconPos.x, iconPos.y); scale(s, s); translate(-12f, -12f) }) {
-                drawPath(icon, color = VitalColors.KnobOrange)
-            }
+    // Activity icons at ICON_R along each iconAngle - use ActivityGlyphs
+    ActivityGlyphs.all.forEachIndexed { i, activity ->
+        val centre = activity.centreDu()
+        val pxCentreX = px(centre.x)
+        val pxCentreY = px(centre.y)
+        val s = px(ICON_SCALE)
+        withTransform({ translate(pxCentreX, pxCentreY); scale(s, s, pivot = Offset.Zero); translate(-12f, -12f) }) {
+            drawPath(activity.path, color = VitalColors.ActivityFanIcon)
         }
     }
 }
@@ -430,8 +454,8 @@ private fun DrawScope.drawFab(density: Float, scale: Float) {
 
     // Walk glyph (orange), scale 40/24*1.13, centred at (52.20, 781.86)
     val gs = px(40f / 24f * 1.13f)
-    withTransform({ translate(px(52.20f), px(781.86f)); scale(gs, gs); translate(-12f, -12f) }) {
-        drawPath(DialIcons.Walk, color = VitalColors.RefOrange)
+    withTransform({ translate(px(52.20f), px(781.86f)); scale(gs, gs, pivot = Offset.Zero); translate(-12f, -12f) }) {
+        drawPath(ActivityGlyphs.Walk.path, color = VitalColors.FabIcon)
     }
 
     // L / M / H leader lines (ink 2.1, butt) - Q converted to cubic
