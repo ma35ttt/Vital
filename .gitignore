@@ -18,3 +18,4 @@ tmp/
 *.apk
 Notes/*.tar.gz
 Notes/old/
+.DS_Store
