@@ -9,3 +9,12 @@ local.properties
 .DS_Store
 screen_*.png
 current_ui*.png
+build/
+.gradle/
+.idea/
+local.properties
+node_modules/
+tmp/
+*.apk
+Notes/*.tar.gz
+Notes/old/

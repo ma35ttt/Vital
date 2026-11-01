@@ -22,13 +22,14 @@ internal const val DESIGN_FRAME_HEIGHT_DU = 855f
 
 /**
  * Holds the scale factor from design units to device pixels.
- * Scale = screenWidthDp / 393 (the design frame width in du)
+ * Scale = screenWidthDp / 393 (the design frame width in du).
+ * To get pixels: du * scale * density.
  */
 data class DesignUnits(val scale: Float) {
     /**
      * Convert design units (du) to device pixels.
      */
-    fun Float.toPx(): Float = this * scale
+    fun Float.toPx(density: Float = 1f): Float = this * scale * density
 
     /**
      * Convert design units to Dp (density-independent pixels).
@@ -36,14 +37,14 @@ data class DesignUnits(val scale: Float) {
     fun Float.toDp(): Dp = (this * scale).dp
 
     /**
-     * Create an Offset from design units.
+     * Create an Offset from design units (in pixels).
      */
-    fun offset(x: Float, y: Float): Offset = Offset(x.toPx(), y.toPx())
+    fun offset(x: Float, y: Float, density: Float = 1f): Offset = Offset(x.toPx(density), y.toPx(density))
 
     /**
-     * Create a Size from design units.
+     * Create a Size from design units (in pixels).
      */
-    fun size(width: Float, height: Float): Size = Size(width.toPx(), height.toPx())
+    fun size(width: Float, height: Float, density: Float = 1f): Size = Size(width.toPx(density), height.toPx(density))
 }
 
 /**
@@ -94,16 +95,16 @@ fun designUnits(): DesignUnits = LocalDesignUnits.current
 fun designUnitsScale(): Float = LocalDesignUnitsScale.current
 
 /**
- * Extension on Float to convert design units to pixels using the current DesignUnits.
+ * Extension on Float to convert design units to pixels using the current DesignUnits and density.
  */
 @Composable
-fun Float.du(): Float = LocalDesignUnits.current.scale * this
+fun Float.du(density: Float = LocalDensity.current.density): Float = LocalDesignUnits.current.scale * this * density
 
 /**
- * Extension on Int to convert design units to pixels using the current DesignUnits.
+ * Extension on Int to convert design units to pixels using the current DesignUnits and density.
  */
 @Composable
-fun Int.du(): Float = LocalDesignUnits.current.scale * this
+fun Int.du(density: Float = LocalDensity.current.density): Float = LocalDesignUnits.current.scale * this * density
 
 /**
  * Extension on Float to convert design units to Dp using the current DesignUnits.
