@@ -1,15 +1,20 @@
 package com.vital.ui.screens
 
+import com.vital.R
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.material.icons.filled.LocalFireDepartment
 import androidx.compose.material.icons.filled.DirectionsRun
 import androidx.compose.material.icons.filled.DirectionsBike
@@ -40,16 +45,23 @@ import com.vital.ui.components.Sparkline
 import com.vital.ui.WorkoutCapsule
 import com.vital.ui.theme.VitalColors
 import com.vital.ui.theme.VitalTypography
+import com.vital.ui.theme.DesignUnitsProvider
+import com.vital.ui.theme.duToDp
+import com.vital.ui.theme.duToSp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import java.time.LocalDate
+import java.time.format.DateTimeFormatter
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.vital.ui.MainViewModel
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.layout.Box
 import androidx.compose.material.icons.Icons
-import androidx.compose.material3.Surface
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.aspectRatio
+import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.ui.text.font.Font
+import androidx.compose.ui.res.fontResource
 
 @Composable
 fun TodayScreen(
@@ -63,8 +75,9 @@ fun TodayScreen(
     viewModel: MainViewModel = viewModel()
 ) {
     val today = LocalDate.now()
-    val dayTag = today.dayOfWeek.name.take(3)
-    val dateTag = today.month.name.take(3) + ".${today.dayOfMonth}"
+    val dayTag = today.dayOfWeek.name.take(3).uppercase()
+    val dateTag = today.month.name.take(3).uppercase() + ".${today.dayOfMonth}"
+    val dateLabel = today.format(DateTimeFormatter.ofPattern("MMM d"))
 
     val remainingKcal by viewModel.remainingKcal.collectAsStateWithLifecycle(0f)
     val proteinCurrent by viewModel.proteinCurrent.collectAsStateWithLifecycle(0f)
@@ -78,142 +91,182 @@ fun TodayScreen(
     val workoutsToday by viewModel.workoutsToday.collectAsStateWithLifecycle(emptyList())
     val cardioToday by viewModel.cardioToday.collectAsStateWithLifecycle(emptyList())
 
-    Surface(
-        modifier = modifier.fillMaxSize(),
-        color = VitalColors.Background
-    ) {
-        Column(
-            modifier = Modifier.fillMaxSize(),
-            verticalArrangement = Arrangement.spacedBy(0.dp)
+    DesignUnitsProvider {
+        // JetBrains Mono from res/font
+        val jetbrainsMono = FontFamily(
+            Font(R.font.jetbrains_mono_400, FontWeight.Normal),
+            Font(R.font.jetbrains_mono_700, FontWeight.Bold)
+        )
+        Surface(
+            modifier = modifier.fillMaxSize(),
+            color = VitalColors.Background
         ) {
-            // Top Bar
-            Row(
+            // Scrollable Column: header → 13 du spacer → hero card → workouts header → capsule rows → 84 du bottom padding
+            val scrollState = rememberScrollState()
+            Column(
                 modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 16.dp, vertical = 12.dp),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
+                    .fillMaxSize()
+                    .verticalScroll(scrollState)
+                    .padding(bottom = 84f.duToDp())
             ) {
-                Tag(text = dayTag, backgroundColor = VitalColors.AccentTDY)
-                Text(
-                    text = "TODAY",
-                    color = VitalColors.PrimaryText,
-                    fontSize = 16.sp,
-                    fontWeight = FontWeight.Bold,
-                    letterSpacing = 1.5.sp
-                )
-                Tag(text = dateTag, backgroundColor = VitalColors.AccentTDY)
-            }
-
-            // Hero Card on Accent Fill
-            Surface(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 16.dp, vertical = 8.dp)
-                    .height(340.dp),
-                color = VitalColors.AccentTDY,
-                shape = RoundedCornerShape(16.dp)
-            ) {
-                Column(
-                    modifier = Modifier.fillMaxSize().padding(16.dp),
-                    verticalArrangement = Arrangement.SpaceBetween
+                // Top Bar — 13.1 du from top
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 13.8f.duToDp())
+                        .padding(top = 13.1f.duToDp()),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
-                    // Top row: label and "Now"
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Tag(
-                            text = "KCAL REMAINING",
-                            backgroundColor = Color.Black.copy(alpha = 0.3f),
-                            textColor = Color.White
+                    Tag(text = dayTag, backgroundColor = VitalColors.AccentTDY)
+                    Text(
+                        text = "TODAY",
+                        color = VitalColors.PrimaryText,
+                        fontSize = 16.sp,
+                        fontWeight = FontWeight.Bold,
+                        fontFamily = jetbrainsMono,
+                        letterSpacing = 1.5.sp
+                    )
+                    Tag(text = dateTag, backgroundColor = VitalColors.AccentTDY)
+                }
+
+                // 13 du spacer between header and hero
+                Spacer(modifier = Modifier.padding(top = 13f.duToDp()))
+
+                // Hero Card — fixed 365.4 × 326.6 du, 13.8 du horizontal inset
+                Surface(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 13.8f.duToDp())
+                        .height(326.6f.duToDp()),
+                    color = VitalColors.RefOrange,
+                    shape = RoundedCornerShape(11f.duToDp())
+                ) {
+                    // Hero card content as Box with absolute positioning from card top-left (0,0)
+                    Box(modifier = Modifier.fillMaxSize()) {
+                        // Label row: cap height 18.5, top 19.1, left 14.3, NOW right edge at 354.6
+                        androidx.compose.foundation.layout.Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(top = 19.1f.duToDp())
+                        ) {
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(start = 14.3f.duToDp(), end = 10.8f.duToDp()), // 365.4 - 354.6 = 10.8
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.Top
+                            ) {
+                                Text(
+                                    text = "KCAL REMAINING",
+                                    color = VitalColors.RefInk,
+                                    fontSize = 18.5f.duToSp(),
+                                    fontWeight = FontWeight.Normal,
+                                    fontFamily = jetbrainsMono,
+                                    letterSpacing = 1.sp
+                                )
+                                Text(
+                                    text = "NOW",
+                                    color = Color(0xFFD33100),
+                                    fontSize = 18.5f.duToSp(),
+                                    fontWeight = FontWeight.Medium,
+                                    fontFamily = jetbrainsMono
+                                )
+                            }
+                        }
+
+                        // Big number: left-aligned at x 12, digit height 62.7, baseline ~114
+                        // KCAL as small ink superscript to right of digits
+                        BigKcalDisplay(
+                            remaining = remainingKcal,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(start = 12f.duToDp())
+                                .padding(top = (114f - 62.7f).duToDp()) // baseline 114 - digit height 62.7 = top 51.3
                         )
-                        Text(
-                            text = "NOW",
-                            color = Color.White.copy(alpha = 0.7f),
-                            fontSize = 12.sp,
-                            fontWeight = FontWeight.Medium
+
+                        // Macro row: 3 columns starting at x 15.5, pitch ~126
+                        // Labels cap height 10 at top 141.5
+                        // Values 17.3 tall at top 160.6
+                        // Units 60% size on same baseline
+                        MacroRow(
+                            protein = proteinCurrent,
+                            carbs = carbsCurrent,
+                            fat = fatCurrent,
+                            proteinTarget = proteinTarget,
+                            carbsTarget = carbsTarget,
+                            fatTarget = fatTarget,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(start = 15.5f.duToDp())
+                                .padding(top = 141.5f.duToDp())
+                        )
+
+                        // Grey Panel — top 199.4 du from card top, height 121.2 du, 6 du side inset (spec)
+                        Surface(
+                            modifier = Modifier
+                                .width(353.4f.duToDp()) // 365.4 - 2*6
+                                .height(121.2f.duToDp())
+                                .offset(x = 6f.duToDp(), y = 199.4f.duToDp()),
+                            color = Color.Transparent,
+                            shape = RoundedCornerShape(6.duToDp())
+                        ) {
+                            HeroLineGraph(
+                                modifier = Modifier.fillMaxSize(),
+                                dataPoints = weeklyKcalData,
+                                labels = listOf("6m", "7m", "8m", "9m", "10m", "11m", "12m", "13m"),
+                                accentColor = VitalColors.RefInk,
+                                showTooltip = weeklyKcalData.isNotEmpty(),
+                                tooltipIndex = if (weeklyKcalData.isNotEmpty()) weeklyKcalData.lastIndex else -1,
+                                tooltipValue = weeklyKcalData.lastOrNull() ?: 0f,
+                                tooltipLabel = "BMP"
+                            )
+                        }
+                    }
+                }
+
+                // WORKOUTS Section
+                SectionHeader(
+                    title = "WORKOUTS",
+                    accentColor = VitalColors.AccentTDY,
+                    showMoreAction = onShowSummary,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp)
+                        .padding(top = 24.dp)
+                )
+
+                // Workout capsules in a Column for proper flow
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp)
+                        .padding(top = 12.dp),
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    workoutsToday.forEach { workout ->
+                        capsuleRow(
+                            modifier = Modifier.fillMaxWidth(),
+                            icon = { Icon(workout.icon, "", tint = workout.accentColor) },
+                            label = workout.name,
+                            value = workout.value,
+                            sparklineData = workout.sparklineData,
+                            accentColor = workout.accentColor,
+                            dateLabel = dateLabel
                         )
                     }
-
-                    // Big Kcal Display
-                    BigKcalDisplay(
-                        remaining = remainingKcal,
-                        accentColor = Color.White
-                    )
-
-                    // Macro Row
-                    MacroRow(
-                        protein = proteinCurrent,
-                        carbs = carbsCurrent,
-                        fat = fatCurrent,
-                        proteinTarget = proteinTarget,
-                        carbsTarget = carbsTarget,
-                        fatTarget = fatTarget
-                    )
-
-                    // Hero Line Graph (inset grey panel)
-                    Surface(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(110.dp)
-                            .padding(top = 8.dp),
-                        color = VitalColors.InsetGreyPanel,
-                        shape = RoundedCornerShape(12.dp)
-                    ) {
-                        HeroLineGraph(
-                            modifier = Modifier.fillMaxSize(),
-                            dataPoints = weeklyKcalData,
-                            labels = weeklyLabels,
-                            accentColor = Color.White,
-                            showTooltip = true,
-                            tooltipIndex = weeklyKcalData.lastIndex,
-                            tooltipValue = weeklyKcalData.lastOrNull() ?: 0f
+                    cardioToday.forEach { cardio ->
+                        capsuleRow(
+                            modifier = Modifier.fillMaxWidth(),
+                            icon = { Icon(cardio.icon, "", tint = cardio.accentColor) },
+                            label = cardio.name,
+                            value = cardio.value,
+                            sparklineData = cardio.sparklineData,
+                            accentColor = cardio.accentColor,
+                            dateLabel = dateLabel
                         )
                     }
-                }
-            }
-
-            // WORKOUTS Section
-            SectionHeader(
-                title = "WORKOUTS",
-                accentColor = VitalColors.AccentTDY,
-                showMoreAction = onShowSummary
-            )
-
-            // Workout capsules
-            LazyColumn(
-                modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
-                verticalArrangement = Arrangement.spacedBy(8.dp),
-                contentPadding = androidx.compose.foundation.layout.PaddingValues(bottom = 16.dp)
-            ) {
-                items(workoutsToday) { workout ->
-                    capsuleRow(
-                        modifier = Modifier.fillMaxWidth(),
-                        icon = { Icon(workout.icon, "", tint = workout.accentColor) },
-                        label = workout.name,
-                        value = workout.value,
-                        sparklineData = workout.sparklineData,
-                        accentColor = workout.accentColor
-                    )
-                }
-
-                // Cardio capsules
-                items(cardioToday) { cardio ->
-                    capsuleRow(
-                        modifier = Modifier.fillMaxWidth(),
-                        icon = { Icon(cardio.icon, "", tint = cardio.accentColor) },
-                        label = cardio.name,
-                        value = cardio.value,
-                        sparklineData = cardio.sparklineData,
-                        accentColor = cardio.accentColor
-                    )
-                }
-
-                // Empty state
-                if (workoutsToday.isEmpty() && cardioToday.isEmpty()) {
-                    item {
+                    if (workoutsToday.isEmpty() && cardioToday.isEmpty()) {
                         Box(
                             modifier = Modifier.fillMaxWidth().padding(vertical = 32.dp),
                             contentAlignment = Alignment.Center

@@ -11,6 +11,7 @@ import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 
 /**
  * Design Units system based on a 393 x 855 design frame.
@@ -117,3 +118,16 @@ fun Float.duToDp(): Dp = (LocalDesignUnits.current.scale * this).dp
  */
 @Composable
 fun Int.duToDp(): Dp = (LocalDesignUnits.current.scale * this).dp
+
+/**
+ * Extension on Float to convert design units to Sp (for font sizes).
+ * 1 du = scale dp ≈ scale sp (ignoring font scale per spec).
+ */
+@Composable
+fun Float.duToSp(): androidx.compose.ui.unit.TextUnit = (LocalDesignUnits.current.scale * this).sp
+
+/**
+ * Extension on Int to convert design units to Sp (for font sizes).
+ */
+@Composable
+fun Int.duToSp(): androidx.compose.ui.unit.TextUnit = (LocalDesignUnits.current.scale * this).sp
