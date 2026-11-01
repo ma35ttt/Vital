@@ -115,11 +115,18 @@ com.vital: data (entity, dao, repository, seed), domain, ui (theme, components, 
 
 - **2A (dial): DONE** — dial face, inner dial, four tick tracks (RIM/BARS/MID/FINE) rendered from generated `DialTicks.kt`.
 - **2B (knob, FAB, icons, text): DONE** — `ActivityGlyphs.kt` is now the single source for the five glyphs (Steps, Walk, Run, Bike, Moto). Deleted `DialIcons.kt`/`ActivityIcons.kt`. Knob fan (`drawKnurledKnob`) draws all five via `ActivityGlyphs.all.forEachIndexed` with transform `{ translate(pxCentreX, pxCentreY); scale(s, s, pivot=Offset.Zero); translate(-12f,-12f) }` and `VitalColors.ActivityFanIcon`. FAB (`drawFab`) draws `ActivityGlyphs.Walk.path` with same transform pattern and `VitalColors.FabIcon`. Fixed `.du()` @Composable calls to local `px()` helper in DrawScope.
-- **Remaining 2B details to verify on device**: needle rotation range (-13.425° to +40.365°), footprints (Steps) placement at `ActivityGlyphs.Steps.centreDu()`, Moto placement at `ActivityGlyphs.Moto.centreDu()`, pointer notch on dial left edge, FAB walk glyph geometry (scale 40/24*1.13, centre 52.20/781.86 du).
-- **Verified**: `assembleDebug` ✅, `installDebug` ✅ on OnePlus 11R (Android 16), launch with **0 `AndroidRuntime:E`**, screenshot `tmp/step2b.png` captured.
-- **NOT TESTED**: visual diff vs `Notes/docs/Summary.png` (dial reference) — no automated image comparison; font rendering (JetBrains Mono vs reference), status bar, bottom tab bar, sample data (850 kcal remaining) not compared pixel-for-pixel.
-- **Known differences from reference**: fonts (monospace weights/letter-spacing may differ), status bar present in screenshot (reference hides it), no bottom tab bar implemented yet, sample data values hardcoded in preview (850 cal, 4.98 km, 11.624 steps, 128 bpm).
-- **Next sub-step**: **2C** — hero graph + sparklines.
+- **2C (hero graph + sparklines): IN PROGRESS** — measurements received from `Activity.png` (393×855 frame, scale 1.675 px/du). Key findings vs draft:
+  - Grey panel is **FLAT #5F6971** (not gradient), radius ~6, 6 du inset from card
+  - Panel has **inner shadow** on top/left edges (~#424143 fading over ~7 du)
+  - Two **guide lines** at 15% and 50% panel height (darker than panel)
+  - Bottom labels: "6m ... 13m" with dashes, tiny ~5-6 du, at ~87% panel height
+  - End dot at 85.6% panel width, 53% panel height; polyline STOPS at dot
+  - Tooltip pill centred on guide line 1 & end dot x; thin outline; text "111BMP"
+  - Capsule rows: 90.7 du height, half-height radius, #0D0D0D fill, darker outer ring ~6.5 du, light rim line at bottom
+  - Thumbnail: 108.7×73 du, flat #5F6971; bottom ruler shows **numbers (960/980/990)**, active dark, NOT "MIN AVG MAX"
+  - Hero card radius ~11 (not 16), "MOVE" label mono ~21, time font ~83, superscript ~29
+- **Verified**: `assembleDebug` ✅, `installDebug` ✅ on OnePlus 11R, launch 0 `AndroidRuntime:E`, `tmp/step2c.png` captured.
+- **Next**: implement measured values in `Color.kt`, `Graphs.kt`, `Components.kt`, `TodayScreen.kt`.
 
 ## Compose Canvas facts (Compose UI 1.7.4 / BOM 2024.10.00, learned on 2026-11-01)
 

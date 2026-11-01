@@ -1,0 +1,16 @@
+{
+  "permissions": {
+    "deny": [
+      "Edit(build.gradle.kts)",
+      "Edit(app/build.gradle.kts)",
+      "Edit(settings.gradle.kts)",
+      "Edit(gradle.properties)",
+      "Edit(gradle/libs.versions.toml)",
+      "Write(build.gradle.kts)",
+      "Write(app/build.gradle.kts)",
+      "Write(settings.gradle.kts)",
+      "Write(gradle.properties)",
+      "Write(gradle/libs.versions.toml)"
+    ]
+  }
+}

@@ -5,17 +5,38 @@ import androidx.compose.ui.graphics.Color
 object VitalColors {
 
     // Main palette from SPEC.md
-    val Background = Color(0xFF141414)
+    val Background = Color(0xFF131313)
     val BackgroundTrueBlack = Color(0xFF000000)
     val Card = Color(0xFF1E1E1E)
     val NearBlackRow = Color(0xFF0B0B0B)
     val NearBlackRowStroke = Color(0xFF2A2A2A)
-    val InsetGreyPanel = Color(0xFF6B7780)
     val InsetGreyGridLines = Color(0xFF454D53)
     val InsetGreyLabels = Color(0xFF3D454A)
     val PrimaryText = Color(0xFFF2F2F2)
     val MutedText = Color(0xFF8A8A8A)
     val TagButtonFill = Color(0xFF2A2A2A)
+
+    // Activity screen colors (from SVG export spec)
+    val ActivityNow = Color(0xFFE23700)
+    val ActivityStatLabel = Color(0xFFCB3100)
+    val ActivityChipFill = Color(0xFF121212)
+    val ActivityChipBorder = Color(0xFF222222)
+    val ActivityShowMoreFill = Color(0xFF1A1A1A)
+    val ActivityShowMoreStroke = Color(0xFF080808)
+    val ActivityShowMoreText = Color(0xFFBDBDBD)
+    val ActivityAxisLine = Color(0xFF8A939A)
+    val ActivityLabelBox = Color(0xFF5F6971)
+    val ActivityLabelText = Color(0xFFAAB2B8)
+    val ActivityTooltipStroke = Color(0xFF2B3034)
+    val ActivityTooltipText = Color(0xFF111111)
+    val ActivityLeaderLine = Color(0xFF22272A)
+    val ActivityEndDot = Color(0xFF0B0B0B)
+    val ActivityRulerTick = Color(0xFF3E454A)
+    val ActivityRulerNumberActive = Color(0xFF0B0B0B)
+    val ActivityRulerNumberInactive = Color(0xFF7F888F)
+    val ActivityDateText = Color(0xFF1C2023)
+    val ActivityIconWell = Color(0xFF191919)
+    val ActivityMutedIcon = Color(0xFF757577)
 
     // Tab accents (black text on accent fills)
     val AccentTDY = Color(0xFFFF4D00) // Safety Orange
@@ -34,6 +55,17 @@ object VitalColors {
     val RefLabelGray = Color(0xFF8A8A8A)    // --label-gray: STEPS
     val RefRingLine = Color(0xFF232323)     // --ring-line: hairline on the inner dial
     val RefWhite = Color(0xFFF4F4F4)        // --white
+
+    // Inset Grey Panel (Activity.png measured) — FLAT #5F6971, NOT gradient
+    val InsetGreyPanel = Color(0xFF5F6971)       // panel fill (measured)
+    val InsetGreyPanelShadow = Color(0xFF424143) // inner shadow top/left edges
+    val InsetGreyGuideLine = Color(0xFF4A535A)   // guide lines (darker than panel)
+    val InsetGreyBottomLabels = Color(0xFF3D454A) // bottom labels (6m...13m)
+
+    // Capsule row (Activity.png measured)
+    val CapsuleFill = Color(0xFF0D0D0D)          // capsule background
+    val CapsuleDarkRing = Color(0xFF030303)      // darker outer ring ~6.5 du
+    val CapsuleRimLine = Color(0xFF1A1A1A)       // light rim line at bottom edge
 
     // Dial face gradient stops (from dial.js radialGradient #dialFace)
     val DialFaceStop0 = Color(0xFF070707)   // 0%
