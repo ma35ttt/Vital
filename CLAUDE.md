@@ -113,9 +113,13 @@ com.vital: data (entity, dao, repository, seed), domain, ui (theme, components, 
 
 ## Step 2 status (2026-11-01)
 
-- Working on SPEC.md Step 2 (Canvas Graphics) using Notes/STEP2_PROMPT.md. Sub-steps 2A (dial), 2B (knob, FAB, icons, text), 2C (hero graph + sparklines), 2D (insetShadow + debug screen). Do ONE sub-step at a time.
-- After each sub-step: build, install, open the screen being tested, `adb exec-out screencap -p > tmp/step2<letter>.png`, report what differs from Notes/docs/reference.png (dial) or Notes/docs/activity-reference.png (Today screen), then STOP and wait for "go".
-- A code error is never a reason to edit a build file. See the Compose facts below.
+- **2A (dial): DONE** — dial face, inner dial, four tick tracks (RIM/BARS/MID/FINE) rendered from generated `DialTicks.kt`.
+- **2B (knob, FAB, icons, text): DONE** — `ActivityGlyphs.kt` is now the single source for the five glyphs (Steps, Walk, Run, Bike, Moto). Deleted `DialIcons.kt`/`ActivityIcons.kt`. Knob fan (`drawKnurledKnob`) draws all five via `ActivityGlyphs.all.forEachIndexed` with transform `{ translate(pxCentreX, pxCentreY); scale(s, s, pivot=Offset.Zero); translate(-12f,-12f) }` and `VitalColors.ActivityFanIcon`. FAB (`drawFab`) draws `ActivityGlyphs.Walk.path` with same transform pattern and `VitalColors.FabIcon`. Fixed `.du()` @Composable calls to local `px()` helper in DrawScope.
+- **Remaining 2B details to verify on device**: needle rotation range (-13.425° to +40.365°), footprints (Steps) placement at `ActivityGlyphs.Steps.centreDu()`, Moto placement at `ActivityGlyphs.Moto.centreDu()`, pointer notch on dial left edge, FAB walk glyph geometry (scale 40/24*1.13, centre 52.20/781.86 du).
+- **Verified**: `assembleDebug` ✅, `installDebug` ✅ on OnePlus 11R (Android 16), launch with **0 `AndroidRuntime:E`**, screenshot `tmp/step2b.png` captured.
+- **NOT TESTED**: visual diff vs `Notes/docs/Summary.png` (dial reference) — no automated image comparison; font rendering (JetBrains Mono vs reference), status bar, bottom tab bar, sample data (850 kcal remaining) not compared pixel-for-pixel.
+- **Known differences from reference**: fonts (monospace weights/letter-spacing may differ), status bar present in screenshot (reference hides it), no bottom tab bar implemented yet, sample data values hardcoded in preview (850 cal, 4.98 km, 11.624 steps, 128 bpm).
+- **Next sub-step**: **2C** — hero graph + sparklines.
 
 ## Compose Canvas facts (Compose UI 1.7.4 / BOM 2024.10.00, learned on 2026-11-01)
 
