@@ -1,6 +1,5 @@
 package com.vital.ui.screens
 
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -65,95 +64,24 @@ fun SummaryDialScreen(
     val dayTag = today.dayOfWeek.name.take(3)
     val dateTag = today.month.name.take(3) + ".${today.dayOfMonth}"
 
-    // Full accent background per SPEC.md
+    // Full accent background per SPEC.md - SummaryDial fills entire screen
     Surface(
         modifier = Modifier.fillMaxSize(),
         color = accentColor
     ) {
-        Column(
-            modifier = Modifier.fillMaxSize()
-        ) {
-            // Dark top bar with day/date tags and title
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .background(VitalColors.Background)
-                    .padding(horizontal = 16.dp, vertical = 12.dp),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                com.vital.ui.components.Tag(text = dayTag, backgroundColor = accentColor, textColor = Color.Black)
-                Text(
-                    text = "SUMMARY",
-                    color = VitalColors.PrimaryText,
-                    fontSize = 16.sp,
-                    fontWeight = FontWeight.Bold,
-                    letterSpacing = 1.5.sp
-                )
-                com.vital.ui.components.Tag(text = dateTag, backgroundColor = accentColor, textColor = Color.Black)
-            }
-
-            // Header: KCAL LEFT label + huge value + SHOW MORE button
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 16.dp, vertical = 8.dp),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.Top
-            ) {
-                Column {
-                    Text(
-                        text = "KCAL LEFT",
-                        color = Color.Black.copy(alpha = 0.7f),
-                        fontSize = 12.sp,
-                        fontWeight = FontWeight.Bold,
-                        letterSpacing = 1.5.sp
-                    )
-                    Text(
-                        text = kcalRemaining.toInt().toString(),
-                        color = Color.Black,
-                        fontSize = 56.sp,
-                        fontWeight = FontWeight.Bold,
-                        letterSpacing = 0.sp
-                    )
-                }
-                // SHOW MORE button with 2dp stroke (closes the dial)
-                androidx.compose.material3.Surface(
-                    modifier = Modifier
-                        .clickable(onClick = onClose),
-                    color = Color.Transparent,
-                    shape = RoundedCornerShape(8.dp),
-                    border = BorderStroke(2.dp, Color.Black)
-                ) {
-                    Text(
-                        text = "SHOW LESS",
-                        color = Color.Black,
-                        fontSize = 11.sp,
-                        fontWeight = FontWeight.Bold,
-                        letterSpacing = 1.5.sp,
-                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp)
-                    )
-                }
-            }
-
-            // Summary Dial - takes remaining space
-            SummaryDial(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .weight(1f)
-                    .padding(horizontal = 16.dp, vertical = 8.dp),
-                kcalRemaining = kcalRemaining,
-                kcalTarget = kcalTarget.toFloat(),
-                proteinPercent = proteinPercent,
-                carbsPercent = carbsPercent,
-                fatPercent = fatPercent,
-                period = period,
-                onPeriodChange = { },
-                accentColor = VitalColors.Background, // dark accent on orange bg
-                showKnob = true,
-                onKnobProgressChange = { knobProgress = it }
-            )
-        }
+        SummaryDial(
+            modifier = Modifier.fillMaxSize(),
+            kcalRemaining = kcalRemaining,
+            kcalTarget = kcalTarget.toFloat(),
+            proteinPercent = proteinPercent,
+            carbsPercent = carbsPercent,
+            fatPercent = fatPercent,
+            period = period,
+            onPeriodChange = { },
+            accentColor = VitalColors.Background, // dark accent on orange bg
+            showKnob = true,
+            onKnobProgressChange = { knobProgress = it }
+        )
     }
 }
 
