@@ -15,13 +15,14 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
+import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.graphics.StrokeJoin
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.drawscope.rotate
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.px
 import com.vital.ui.theme.VitalColors
 import kotlin.math.PI
 import kotlin.math.cos
@@ -117,7 +118,7 @@ fun KnurledKnob(
                 color = Color.Transparent,
                 center = Offset(centerX, centerY),
                 radius = radius * 0.95f,
-                style = Stroke(1.5f, cap = Stroke.Cap.Round, join = Stroke.Join.Round)
+                style = Stroke(1.5f, cap = StrokeCap.Round, join = StrokeJoin.Round)
             )
 
             // Inner bevel - lighter arc on top-left
@@ -182,7 +183,7 @@ fun KnurledKnob(
                         centerY + sin(0f) * handLength
                     ),
                     strokeWidth = 4f,
-                    cap = Stroke.Cap.Round
+                    cap = StrokeCap.Round
                 )
 
                 // Hand tip
