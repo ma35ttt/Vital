@@ -15,46 +15,46 @@ import com.vital.ui.theme.VitalColors
 import com.vital.ui.theme.VitalTypography.Typography
 
 private val DarkColorScheme = darkColorScheme(
-    primary = VitalColors.AccentTDY,
-    onPrimary = VitalColors.PrimaryText,
-    secondary = VitalColors.AccentTDY,
-    onSecondary = VitalColors.PrimaryText,
-    tertiary = VitalColors.AccentTDY,
-    onTertiary = VitalColors.PrimaryText,
-    background = VitalColors.Background,
-    onBackground = VitalColors.PrimaryText,
-    surface = VitalColors.Card,
-    onSurface = VitalColors.PrimaryText,
-    surfaceVariant = VitalColors.NearBlackRow,
-    onSurfaceVariant = VitalColors.MutedText,
-    outline = VitalColors.NearBlackRowStroke,
-    outlineVariant = VitalColors.NearBlackRowStroke,
+    primary = VitalColors.orange,
+    onPrimary = VitalColors.black,
+    secondary = VitalColors.orange,
+    onSecondary = VitalColors.black,
+    tertiary = VitalColors.orange,
+    onTertiary = VitalColors.black,
+    background = VitalColors.black,
+    onBackground = VitalColors.textPrimary,
+    surface = VitalColors.wellFill,
+    onSurface = VitalColors.textPrimary,
+    surfaceVariant = VitalColors.wellFill,
+    onSurfaceVariant = VitalColors.textMuted,
+    outline = VitalColors.wellStroke,
+    outlineVariant = VitalColors.wellStroke,
     scrim = Color.Black,
-    inverseSurface = VitalColors.PrimaryText,
-    inverseOnSurface = VitalColors.Background,
-    inversePrimary = VitalColors.AccentTDY,
-    primaryContainer = VitalColors.AccentTDY,
-    onPrimaryContainer = Color.Black,
-    secondaryContainer = VitalColors.AccentTDY,
-    onSecondaryContainer = Color.Black,
-    tertiaryContainer = VitalColors.AccentTDY,
-    onTertiaryContainer = Color.Black,
-    surfaceContainer = VitalColors.Card,
-    surfaceContainerHigh = VitalColors.NearBlackRow,
-    surfaceContainerHighest = VitalColors.TagButtonFill,
-    surfaceContainerLow = VitalColors.Background,
-    surfaceContainerLowest = VitalColors.Background,
-    surfaceBright = VitalColors.Card,
-    surfaceDim = VitalColors.Background,
+    inverseSurface = VitalColors.textPrimary,
+    inverseOnSurface = VitalColors.black,
+    inversePrimary = VitalColors.orange,
+    primaryContainer = VitalColors.orange,
+    onPrimaryContainer = VitalColors.black,
+    secondaryContainer = VitalColors.orange,
+    onSecondaryContainer = VitalColors.black,
+    tertiaryContainer = VitalColors.orange,
+    onTertiaryContainer = VitalColors.black,
+    surfaceContainer = VitalColors.wellFill,
+    surfaceContainerHigh = VitalColors.wellFill,
+    surfaceContainerHighest = VitalColors.wellFill,
+    surfaceContainerLow = VitalColors.black,
+    surfaceContainerLowest = VitalColors.black,
+    surfaceBright = VitalColors.wellFill,
+    surfaceDim = VitalColors.black,
 )
 
 private val LightColorScheme = lightColorScheme(
-    primary = VitalColors.AccentTDY,
-    onPrimary = Color.White,
-    secondary = VitalColors.AccentTDY,
-    onSecondary = Color.White,
-    tertiary = VitalColors.AccentTDY,
-    onTertiary = Color.White,
+    primary = VitalColors.orange,
+    onPrimary = VitalColors.black,
+    secondary = VitalColors.orange,
+    onSecondary = VitalColors.black,
+    tertiary = VitalColors.orange,
+    onTertiary = VitalColors.black,
     background = Color(0xFFF5F5F5),
     onBackground = Color(0xFF1C1C1C),
     surface = Color.White,
@@ -66,13 +66,13 @@ private val LightColorScheme = lightColorScheme(
     scrim = Color.Black,
     inverseSurface = Color(0xFF1C1C1C),
     inverseOnSurface = Color.White,
-    inversePrimary = VitalColors.AccentTDY,
-    primaryContainer = VitalColors.AccentTDY.copy(alpha = 0.2f),
-    onPrimaryContainer = VitalColors.AccentTDY,
-    secondaryContainer = VitalColors.AccentTDY.copy(alpha = 0.2f),
-    onSecondaryContainer = VitalColors.AccentTDY,
-    tertiaryContainer = VitalColors.AccentTDY.copy(alpha = 0.2f),
-    onTertiaryContainer = VitalColors.AccentTDY,
+    inversePrimary = VitalColors.orange,
+    primaryContainer = VitalColors.orange.copy(alpha = 0.2f),
+    onPrimaryContainer = VitalColors.orange,
+    secondaryContainer = VitalColors.orange.copy(alpha = 0.2f),
+    onSecondaryContainer = VitalColors.orange,
+    tertiaryContainer = VitalColors.orange.copy(alpha = 0.2f),
+    onTertiaryContainer = VitalColors.orange,
 )
 
 @Composable
@@ -80,15 +80,15 @@ fun VitalTheme(
     darkTheme: Boolean = isSystemInDarkTheme(),
     // True black setting overrides background
     trueBlack: Boolean = false,
-    // Accent color for current tab (used for dynamic theming)
-    accentColor: Color = VitalColors.AccentTDY,
+    // Accent color for current tab - always orange now
+    accentColor: Color = VitalColors.orange,
     content: @Composable () -> Unit
 ) {
     val colorScheme = if (darkTheme) {
         if (trueBlack) {
-            DarkColorScheme.copy(background = VitalColors.BackgroundTrueBlack)
+            DarkColorScheme.copy(background = VitalColors.trueBlackBackground)
         } else {
-            DarkColorScheme
+            DarkColorScheme.copy(background = VitalColors.falseBlackBackground)
         }
     } else {
         LightColorScheme
@@ -115,10 +115,10 @@ fun VitalTheme(
     )
 }
 
-// Helper to get current theme's accent color
+// Helper to get current theme's accent color (always orange now)
 @Composable
 fun currentAccentColor(): Color {
-    return MaterialTheme.colorScheme.primary
+    return VitalColors.orange
 }
 
 // Helper to check if true black is enabled

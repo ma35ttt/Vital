@@ -114,6 +114,13 @@
 ## Build Investigation Status
 *To be updated during each step*
 
+### STEP 1 (Chrome) — Colour token aliases added (2026-11-02)
+
+- `sheetHighlight` → aliases `sheetTopHighlight` (#1C1C1C)
+- `backgroundTrueBlackOff` → aliases `falseBlackBackground` (#141414)
+
+Both added as aliases per REMAINING_TABS_BRIEF.md section 1 / chrome.md "Colours" table. Original tokens kept for compatibility.
+
 ### Corrected 2C measurements table (2026-11-01)
 
 The previous table here mixed numbers from the Summary SVG (vital-ui) into an "Activity.png" table and ended with a pasted prompt. It was replaced by the table below, which was measured from pixels of `Notes/docs/Activity.png`.
