@@ -19,3 +19,4 @@ tmp/
 Notes/*.tar.gz
 Notes/old/
 .DS_Store
+design/*.zip
