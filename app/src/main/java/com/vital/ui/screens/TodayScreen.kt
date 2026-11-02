@@ -99,7 +99,7 @@ fun TodayScreen(
         )
         Surface(
             modifier = modifier.fillMaxSize(),
-            color = VitalColors.Background
+            color = VitalColors.black
         ) {
             // Scrollable Column: header → 13 du spacer → hero card → workouts header → capsule rows → 84 du bottom padding
             val scrollState = rememberScrollState()
@@ -118,16 +118,16 @@ fun TodayScreen(
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Tag(text = dayTag, backgroundColor = VitalColors.AccentTDY)
+                    Tag(text = dayTag, backgroundColor = VitalColors.orange)
                     Text(
                         text = "TODAY",
-                        color = VitalColors.PrimaryText,
+                        color = VitalColors.textPrimary,
                         fontSize = 16.sp,
                         fontWeight = FontWeight.Bold,
                         fontFamily = jetbrainsMono,
                         letterSpacing = 1.5.sp
                     )
-                    Tag(text = dateTag, backgroundColor = VitalColors.AccentTDY)
+                    Tag(text = dateTag, backgroundColor = VitalColors.orange)
                 }
 
                 // 13 du spacer between header and hero
@@ -139,7 +139,7 @@ fun TodayScreen(
                         .fillMaxWidth()
                         .padding(horizontal = 13.8f.duToDp())
                         .height(326.6f.duToDp()),
-                    color = VitalColors.RefOrange,
+                    color = VitalColors.orange,
                     shape = RoundedCornerShape(11f.duToDp())
                 ) {
                     // Hero card content as Box with absolute positioning from card top-left (0,0)
@@ -159,7 +159,7 @@ fun TodayScreen(
                             ) {
                                 Text(
                                     text = "KCAL REMAINING",
-                                    color = VitalColors.RefInk,
+                                    color = VitalColors.black,
                                     fontSize = 18.5f.duToSp(),
                                     fontWeight = FontWeight.Normal,
                                     fontFamily = jetbrainsMono,
@@ -215,7 +215,7 @@ fun TodayScreen(
                                 modifier = Modifier.fillMaxSize(),
                                 dataPoints = weeklyKcalData,
                                 labels = listOf("6m", "7m", "8m", "9m", "10m", "11m", "12m", "13m"),
-                                accentColor = VitalColors.RefInk,
+                                accentColor = VitalColors.black,
                                 showTooltip = weeklyKcalData.isNotEmpty(),
                                 tooltipIndex = if (weeklyKcalData.isNotEmpty()) weeklyKcalData.lastIndex else -1,
                                 tooltipValue = weeklyKcalData.lastOrNull() ?: 0f,
@@ -228,7 +228,7 @@ fun TodayScreen(
                 // WORKOUTS Section
                 SectionHeader(
                     title = "WORKOUTS",
-                    accentColor = VitalColors.AccentTDY,
+                    accentColor = VitalColors.orange,
                     showMoreAction = onShowSummary,
                     modifier = Modifier
                         .fillMaxWidth()
@@ -273,7 +273,7 @@ fun TodayScreen(
                         ) {
                             Text(
                                 text = "NO WORKOUTS LOGGED TODAY",
-                                color = VitalColors.MutedText,
+                                color = VitalColors.textMuted,
                                 fontSize = 12.sp,
                                 fontWeight = FontWeight.Medium,
                                 letterSpacing = 1.sp
@@ -289,11 +289,11 @@ fun TodayScreen(
 // Preview data for testing
 object TodayScreenPreviewData {
     val sampleWorkouts = listOf(
-        WorkoutCapsule("Strength", "45 min", Icons.Default.LocalFireDepartment, VitalColors.AccentLFT, listOf(0.3f, 0.5f, 0.4f, 0.6f, 0.55f)),
-        WorkoutCapsule("Upper Body", "38 min", Icons.Default.DirectionsRun, VitalColors.AccentLFT, listOf(0.4f, 0.6f, 0.5f, 0.7f, 0.65f))
+        WorkoutCapsule("Strength", "45 min", Icons.Default.LocalFireDepartment, VitalColors.orange, listOf(0.3f, 0.5f, 0.4f, 0.6f, 0.55f)),
+        WorkoutCapsule("Upper Body", "38 min", Icons.Default.DirectionsRun, VitalColors.orange, listOf(0.4f, 0.6f, 0.5f, 0.7f, 0.65f))
     )
     val sampleCardio = listOf(
-        WorkoutCapsule("Running", "5.2 km", Icons.Default.DirectionsBike, VitalColors.AccentCRD, listOf(0.2f, 0.4f, 0.35f, 0.5f, 0.45f))
+        WorkoutCapsule("Running", "5.2 km", Icons.Default.DirectionsBike, VitalColors.orange, listOf(0.2f, 0.4f, 0.35f, 0.5f, 0.45f))
     )
     val weeklyKcal = listOf(0.2f, 0.35f, 0.45f, 0.38f, 0.52f, 0.61f, 0.55f)
     val weeklyLabels = listOf("MON", "TUE", "WED", "THU", "FRI", "SAT", "SUN")

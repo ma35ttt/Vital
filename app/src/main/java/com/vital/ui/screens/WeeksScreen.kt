@@ -179,16 +179,22 @@ fun WeeksScreen(
                             MacroLabel("CARBS", modifier = Modifier.width(113.duToDp()))
                             MacroLabel("FAT", modifier = Modifier.width(113.duToDp()))
                         }
-                        // Values row
+                        // Values row - show dashes if no data
                         Row(
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .padding(top = 4.dp),
                             horizontalArrangement = Arrangement.spacedBy(0.dp)
                         ) {
-                            MacroValue("97%", modifier = Modifier.width(113.duToDp()))
-                            MacroValue("88%", modifier = Modifier.width(113.duToDp()))
-                            MacroValue("91%", modifier = Modifier.width(113.duToDp()))
+                            if (weeklyMacroData.isNotEmpty()) {
+                                MacroValue("${(weeklyMacroData[0] * 100).toInt()}%", modifier = Modifier.width(113.duToDp()))
+                                MacroValue("${(weeklyMacroData[1] * 100).toInt()}%", modifier = Modifier.width(113.duToDp()))
+                                MacroValue("${(weeklyMacroData[2] * 100).toInt()}%", modifier = Modifier.width(113.duToDp()))
+                            } else {
+                                MacroValue("—%", modifier = Modifier.width(113.duToDp()))
+                                MacroValue("—%", modifier = Modifier.width(113.duToDp()))
+                                MacroValue("—%", modifier = Modifier.width(113.duToDp()))
+                            }
                         }
                     }
 
@@ -237,15 +243,15 @@ fun WeeksScreen(
                 )
             }
 
-            // Three capsule rows
+            // Three capsule rows - show dashes for empty state
             // Row 1: BODY WEIGHT
             CapsuleRow(
                 modifier = Modifier.fillMaxWidth(),
                 icon = { Icon(Icons.Default.MonitorWeight, "", tint = VitalColors.orange) },
                 label = "BODY WEIGHT",
-                value = "68.4 kg",
-                secondaryText = "−0.6 · 4W",
-                sparklineData = weeklyWeightData,
+                value = if (weeklyWeightData.isNotEmpty()) "${weeklyWeightData.last()} kg" else "— kg",
+                secondaryText = "— · 4W",
+                sparklineData = if (weeklyWeightData.size >= 2) weeklyWeightData else null,
                 onClick = null
             )
 
@@ -254,9 +260,9 @@ fun WeeksScreen(
                 modifier = Modifier.fillMaxWidth(),
                 icon = { Icon(Icons.Default.FitnessCenter, "", tint = VitalColors.orange) },
                 label = "WEEKLY VOLUME",
-                value = "18.4 t",
-                secondaryText = "PEAK 21.2",
-                sparklineData = weeklyVolumeData,
+                value = if (weeklyVolumeData.isNotEmpty()) "${(weeklyVolumeData.last() * 100).toInt() / 10}.0 t" else "— t",
+                secondaryText = "PEAK —",
+                sparklineData = if (weeklyVolumeData.size >= 2) weeklyVolumeData else null,
                 onClick = null
             )
 
@@ -265,9 +271,9 @@ fun WeeksScreen(
                 modifier = Modifier.fillMaxWidth(),
                 icon = { Icon(Icons.Default.TrendingUp, "", tint = VitalColors.orange) },
                 label = "BENCH PR",
-                value = "100 × 5",
-                secondaryText = "+5 KG",
-                sparklineData = weeklyPrData,
+                value = "— × —",
+                secondaryText = "—",
+                sparklineData = if (weeklyPrData.size >= 2) weeklyPrData else null,
                 onClick = null
             )
         }

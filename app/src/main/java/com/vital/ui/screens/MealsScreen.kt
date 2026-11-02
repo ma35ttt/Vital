@@ -95,6 +95,7 @@ fun MealsScreen(
     val weeklyKcalData by viewModel.weeklyKcalData.collectAsStateWithLifecycle(emptyList())
     val weeklyLabels by viewModel.weeklyLabels.collectAsStateWithLifecycle(emptyList())
     val mealsToday by viewModel.mealsToday.collectAsStateWithLifecycle(emptyList())
+    val kcalTarget by viewModel.kcalTarget.collectAsStateWithLifecycle(2500)
 
     var searchText by remember { mutableStateOf("") }
     var isSearchFocused by remember { mutableStateOf(false) }
@@ -111,7 +112,7 @@ fun MealsScreen(
         dialInnerLabel = "EATEN",
         dialInnerValue = "${consumedKcal.toInt()}",
         dialInnerUnit = "KCAL",
-        dialPillText = "OF 2,500",
+        dialPillText = "OF ${kcalTarget}",
         dialTopPill = "LUNCH",
         dialFabGlyph = FabGlyph.Plus
     ) {

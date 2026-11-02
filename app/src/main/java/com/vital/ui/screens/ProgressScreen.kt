@@ -73,7 +73,7 @@ fun ProgressScreen(
 
     Surface(
         modifier = Modifier.fillMaxSize(),
-        color = VitalColors.Background
+        color = VitalColors.black
     ) {
         Column(
             modifier = Modifier.fillMaxSize(),
@@ -87,10 +87,10 @@ fun ProgressScreen(
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Tag(text = dayTag, backgroundColor = VitalColors.AccentWKS)
+                Tag(text = dayTag, backgroundColor = VitalColors.orange)
                 Text(
                     text = "PROGRESS",
-                    color = VitalColors.PrimaryText,
+                    color = VitalColors.textPrimary,
                     fontSize = 16.sp,
                     fontWeight = FontWeight.Bold,
                     letterSpacing = 1.5.sp
@@ -99,15 +99,15 @@ fun ProgressScreen(
                     modifier = Modifier
                         .size(48.dp)
                         .clickable(onClick = onClose),
-                    color = VitalColors.NearBlackRow,
+                    color = VitalColors.wellFill,
                     shape = CircleShape,
-                    border = BorderStroke(1.5.dp, VitalColors.NearBlackRowStroke)
+                    border = BorderStroke(1.5.dp, VitalColors.wellStroke)
                 ) {
                     Box(
                         modifier = Modifier.fillMaxSize(),
                         contentAlignment = Alignment.Center
                     ) {
-                        Icon(imageVector = Icons.Default.Close, contentDescription = "Close", tint = VitalColors.PrimaryText, modifier = Modifier.padding(12.dp))
+                        Icon(imageVector = Icons.Default.Close, contentDescription = "Close", tint = VitalColors.textPrimary, modifier = Modifier.padding(12.dp))
                     }
                 }
             }
@@ -124,34 +124,34 @@ fun ProgressScreen(
                     label = "WEIGHT",
                     value = String.format("%.1f kg", currentWeight),
                     delta = String.format("%+.1f", weightChange),
-                    deltaColor = if (weightChange < 0) VitalColors.AccentMLS else VitalColors.AccentTDY,
+                    deltaColor = if (weightChange < 0) VitalColors.orange else VitalColors.orange,
                     icon = Icons.Default.MonitorWeight,
-                    accentColor = VitalColors.AccentCRD
+                    accentColor = VitalColors.orange
                 )
                 ProgressStatCard(
                     modifier = Modifier.weight(1f),
                     label = "BODY FAT",
                     value = String.format("%.1f%%", bodyFatPct),
                     delta = "--",
-                    deltaColor = VitalColors.MutedText,
+                    deltaColor = VitalColors.textMuted,
                     icon = Icons.Default.Straighten,
-                    accentColor = VitalColors.AccentLFT
+                    accentColor = VitalColors.orange
                 )
                 ProgressStatCard(
                     modifier = Modifier.weight(1f),
                     label = "PHOTOS",
                     value = progressPhotos.size.toString(),
                     delta = "TOTAL",
-                    deltaColor = VitalColors.MutedText,
+                    deltaColor = VitalColors.textMuted,
                     icon = Icons.Default.PhotoCamera,
-                    accentColor = VitalColors.AccentWKS
+                    accentColor = VitalColors.orange
                 )
             }
 
             // Weight Trend Chart
             SectionHeader(
                 title = "WEIGHT TREND",
-                accentColor = VitalColors.AccentWKS,
+                accentColor = VitalColors.orange,
                 showMoreAction = { /* TODO: Show full weight history */ }
             )
 
@@ -160,9 +160,9 @@ fun ProgressScreen(
                     .fillMaxWidth()
                     .padding(horizontal = 16.dp, vertical = 8.dp)
                     .height(220.dp),
-                color = VitalColors.Card,
+                color = VitalColors.wellFill,
                 shape = RoundedCornerShape(12.dp),
-                border = BorderStroke(1.dp, VitalColors.NearBlackRowStroke)
+                border = BorderStroke(1.dp, VitalColors.wellStroke)
             ) {
                 Column(
                     modifier = Modifier.fillMaxSize().padding(16.dp),
@@ -174,7 +174,7 @@ fun ProgressScreen(
                             .weight(1f),
                         dataPoints = weeklyWeightData,
                         labels = weeklyLabels,
-                        accentColor = VitalColors.AccentCRD,
+                        accentColor = VitalColors.orange,
                         showTooltip = true,
                         tooltipIndex = weeklyWeightData.lastIndex,
                         tooltipValue = weeklyWeightData.lastOrNull() ?: 0f
@@ -188,17 +188,17 @@ fun ProgressScreen(
                         Sparkline(
                             modifier = Modifier.weight(1f).height(40.dp),
                             dataPoints = weeklyWeightData,
-                            accentColor = VitalColors.AccentCRD
+                            accentColor = VitalColors.orange
                         )
                         Sparkline(
                             modifier = Modifier.weight(1f).height(40.dp),
                             dataPoints = weeklyWeightData.map { it * 0.95f },
-                            accentColor = VitalColors.AccentCRD.copy(alpha = 0.7f)
+                            accentColor = VitalColors.orange.copy(alpha = 0.7f)
                         )
                         Sparkline(
                             modifier = Modifier.weight(1f).height(40.dp),
                             dataPoints = weeklyWeightData.map { it * 1.05f },
-                            accentColor = VitalColors.AccentCRD.copy(alpha = 0.5f)
+                            accentColor = VitalColors.orange.copy(alpha = 0.5f)
                         )
                     }
                 }
@@ -207,7 +207,7 @@ fun ProgressScreen(
             // Progress Photos
             SectionHeader(
                 title = "PROGRESS PHOTOS",
-                accentColor = VitalColors.AccentWKS
+                accentColor = VitalColors.orange
             )
 
             LazyColumn(
@@ -233,7 +233,7 @@ fun ProgressScreen(
             // Measurements
             SectionHeader(
                 title = "MEASUREMENTS",
-                accentColor = VitalColors.AccentWKS
+                accentColor = VitalColors.orange
             )
 
             LazyColumn(
@@ -247,7 +247,7 @@ fun ProgressScreen(
                         value = measurement.value,
                         unit = measurement.unit,
                         delta = measurement.delta,
-                        accentColor = VitalColors.AccentLFT
+                        accentColor = VitalColors.orange
                     )
                 }
 
@@ -259,7 +259,7 @@ fun ProgressScreen(
                         ) {
                             Text(
                                 text = "NO MEASUREMENTS RECORDED",
-                                color = VitalColors.MutedText,
+                                color = VitalColors.textMuted,
                                 fontSize = 12.sp,
                                 fontWeight = FontWeight.Medium,
                                 letterSpacing = 1.sp
@@ -285,9 +285,9 @@ fun ProgressStatCard(
     Surface(
         modifier = modifier
             .height(100.dp),
-        color = VitalColors.NearBlackRow,
+        color = VitalColors.wellFill,
         shape = RoundedCornerShape(12.dp),
-        border = BorderStroke(1.5.dp, VitalColors.NearBlackRowStroke)
+        border = BorderStroke(1.5.dp, VitalColors.wellStroke)
     ) {
         Column(
             modifier = Modifier.fillMaxSize().padding(16.dp),
@@ -303,8 +303,8 @@ fun ProgressStatCard(
                 Text(text = delta, color = deltaColor, fontSize = 10.sp, fontWeight = FontWeight.Bold)
             }
             Spacer(modifier = Modifier.height(8.dp))
-            Text(text = value, color = VitalColors.PrimaryText, fontSize = 20.sp, fontWeight = FontWeight.Bold)
-            Text(text = label, color = VitalColors.MutedText, fontSize = 10.sp, fontWeight = FontWeight.Bold, letterSpacing = 1.sp)
+            Text(text = value, color = VitalColors.textPrimary, fontSize = 20.sp, fontWeight = FontWeight.Bold)
+            Text(text = label, color = VitalColors.textMuted, fontSize = 10.sp, fontWeight = FontWeight.Bold, letterSpacing = 1.sp)
         }
     }
 }
@@ -313,9 +313,9 @@ fun ProgressStatCard(
 fun ProgressPhotoCard(photo: ProgressPhotoItem) {
     Surface(
         modifier = Modifier.fillMaxWidth(),
-        color = VitalColors.Card,
+        color = VitalColors.wellFill,
         shape = RoundedCornerShape(12.dp),
-        border = BorderStroke(1.dp, VitalColors.NearBlackRowStroke)
+        border = BorderStroke(1.dp, VitalColors.wellStroke)
     ) {
         Column(
             modifier = Modifier.padding(16.dp)
@@ -328,22 +328,22 @@ fun ProgressPhotoCard(photo: ProgressPhotoItem) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Surface(
                         modifier = Modifier.size(40.dp),
-                        color = VitalColors.AccentWKS.copy(alpha = 0.2f),
+                        color = VitalColors.orange.copy(alpha = 0.2f),
                         shape = CircleShape
                     ) {
                         Box(
                             modifier = Modifier.fillMaxSize(),
                             contentAlignment = Alignment.Center
                         ) {
-                            Icon(imageVector = Icons.Default.PhotoCamera, contentDescription = "Photo", tint = VitalColors.AccentWKS)
+                            Icon(imageVector = Icons.Default.PhotoCamera, contentDescription = "Photo", tint = VitalColors.orange)
                         }
                     }
                     Column(modifier = Modifier.padding(start = 12.dp)) {
-                        Text(text = photo.type.uppercase(), color = VitalColors.PrimaryText, fontSize = 14.sp, fontWeight = FontWeight.Bold)
-                        Text(text = photo.date, color = VitalColors.MutedText, fontSize = 11.sp, fontWeight = FontWeight.Medium)
+                        Text(text = photo.type.uppercase(), color = VitalColors.textPrimary, fontSize = 14.sp, fontWeight = FontWeight.Bold)
+                        Text(text = photo.date, color = VitalColors.textMuted, fontSize = 11.sp, fontWeight = FontWeight.Medium)
                     }
                 }
-                Text(text = photo.notes ?: "", color = VitalColors.MutedText, fontSize = 12.sp, fontWeight = FontWeight.Medium)
+                Text(text = photo.notes ?: "", color = VitalColors.textMuted, fontSize = 12.sp, fontWeight = FontWeight.Medium)
             }
 
             // Photo placeholder
@@ -352,9 +352,9 @@ fun ProgressPhotoCard(photo: ProgressPhotoItem) {
                     .fillMaxWidth()
                     .height(200.dp)
                     .padding(top = 12.dp),
-                color = VitalColors.NearBlackRow,
+                color = VitalColors.wellFill,
                 shape = RoundedCornerShape(8.dp),
-                border = BorderStroke(1.dp, VitalColors.NearBlackRowStroke)
+                border = BorderStroke(1.dp, VitalColors.wellStroke)
             ) {
                 Box(
                     modifier = Modifier.fillMaxSize(),
@@ -364,8 +364,8 @@ fun ProgressPhotoCard(photo: ProgressPhotoItem) {
                         horizontalAlignment = Alignment.CenterHorizontally,
                         verticalArrangement = Arrangement.Center
                     ) {
-                        Icon(imageVector = Icons.Default.PhotoCamera, contentDescription = "Progress photo", tint = VitalColors.MutedText.copy(alpha = 0.5f), modifier = Modifier.size(48.dp))
-                        Text(text = "PHOTO: ${photo.type}", color = VitalColors.MutedText.copy(alpha = 0.5f), fontSize = 12.sp, fontWeight = FontWeight.Medium)
+                        Icon(imageVector = Icons.Default.PhotoCamera, contentDescription = "Progress photo", tint = VitalColors.textMuted.copy(alpha = 0.5f), modifier = Modifier.size(48.dp))
+                        Text(text = "PHOTO: ${photo.type}", color = VitalColors.textMuted.copy(alpha = 0.5f), fontSize = 12.sp, fontWeight = FontWeight.Medium)
                     }
                 }
             }
@@ -380,18 +380,18 @@ fun AddPhotoCard(onClick: () -> Unit) {
             .fillMaxWidth()
             .height(120.dp)
             .clickable(onClick = onClick),
-        color = VitalColors.NearBlackRow,
+        color = VitalColors.wellFill,
         shape = RoundedCornerShape(12.dp),
-        border = BorderStroke(2.dp, VitalColors.AccentWKS.copy(alpha = 0.5f))
+        border = BorderStroke(2.dp, VitalColors.orange.copy(alpha = 0.5f))
     ) {
         Column(
             modifier = Modifier.fillMaxSize(),
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center
         ) {
-            Icon(imageVector = Icons.Default.PhotoCamera, contentDescription = "Add photo", tint = VitalColors.AccentWKS, modifier = Modifier.size(32.dp))
+            Icon(imageVector = Icons.Default.PhotoCamera, contentDescription = "Add photo", tint = VitalColors.orange, modifier = Modifier.size(32.dp))
             Spacer(modifier = Modifier.height(8.dp))
-            Text(text = "ADD PROGRESS PHOTO", color = VitalColors.AccentWKS, fontSize = 14.sp, fontWeight = FontWeight.Bold, letterSpacing = 1.sp)
+            Text(text = "ADD PROGRESS PHOTO", color = VitalColors.orange, fontSize = 14.sp, fontWeight = FontWeight.Bold, letterSpacing = 1.sp)
         }
     }
 }
@@ -408,9 +408,9 @@ fun MeasurementRow(
         modifier = Modifier
             .fillMaxWidth()
             .padding(vertical = 4.dp),
-        color = VitalColors.NearBlackRow,
+        color = VitalColors.wellFill,
         shape = RoundedCornerShape(8.dp),
-        border = BorderStroke(1.5.dp, VitalColors.NearBlackRowStroke)
+        border = BorderStroke(1.5.dp, VitalColors.wellStroke)
     ) {
         Row(
             modifier = Modifier
@@ -433,13 +433,13 @@ fun MeasurementRow(
                     }
                 }
                 Column(modifier = Modifier.padding(start = 12.dp)) {
-                    Text(text = label.uppercase(), color = VitalColors.PrimaryText, fontSize = 14.sp, fontWeight = FontWeight.Bold)
+                    Text(text = label.uppercase(), color = VitalColors.textPrimary, fontSize = 14.sp, fontWeight = FontWeight.Bold)
                 }
             }
             Row(verticalAlignment = Alignment.CenterVertically) {
-                Text(text = "$value $unit", color = VitalColors.PrimaryText, fontSize = 18.sp, fontWeight = FontWeight.Bold)
+                Text(text = "$value $unit", color = VitalColors.textPrimary, fontSize = 18.sp, fontWeight = FontWeight.Bold)
                 if (delta.isNotBlank()) {
-                    Text(text = delta, color = VitalColors.MutedText, fontSize = 11.sp, fontWeight = FontWeight.Medium, modifier = Modifier.padding(start = 8.dp))
+                    Text(text = delta, color = VitalColors.textMuted, fontSize = 11.sp, fontWeight = FontWeight.Medium, modifier = Modifier.padding(start = 8.dp))
                 }
             }
         }

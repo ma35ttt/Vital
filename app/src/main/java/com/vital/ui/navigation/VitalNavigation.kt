@@ -106,7 +106,7 @@ fun VitalNavigation() {
                 composable("cardio") {
                     CardioScreen(
                         modifier = Modifier.padding(innerPadding),
-                        onShowSummary = { navController.navigate("summary") },
+                        onShowMore = { navController.navigate("summary") },
                         onNavigateToToday = { navController.popBackStack("today", false) },
                         onNavigateToMeals = { navController.navigate("meals") },
                         onNavigateToLift = { navController.navigate("lift") },
@@ -173,12 +173,12 @@ fun TabBar(
 ) {
 
     val tabColors = listOf(
-        com.vital.ui.theme.VitalColors.AccentTDY,
-        com.vital.ui.theme.VitalColors.AccentMLS,
-        com.vital.ui.theme.VitalColors.AccentLFT,
-        com.vital.ui.theme.VitalColors.AccentCRD,
-        com.vital.ui.theme.VitalColors.AccentWKS,
-        com.vital.ui.theme.VitalColors.AccentSET
+        com.vital.ui.theme.VitalColors.orange,
+        com.vital.ui.theme.VitalColors.orange,
+        com.vital.ui.theme.VitalColors.orange,
+        com.vital.ui.theme.VitalColors.orange,
+        com.vital.ui.theme.VitalColors.orange,
+        com.vital.ui.theme.VitalColors.orange
     )
 
     Surface(
@@ -186,9 +186,9 @@ fun TabBar(
             .fillMaxWidth()
             .height(60.dp)
             .padding(bottom = 8.dp),
-        color = com.vital.ui.theme.VitalColors.Card,
+        color = com.vital.ui.theme.VitalColors.wellFill,
         shape = RoundedCornerShape(topStart = 16.dp, topEnd = 16.dp),
-        border = BorderStroke(1.dp, com.vital.ui.theme.VitalColors.NearBlackRowStroke)
+        border = BorderStroke(1.dp, com.vital.ui.theme.VitalColors.wellStroke)
     ) {
         Row(
             modifier = Modifier.fillMaxWidth(),
@@ -214,7 +214,7 @@ fun TabBar(
                     ) {
                         Text(
                             text = tab.label,
-                            color = if (isSelected) Color.Black else com.vital.ui.theme.VitalColors.MutedText,
+                            color = if (isSelected) Color.Black else com.vital.ui.theme.VitalColors.textMuted,
                             fontSize = 10.sp,
                             fontWeight = FontWeight.Bold,
                             letterSpacing = 1.5.sp

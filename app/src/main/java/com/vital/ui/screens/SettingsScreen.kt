@@ -10,12 +10,15 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.layout.wrapContentWidth
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.material3.Icon
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Code
@@ -32,6 +35,7 @@ import androidx.compose.material.icons.filled.MonitorWeight
 import androidx.compose.material.icons.filled.OilBarrel
 import androidx.compose.material.icons.filled.Palette
 import androidx.compose.material.icons.filled.Person
+import androidx.compose.material.icons.filled.Restaurant
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.SmartToy
 import androidx.compose.material.icons.filled.Timer
@@ -46,7 +50,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
@@ -64,9 +67,19 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import java.time.LocalDate
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.vital.ui.MainViewModel
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.BorderStroke
+import com.vital.ui.components.ScreenScaffold
+import com.vital.ui.components.ScreenVariant
+import com.vital.ui.components.SectionLabel
+import com.vital.ui.components.WellRow
+import com.vital.ui.components.CapsuleRow
+import com.vital.ui.components.GreyPanel
+import com.vital.ui.components.VitalChip
+import com.vital.ui.components.VitalToggle
+import com.vital.ui.theme.duToSp
+import com.vital.ui.theme.duToDp
+import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.ui.unit.em
+import androidx.compose.ui.text.style.TextAlign
 
 @Composable
 fun SettingsScreen(
@@ -78,10 +91,6 @@ fun SettingsScreen(
     onNavigateToWeeks: () -> Unit,
     viewModel: MainViewModel = viewModel()
 ) {
-    val today = LocalDate.now()
-    val dayTag = today.dayOfWeek.name.take(3)
-    val dateTag = today.month.name.take(3) + ".${today.dayOfMonth}"
-
     val trueBlack by viewModel.trueBlack.collectAsStateWithLifecycle(false)
     val aiProvider by viewModel.aiProvider.collectAsStateWithLifecycle("gemini")
     val kcalTarget by viewModel.kcalTarget.collectAsStateWithLifecycle(2500)
@@ -94,153 +103,341 @@ fun SettingsScreen(
     var showBiometric by remember { mutableStateOf(false) }
     var showPin by remember { mutableStateOf(false) }
 
-    Surface(
-        modifier = modifier.fillMaxSize(),
-        color = VitalColors.Background
+    ScreenScaffold(
+        variant = ScreenVariant.BlackPage,
+        title = "SETTINGS"
     ) {
         Column(
-            modifier = Modifier.fillMaxSize(),
-            verticalArrangement = Arrangement.spacedBy(0.dp)
+            modifier = Modifier.fillMaxWidth(),
+            horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            // Top Bar
-            Row(
+            // Content left/right edge is 12 and 380 (369 wide), not 16
+            LazyColumn(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = 16.dp, vertical = 12.dp),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
+                    .padding(horizontal = 12.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp),
+                contentPadding = androidx.compose.foundation.layout.PaddingValues(top = 0.dp, bottom = 100.dp) // bottom padding for nav
             ) {
-                Tag(text = dayTag, backgroundColor = VitalColors.AccentSET)
-                Text(
-                    text = "SETTINGS",
-                    color = VitalColors.PrimaryText,
-                    fontSize = 16.sp,
-                    fontWeight = FontWeight.Bold,
-                    letterSpacing = 1.5.sp
-                )
-                Tag(text = dateTag, backgroundColor = VitalColors.AccentSET)
-            }
-
-            LazyColumn(
-                modifier = Modifier.fillMaxWidth(),
-                verticalArrangement = Arrangement.spacedBy(16.dp),
-                contentPadding = androidx.compose.foundation.layout.PaddingValues(start = 16.dp, top = 16.dp, end = 16.dp, bottom = 32.dp)
-            ) {
-                // PROFILE Section
-                item { SectionHeader(title = "PROFILE", accentColor = VitalColors.AccentSET) }
+                // DAILY TARGETS hero card - orange, radius ~18, at content top (y 98 from screen top)
                 item {
-                    SettingsCard {
+                    Surface(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(228.duToDp()),
+                        color = VitalColors.orange,
+                        shape = RoundedCornerShape(18.duToDp())
+                    ) {
+                        Column(
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .padding(horizontal = 14.dp, vertical = 23.dp),
+                            horizontalAlignment = Alignment.Start
+                        ) {
+                            // DAILY TARGETS tag
+                            Text(
+                                text = "DAILY TARGETS",
+                                color = VitalColors.black,
+                                fontSize = 11.duToSp(),
+                                fontWeight = FontWeight.Bold,
+                                fontFamily = FontFamily.Monospace
+                            )
+
+                            // Kcal target row
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(top = 26.dp),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.Bottom
+                            ) {
+                                Text(
+                                    text = kcalTarget.toString(),
+                                    color = VitalColors.black,
+                                    fontSize = 76.duToSp(),
+                                    fontWeight = FontWeight.Bold,
+                                    fontFamily = FontFamily.Monospace,
+                                    letterSpacing = -0.045.em
+                                )
+                                Text(
+                                    text = "KCAL",
+                                    color = VitalColors.black,
+                                    fontSize = 17.duToSp(),
+                                    fontWeight = FontWeight.Bold,
+                                    fontFamily = FontFamily.Monospace,
+                                    modifier = Modifier.padding(bottom = 4.dp)
+                                )
+                            }
+
+                            // P / C / F labels and values
+                            Column(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(top = 30.dp),
+                                horizontalAlignment = Alignment.Start
+                            ) {
+                                // Labels row
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.spacedBy(0.dp)
+                                ) {
+                                    MacroLabel("PROTEIN", modifier = Modifier.width(113.duToDp()))
+                                    MacroLabel("CARBS", modifier = Modifier.width(113.duToDp()))
+                                    MacroLabel("FAT", modifier = Modifier.width(113.duToDp()))
+                                }
+                                // Values row
+                                Row(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(top = 4.dp),
+                                    horizontalArrangement = Arrangement.spacedBy(0.dp)
+                                ) {
+                                    MacroValue("${proteinTarget} g", modifier = Modifier.width(113.duToDp()))
+                                    MacroValue("${carbsTarget} g", modifier = Modifier.width(113.duToDp()))
+                                    MacroValue("${fatTarget} g", modifier = Modifier.width(113.duToDp()))
+                                }
+                            }
+
+                            // Macro-share bar
+                            GreyPanel(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .height(36.duToDp())
+                                    .padding(top = 8.dp)
+                            ) {
+                                // Text: P 29% at x 36, C 40% centred, F 31% right-aligned to x 357
+                                Row(
+                                    modifier = Modifier.fillMaxSize().padding(horizontal = 12.dp),
+                                    horizontalArrangement = Arrangement.SpaceBetween,
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Text(
+                                        text = "P ${(proteinTarget * 4 * 100 / (kcalTarget.toFloat())).toInt()}%",
+                                        color = VitalColors.textPrimary,
+                                        fontSize = 11.duToSp(),
+                                        fontWeight = FontWeight.Bold,
+                                        fontFamily = FontFamily.Monospace
+                                    )
+                                    Text(
+                                        text = "C ${(carbsTarget * 4 * 100 / (kcalTarget.toFloat())).toInt()}%",
+                                        color = VitalColors.textPrimary,
+                                        fontSize = 11.duToSp(),
+                                        fontWeight = FontWeight.Bold,
+                                        fontFamily = FontFamily.Monospace
+                                    )
+                                    Text(
+                                        text = "F ${(fatTarget * 9 * 100 / (kcalTarget.toFloat())).toInt()}%",
+                                        color = VitalColors.textPrimary,
+                                        fontSize = 11.duToSp(),
+                                        fontWeight = FontWeight.Bold,
+                                        fontFamily = FontFamily.Monospace
+                                    )
+                                }
+                            }
+                        }
+                    }
+                }
+
+                // PROFILE Section
+                item { SectionLabel(title = "PROFILE") }
+                item {
+                    WellRow(modifier = Modifier.fillMaxWidth()) {
                         SettingRow(
-                            icon = { Icon(Icons.Default.Person, "", tint = VitalColors.AccentSET) },
+                            icon = { Icon(Icons.Default.Person, "", tint = VitalColors.orange) },
                             label = "DISPLAY NAME",
                             value = "User",
                             onClick = { /* TODO: Edit name */ }
                         )
-                        Divider()
+                    }
+                }
+                item {
+                    WellRow(modifier = Modifier.fillMaxWidth()) {
                         SettingRow(
-                            icon = { Icon(Icons.Default.Palette, "", tint = VitalColors.AccentSET) },
-                            label = "THEME COLOR",
-                            value = "SAFETY ORANGE",
+                            icon = { Icon(Icons.Default.Settings, "", tint = VitalColors.orange) },
+                            label = "TRUE BLACK",
+                            value = "PURE #000 FOR AMOLED",
                             trailing = {
-                                ThemeColorPicker()
-                            }
-                        )
-                        Divider()
-                        SettingRow(
-                            icon = { Icon(Icons.Default.Settings, "", tint = VitalColors.AccentSET) },
-                            label = "TRUE BLACK (#000000)",
-                            trailing = {
-                                Switch(
+                                VitalToggle(
                                     checked = trueBlack,
-                                    onCheckedChange = { /* viewModel.setTrueBlack(it) */ },
-                                    colors = androidx.compose.material3.SwitchDefaults.colors(
-                                        checkedThumbColor = VitalColors.AccentSET,
-                                        checkedTrackColor = VitalColors.AccentSET.copy(alpha = 0.3f),
-                                        uncheckedTrackColor = VitalColors.AccentSET.copy(alpha = 0.3f)
-                                    )
+                                    onCheckedChange = { /* viewModel.setTrueBlack(it) */ }
                                 )
                             }
                         )
                     }
                 }
 
-                // TARGETS Section
-                item { SectionHeader(title = "TARGETS", accentColor = VitalColors.AccentSET) }
+                // Two wells side by side: BODY WEIGHT and REST PRESET
                 item {
-                    SettingsCard {
-                        TargetInputRow(label = "KCAL", value = kcalTarget.toString(), unit = "kcal", icon = Icons.Default.LocalFireDepartment, color = VitalColors.AccentTDY) { /* viewModel.setKcalTarget(it) */ }
-                        Divider()
-                        TargetInputRow(label = "PROTEIN", value = proteinTarget.toString(), unit = "g", icon = Icons.Default.FitnessCenter, color = VitalColors.MacroProtein) { /* viewModel.setProteinTarget(it) */ }
-                        Divider()
-                        TargetInputRow(label = "CARBS", value = carbsTarget.toString(), unit = "g", icon = Icons.Default.Grain, color = VitalColors.MacroCarbs) { /* viewModel.setCarbsTarget(it) */ }
-                        Divider()
-                        TargetInputRow(label = "FAT", value = fatTarget.toString(), unit = "g", icon = Icons.Default.OilBarrel, color = VitalColors.MacroFat) { /* viewModel.setFatTarget(it) */ }
-                        Divider()
-                        TargetInputRow(label = "BODY WEIGHT", value = bodyWeightKg.toString(), unit = "kg", icon = Icons.Default.MonitorWeight, color = VitalColors.AccentCRD) { /* viewModel.setBodyWeight(it) */ }
-                        Divider()
-                        TargetInputRow(label = "REST PRESET", value = "${restPresetSec / 60} min", unit = "", icon = Icons.Default.Timer, color = VitalColors.AccentLFT) { /* viewModel.setRestPreset(it) */ }
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        WellRow(modifier = Modifier.weight(1f).height(57.dp)) {
+                            Column(
+                                modifier = Modifier
+                                    .fillMaxSize()
+                                    .padding(horizontal = 14.dp, vertical = 10.dp),
+                                horizontalAlignment = Alignment.Start
+                            ) {
+                                Text(
+                                    text = "BODY WEIGHT",
+                                    color = VitalColors.textMuted,
+                                    fontSize = 10.duToSp(),
+                                    fontWeight = FontWeight.Bold,
+                                    fontFamily = FontFamily.Monospace,
+                                    letterSpacing = 1.sp
+                                )
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Text(
+                                        text = bodyWeightKg.toString(),
+                                        color = VitalColors.textPrimary,
+                                        fontSize = 20.duToSp(),
+                                        fontWeight = FontWeight.Bold,
+                                        fontFamily = FontFamily.Monospace
+                                    )
+                                    Text(
+                                        text = " KG",
+                                        color = VitalColors.textMuted,
+                                        fontSize = 10.duToSp(),
+                                        fontWeight = FontWeight.Medium,
+                                        fontFamily = FontFamily.Monospace
+                                    )
+                                }
+                            }
+                        }
+                        WellRow(modifier = Modifier.weight(1f).height(57.dp)) {
+                            Column(
+                                modifier = Modifier
+                                    .fillMaxSize()
+                                    .padding(horizontal = 14.dp, vertical = 10.dp),
+                                horizontalAlignment = Alignment.Start
+                            ) {
+                                Text(
+                                    text = "REST PRESET",
+                                    color = VitalColors.textMuted,
+                                    fontSize = 10.duToSp(),
+                                    fontWeight = FontWeight.Bold,
+                                    fontFamily = FontFamily.Monospace,
+                                    letterSpacing = 1.sp
+                                )
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Text(
+                                        text = "${restPresetSec / 60}:${"%02d".format(restPresetSec % 60)}",
+                                        color = VitalColors.textPrimary,
+                                        fontSize = 20.duToSp(),
+                                        fontWeight = FontWeight.Bold,
+                                        fontFamily = FontFamily.Monospace
+                                    )
+                                    Text(
+                                        text = " MIN",
+                                        color = VitalColors.textMuted,
+                                        fontSize = 10.duToSp(),
+                                        fontWeight = FontWeight.Medium,
+                                        fontFamily = FontFamily.Monospace
+                                    )
+                                }
+                            }
+                        }
                     }
                 }
 
-                // AI Section
-                item { SectionHeader(title = "AI COACH", accentColor = VitalColors.AccentSET) }
+                // AI COACH Section
+                item { SectionLabel(title = "AI COACH") }
                 item {
-                    SettingsCard {
-                        SettingRow(
-                            icon = { Icon(Icons.Default.SmartToy, "", tint = VitalColors.AccentSET) },
-                            label = "AI PROVIDER",
-                            value = when (aiProvider) {
-                                "gemini" -> "GEMINI 1.5 FLASH"
-                                "openrouter" -> "OPENROUTER (FREE)"
-                                else -> "GEMINI 1.5 FLASH"
-                            },
-                            trailing = {
-                                AiProviderPicker(currentProvider = aiProvider) { /* viewModel.setAiProvider(it) */ }
+                    WellRow(modifier = Modifier.fillMaxWidth().height(44.dp)) {
+                        // Segmented control
+                        Row(
+                            modifier = Modifier.fillMaxSize().padding(16.dp),
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            listOf("gemini" to "GEMINI", "openrouter" to "OPENROUTER").forEach { (id, label) ->
+                                val isSelected = aiProvider == id
+                                Surface(
+                                    modifier = Modifier
+                                        .weight(1f)
+                                        .fillMaxSize()
+                                        .padding(horizontal = 6.dp)
+                                        .clickable { /* viewModel.setAiProvider(id) */ },
+                                    color = if (isSelected) VitalColors.orange else VitalColors.wellFill,
+                                    shape = RoundedCornerShape(10.dp),
+                                    border = BorderStroke(1.dp, if (isSelected) Color.Transparent else VitalColors.wellStroke)
+                                ) {
+                                    Text(
+                                        text = label,
+                                        color = if (isSelected) VitalColors.black else VitalColors.textMuted,
+                                        fontSize = 11.duToSp(),
+                                        fontWeight = FontWeight.Bold,
+                                        fontFamily = FontFamily.Monospace,
+                                        modifier = Modifier
+                                            .fillMaxSize()
+                                            .wrapContentWidth(Alignment.CenterHorizontally)
+                                            .wrapContentHeight(Alignment.CenterVertically)
+                                    )
+                                }
                             }
-                        )
-                        Divider()
-                        SettingRow(
-                            icon = { Icon(Icons.Default.Key, "", tint = VitalColors.AccentSET) },
-                            label = "API KEY",
-                            value = "••••••••••••••••",
-                            trailing = {
-                                Text(text = "CHANGE", color = VitalColors.AccentSET, fontSize = 12.sp, fontWeight = FontWeight.Bold, modifier = Modifier
+                        }
+                    }
+                }
+                item {
+                    WellRow(modifier = Modifier.fillMaxWidth().height(48.dp)) {
+                        Row(
+                            modifier = Modifier.fillMaxSize().padding(16.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.SpaceBetween
+                        ) {
+                            Text(
+                                text = "••••••••••••••••",
+                                color = VitalColors.textPrimary,
+                                fontSize = 13.duToSp(),
+                                fontWeight = FontWeight.Medium,
+                                fontFamily = FontFamily.Monospace
+                            )
+                            Text(
+                                text = "SHOW",
+                                color = VitalColors.orange,
+                                fontSize = 10.duToSp(),
+                                fontWeight = FontWeight.Bold,
+                                fontFamily = FontFamily.Monospace,
+                                modifier = Modifier
                                     .fillMaxWidth()
                                     .clickable { /* TODO: Show API key dialog */ }
                                     .wrapContentWidth(Alignment.CenterHorizontally)
                                     .padding(vertical = 8.dp)
+                            )
+                        }
+                    }
+                }
+
+                // SECURITY Section
+                item { SectionLabel(title = "SECURITY") }
+                item {
+                    WellRow(modifier = Modifier.fillMaxWidth().height(47.dp)) {
+                        SettingRow(
+                            icon = { Icon(Icons.Default.Fingerprint, "", tint = VitalColors.orange) },
+                            label = "BIOMETRIC UNLOCK",
+                            trailing = {
+                                VitalToggle(
+                                    checked = showBiometric,
+                                    onCheckedChange = { showBiometric = it; /* viewModel.setBiometricEnabled(it) */ }
                                 )
                             }
                         )
                     }
                 }
-
-                // SECURITY Section
-                item { SectionHeader(title = "SECURITY", accentColor = VitalColors.AccentSET) }
                 item {
-                    SettingsCard {
+                    WellRow(modifier = Modifier.fillMaxWidth().height(47.dp)) {
                         SettingRow(
-                            icon = { Icon(Icons.Default.Fingerprint, "", tint = VitalColors.AccentSET) },
-                            label = "BIOMETRIC UNLOCK",
-                            trailing = {
-                                Switch(
-                                    checked = showBiometric,
-                                    onCheckedChange = { showBiometric = it; /* viewModel.setBiometricEnabled(it) */ },
-                                    colors = androidx.compose.material3.SwitchDefaults.colors(
-                                        checkedThumbColor = VitalColors.AccentSET,
-                                        checkedTrackColor = VitalColors.AccentSET.copy(alpha = 0.3f),
-                                        uncheckedTrackColor = VitalColors.AccentSET.copy(alpha = 0.3f)
-                                    )
-                                )
-                            }
-                        )
-                        Divider()
-                        SettingRow(
-                            icon = { Icon(Icons.Default.Key, "", tint = VitalColors.AccentSET) },
+                            icon = { Icon(Icons.Default.Key, "", tint = VitalColors.orange) },
                             label = "PIN CODE",
                             value = if (showPin) "SET" else "NOT SET",
                             trailing = {
-                                Text(text = if (showPin) "CHANGE" else "SET", color = VitalColors.AccentSET, fontSize = 12.sp, fontWeight = FontWeight.Bold, modifier = Modifier
+                                Text(text = if (showPin) "CHANGE" else "SET", color = VitalColors.orange, fontSize = 12.duToSp(), fontWeight = FontWeight.Bold, modifier = Modifier
                                     .fillMaxWidth()
                                     .clickable { showPin = true; /* TODO: Show PIN dialog */ }
                                     .wrapContentWidth(Alignment.CenterHorizontally)
@@ -250,76 +447,189 @@ fun SettingsScreen(
                         )
                     }
                 }
-
-                // DATA Section
-                item { SectionHeader(title = "DATA", accentColor = VitalColors.AccentSET) }
                 item {
-                    SettingsCard {
+                    WellRow(modifier = Modifier.fillMaxWidth().height(47.dp)) {
                         SettingRow(
-                            icon = { Icon(Icons.Default.Download, "", tint = VitalColors.AccentSET) },
-                            label = "EXPORT DATA",
-                            value = "JSON (excludes API keys, PIN)",
+                            icon = { Icon(Icons.Default.Settings, "", tint = VitalColors.orange) },
+                            label = "CHANGE PIN",
                             trailing = {
-                                Text(text = "EXPORT", color = VitalColors.AccentSET, fontSize = 12.sp, fontWeight = FontWeight.Bold, modifier = Modifier
-                                    .fillMaxWidth()
-                                    .clickable { /* TODO: Export JSON */ }
-                                    .wrapContentWidth(Alignment.CenterHorizontally)
-                                    .padding(vertical = 8.dp)
+                                Icon(Icons.Default.Key, "", tint = VitalColors.textMuted, modifier = Modifier.size(20.dp))
+                            }
+                        )
+                    }
+                }
+
+                // NOTIFICATIONS Section
+                item { SectionLabel(title = "NOTIFICATIONS") }
+                item {
+                    WellRow(modifier = Modifier.fillMaxWidth().height(54.dp)) {
+                        SettingRow(
+                            icon = { Icon(Icons.Default.Info, "", tint = VitalColors.orange) },
+                            label = "ALLOW NOTIFICATIONS",
+                            value = "PERMISSION GRANTED",
+                            trailing = {
+                                VitalToggle(
+                                    checked = true,
+                                    onCheckedChange = { /* TODO: Link to system page */ }
                                 )
                             }
                         )
-                        Divider()
+                    }
+                }
+                item {
+                    WellRow(modifier = Modifier.fillMaxWidth().height(54.dp)) {
                         SettingRow(
-                            icon = { Icon(Icons.Default.Upload, "", tint = VitalColors.AccentSET) },
-                            label = "IMPORT DATA",
-                            value = "JSON",
+                            icon = { Icon(Icons.Default.Restaurant, "", tint = VitalColors.orange) },
+                            label = "MEAL REMINDERS",
+                            value = "08:30 · 13:00 · 19:30",
                             trailing = {
-                                Text(text = "IMPORT", color = VitalColors.AccentSET, fontSize = 12.sp, fontWeight = FontWeight.Bold, modifier = Modifier
-                                    .fillMaxWidth()
-                                    .clickable { /* TODO: Import JSON */ }
-                                    .wrapContentWidth(Alignment.CenterHorizontally)
-                                    .padding(vertical = 8.dp)
+                                VitalToggle(
+                                    checked = true,
+                                    onCheckedChange = { /* TODO */ }
                                 )
                             }
                         )
-                        Divider()
+                    }
+                }
+                item {
+                    WellRow(modifier = Modifier.fillMaxWidth().height(54.dp)) {
                         SettingRow(
-                            icon = { Icon(Icons.Default.DeleteForever, "", tint = VitalColors.AccentTDY) },
-                            label = "CLEAR ALL DATA",
-                            value = "Irreversible",
+                            icon = { Icon(Icons.Default.FitnessCenter, "", tint = VitalColors.orange) },
+                            label = "WORKOUT",
+                            value = "MON WED FRI · 18:00",
                             trailing = {
-                                Text(text = "CLEAR", color = VitalColors.AccentTDY, fontSize = 12.sp, fontWeight = FontWeight.Bold, modifier = Modifier
-                                    .fillMaxWidth()
-                                    .clickable { /* TODO: Confirm clear */ }
-                                    .wrapContentWidth(Alignment.CenterHorizontally)
-                                    .padding(vertical = 8.dp)
+                                VitalToggle(
+                                    checked = true,
+                                    onCheckedChange = { /* TODO */ }
+                                )
+                            }
+                        )
+                    }
+                }
+                item {
+                    WellRow(modifier = Modifier.fillMaxWidth().height(54.dp)) {
+                        SettingRow(
+                            icon = { Icon(Icons.Default.LocalFireDepartment, "", tint = VitalColors.orange) },
+                            label = "WATER",
+                            value = "EVERY 2 H",
+                            trailing = {
+                                VitalToggle(
+                                    checked = false,
+                                    onCheckedChange = { /* TODO */ }
                                 )
                             }
                         )
                     }
                 }
 
-                // ABOUT Section
-                item { SectionHeader(title = "ABOUT", accentColor = VitalColors.AccentSET) }
+                // DATA Section
+                item { SectionLabel(title = "DATA") }
                 item {
-                    SettingsCard {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        // EXPORT JSON - orange fill
+                        WellRow(modifier = Modifier.weight(1f).height(47.dp)) {
+                            Row(
+                                modifier = Modifier.fillMaxSize().padding(16.dp),
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.Center
+                            ) {
+                                Text(
+                                    text = "EXPORT JSON",
+                                    color = VitalColors.black,
+                                    fontSize = 12.duToSp(),
+                                    fontWeight = FontWeight.Bold,
+                                    fontFamily = FontFamily.Monospace,
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .clickable { /* TODO: Export JSON */ }
+                                        .wrapContentWidth(Alignment.CenterHorizontally)
+                                        .padding(vertical = 8.dp)
+                                )
+                            }
+                        }
+                        // IMPORT JSON - orange outline
+                        Surface(
+                            modifier = Modifier
+                                .weight(1f)
+                                .height(47.dp)
+                                .clickable { /* TODO: Import JSON */ },
+                            color = Color.Transparent,
+                            shape = RoundedCornerShape(10.dp),
+                            border = BorderStroke(2.dp, VitalColors.orange)
+                        ) {
+                            Text(
+                                text = "IMPORT JSON",
+                                color = VitalColors.orange,
+                                fontSize = 12.duToSp(),
+                                fontWeight = FontWeight.Bold,
+                                fontFamily = FontFamily.Monospace,
+                                modifier = Modifier
+                                    .fillMaxSize()
+                                    .wrapContentWidth(Alignment.CenterHorizontally)
+                                    .wrapContentHeight(Alignment.CenterVertically)
+                            )
+                        }
+                    }
+                }
+                item {
+                    // Note (2 lines) - at least 10-11 du text size
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 17.dp, vertical = 8.dp),
+                        horizontalAlignment = Alignment.Start
+                    ) {
+                        Text(
+                            text = "API keys and PIN are never exported",
+                            color = VitalColors.textMuted,
+                            fontSize = 10.duToSp(),
+                            fontWeight = FontWeight.Medium,
+                            fontFamily = FontFamily.Monospace
+                        )
+                        Text(
+                            text = "and never overwritten by an import.",
+                            color = VitalColors.textMuted,
+                            fontSize = 10.duToSp(),
+                            fontWeight = FontWeight.Medium,
+                            fontFamily = FontFamily.Monospace
+                        )
+                    }
+                }
+
+                // WIDGETS Section - ON HOLD (do not build per brief 0A)
+                // item { SectionLabel(title = "WIDGETS") }
+                // item { /* Widget tiles - on hold */ }
+
+                // ABOUT Section
+                item { SectionLabel(title = "ABOUT") }
+                item {
+                    WellRow(modifier = Modifier.fillMaxWidth()) {
                         SettingRow(
-                            icon = { Icon(Icons.Default.Info, "", tint = VitalColors.AccentSET) },
+                            icon = { Icon(Icons.Default.Info, "", tint = VitalColors.orange) },
                             label = "VERSION",
                             value = "1.0.0 (Debug)"
                         )
-                        Divider()
+                    }
+                }
+                item {
+                    WellRow(modifier = Modifier.fillMaxWidth()) {
                         SettingRow(
-                            icon = { Icon(Icons.Default.Code, "", tint = VitalColors.AccentSET) },
+                            icon = { Icon(Icons.Default.Code, "", tint = VitalColors.orange) },
                             label = "BUILD",
                             value = "Local build"
                         )
-                        Divider()
+                    }
+                }
+                item {
+                    WellRow(modifier = Modifier.fillMaxWidth()) {
                         SettingRow(
-                            icon = { Icon(Icons.Default.Description, "", tint = VitalColors.AccentSET) },
+                            icon = { Icon(Icons.Default.Description, "", tint = VitalColors.orange) },
                             label = "LICENSES",
                             trailing = {
-                                Text(text = "VIEW", color = VitalColors.AccentSET, fontSize = 12.sp, fontWeight = FontWeight.Bold, modifier = Modifier
+                                Text(text = "VIEW", color = VitalColors.orange, fontSize = 12.duToSp(), fontWeight = FontWeight.Bold, modifier = Modifier
                                     .fillMaxWidth()
                                     .clickable { /* TODO: Show licenses */ }
                                     .wrapContentWidth(Alignment.CenterHorizontally)
@@ -335,21 +645,7 @@ fun SettingsScreen(
 }
 
 @Composable
-fun SettingsCard(content: @Composable () -> Unit) {
-    Surface(
-        modifier = Modifier.fillMaxWidth(),
-        color = VitalColors.Card,
-        shape = androidx.compose.foundation.shape.RoundedCornerShape(12.dp),
-        border = androidx.compose.foundation.BorderStroke(1.dp, VitalColors.NearBlackRowStroke)
-    ) {
-        Column(modifier = Modifier.padding(16.dp)) {
-            content()
-        }
-    }
-}
-
-@Composable
-fun SettingRow(
+private fun SettingRow(
     icon: @Composable () -> Unit,
     label: String,
     value: String = "",
@@ -367,8 +663,9 @@ fun SettingRow(
         Row(verticalAlignment = Alignment.CenterVertically) {
             androidx.compose.material3.Surface(
                 modifier = Modifier.size(40.dp),
-                color = VitalColors.NearBlackRow,
-                shape = androidx.compose.foundation.shape.RoundedCornerShape(8.dp)
+                color = VitalColors.iconWellFill,
+                shape = RoundedCornerShape(8.dp),
+                border = BorderStroke(1.dp, VitalColors.iconWellStroke)
             ) {
                 Box(
                     modifier = Modifier.fillMaxSize(),
@@ -378,9 +675,9 @@ fun SettingRow(
                 }
             }
             Column(modifier = Modifier.padding(start = 12.dp)) {
-                Text(text = label, color = VitalColors.PrimaryText, fontSize = 14.sp, fontWeight = FontWeight.Bold, letterSpacing = 0.5.sp)
+                Text(text = label, color = VitalColors.textPrimary, fontSize = 12.duToSp(), fontWeight = FontWeight.Bold, fontFamily = FontFamily.Monospace, letterSpacing = 0.5.sp)
                 if (value.isNotBlank()) {
-                    Text(text = value, color = VitalColors.MutedText, fontSize = 12.sp, fontWeight = FontWeight.Medium)
+                    Text(text = value, color = VitalColors.textMuted, fontSize = 14.duToSp(), fontWeight = FontWeight.Medium, fontFamily = FontFamily.Monospace)
                 }
             }
         }
@@ -389,128 +686,31 @@ fun SettingRow(
 }
 
 @Composable
-fun Divider() {
-    androidx.compose.foundation.Canvas(
-        modifier = Modifier
+private fun MacroLabel(text: String, modifier: Modifier = Modifier) {
+    Text(
+        text = text,
+        color = VitalColors.black.copy(alpha = 0.7f),
+        fontSize = 10.duToSp(),
+        fontWeight = FontWeight.Bold,
+        fontFamily = FontFamily.Monospace,
+        modifier = modifier
             .fillMaxWidth()
-            .height(1.dp)
-            .padding(vertical = 4.dp)
-    ) {
-        drawLine(
-            color = VitalColors.NearBlackRowStroke,
-            start = Offset(0f, size.height / 2),
-            end = Offset(size.width, size.height / 2),
-            strokeWidth = 1.dp.toPx()
-        )
-    }
+            .wrapContentWidth(Alignment.Start)
+    )
 }
 
 @Composable
-fun TargetInputRow(
-    label: String,
-    value: String,
-    unit: String,
-    icon: androidx.compose.ui.graphics.vector.ImageVector,
-    color: Color,
-    onValueChange: (String) -> Unit
-) {
-    Row(
-        modifier = Modifier.fillMaxWidth().padding(vertical = 12.dp),
-        horizontalArrangement = Arrangement.SpaceBetween,
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            androidx.compose.material3.Surface(
-                modifier = Modifier.size(40.dp),
-                color = color.copy(alpha = 0.2f),
-                shape = androidx.compose.foundation.shape.RoundedCornerShape(8.dp)
-            ) {
-                Box(
-                    modifier = Modifier.fillMaxSize(),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Icon(imageVector = icon, contentDescription = label, tint = color)
-                }
-            }
-            Column(modifier = Modifier.padding(start = 12.dp)) {
-                Text(text = label, color = VitalColors.PrimaryText, fontSize = 14.sp, fontWeight = FontWeight.Bold, letterSpacing = 0.5.sp)
-            }
-        }
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            androidx.compose.material3.TextField(
-                value = value,
-                onValueChange = onValueChange,
-                modifier = Modifier.width(80.dp),
-                singleLine = true,
-                keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(keyboardType = androidx.compose.ui.text.input.KeyboardType.Number),
-                colors = androidx.compose.material3.TextFieldDefaults.colors(
-                    focusedTextColor = VitalColors.PrimaryText,
-                    unfocusedTextColor = VitalColors.PrimaryText,
-                    cursorColor = color,
-                    focusedContainerColor = VitalColors.NearBlackRow,
-                    unfocusedContainerColor = VitalColors.NearBlackRow,
-                    disabledContainerColor = VitalColors.NearBlackRow,
-                    focusedIndicatorColor = Color.Transparent,
-                    unfocusedIndicatorColor = Color.Transparent,
-                    disabledIndicatorColor = Color.Transparent
-                ),
-                shape = androidx.compose.foundation.shape.RoundedCornerShape(8.dp)
-            )
-            if (unit.isNotBlank()) {
-                Text(text = unit, color = VitalColors.MutedText, fontSize = 12.sp, fontWeight = FontWeight.Medium, modifier = Modifier.padding(start = 8.dp))
-            }
-        }
-    }
-}
-
-@Composable
-fun ThemeColorPicker() {
-    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-        listOf(
-            VitalColors.AccentTDY to "TDY",
-            VitalColors.AccentMLS to "MLS",
-            VitalColors.AccentLFT to "LFT",
-            VitalColors.AccentCRD to "CRD",
-            VitalColors.AccentWKS to "WKS",
-            VitalColors.AccentSET to "SET"
-        ).forEach { (color, label) ->
-            Surface(
-                modifier = Modifier.size(28.dp).clickable { /* TODO: Select theme */ },
-                color = color,
-                shape = androidx.compose.foundation.shape.CircleShape,
-                border = androidx.compose.foundation.BorderStroke(2.dp, VitalColors.PrimaryText.copy(alpha = 0.3f))
-            ) {}
-        }
-    }
-}
-
-@Composable
-fun AiProviderPicker(currentProvider: String, onSelect: (String) -> Unit) {
-    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-        listOf("gemini" to "GEMINI", "openrouter" to "OPENROUTER").forEach { (id, label) ->
-            val isSelected = currentProvider == id
-            Surface(
-                modifier = Modifier
-                    .weight(1f)
-                    .height(32.dp)
-                    .clickable { onSelect(id) },
-                color = if (isSelected) VitalColors.AccentSET else VitalColors.NearBlackRow,
-                shape = androidx.compose.foundation.shape.RoundedCornerShape(6.dp),
-                border = androidx.compose.foundation.BorderStroke(1.dp, if (isSelected) Color.Transparent else VitalColors.NearBlackRowStroke)
-            ) {
-                Text(
-                    text = label,
-                    color = if (isSelected) Color.Black else VitalColors.MutedText,
-                    fontSize = 10.sp,
-                    fontWeight = FontWeight.Bold,
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .wrapContentWidth(Alignment.CenterHorizontally)
-                        .wrapContentHeight(Alignment.CenterVertically)
-                )
-            }
-        }
-    }
+private fun MacroValue(text: String, modifier: Modifier = Modifier) {
+    Text(
+        text = text,
+        color = VitalColors.black,
+        fontSize = 20.duToSp(),
+        fontWeight = FontWeight.Bold,
+        fontFamily = FontFamily.Monospace,
+        modifier = modifier
+            .fillMaxWidth()
+            .wrapContentWidth(Alignment.Start)
+    )
 }
 
 object SettingsScreenPreviewData {}

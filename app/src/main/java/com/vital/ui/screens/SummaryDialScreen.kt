@@ -59,7 +59,7 @@ fun SummaryDialScreen(
 
     var knobProgress by remember { mutableStateOf(0.5f) }
 
-    val accentColor = VitalColors.AccentTDY
+    val accentColor = VitalColors.orange
     val today = LocalDate.now()
     val dayTag = today.dayOfWeek.name.take(3)
     val dateTag = today.month.name.take(3) + ".${today.dayOfMonth}"
@@ -78,7 +78,7 @@ fun SummaryDialScreen(
             fatPercent = fatPercent,
             period = period,
             onPeriodChange = { },
-            accentColor = VitalColors.Background, // dark accent on orange bg
+            accentColor = VitalColors.black, // dark accent on orange bg
             showKnob = true,
             onKnobProgressChange = { knobProgress = it }
         )
@@ -91,16 +91,16 @@ fun InfoPill(modifier: Modifier = Modifier, label: String, value: String, color:
         modifier = modifier
             .padding(horizontal = 4.dp)
             .height(56.dp),
-        color = VitalColors.NearBlackRow,
+        color = VitalColors.wellFill,
         shape = RoundedCornerShape(12.dp),
-        border = BorderStroke(1.5.dp, VitalColors.NearBlackRowStroke)
+        border = BorderStroke(1.5.dp, VitalColors.wellStroke)
     ) {
         Column(
             modifier = Modifier.fillMaxSize().padding(horizontal = 12.dp, vertical = 8.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center
         ) {
-            Text(text = label, color = VitalColors.MutedText, fontSize = 9.sp, fontWeight = FontWeight.Bold, letterSpacing = 1.sp)
+            Text(text = label, color = VitalColors.textMuted, fontSize = 9.sp, fontWeight = FontWeight.Bold, letterSpacing = 1.sp)
             Text(text = value, color = color, fontSize = 18.sp, fontWeight = FontWeight.Bold)
         }
     }

@@ -76,7 +76,7 @@ fun CoachChatScreen(
 
     Surface(
         modifier = Modifier.fillMaxSize(),
-        color = VitalColors.Background
+        color = VitalColors.black
     ) {
         Column(
             modifier = Modifier.fillMaxSize(),
@@ -90,10 +90,10 @@ fun CoachChatScreen(
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Tag(text = dayTag, backgroundColor = VitalColors.AccentSET)
+                Tag(text = dayTag, backgroundColor = VitalColors.orange)
                 Text(
                     text = "COACH",
-                    color = VitalColors.PrimaryText,
+                    color = VitalColors.textPrimary,
                     fontSize = 16.sp,
                     fontWeight = FontWeight.Bold,
                     letterSpacing = 1.5.sp
@@ -102,15 +102,15 @@ fun CoachChatScreen(
                     modifier = Modifier
                         .size(48.dp)
                         .clickable(onClick = onClose),
-                    color = VitalColors.NearBlackRow,
+                    color = VitalColors.wellFill,
                     shape = CircleShape,
-                    border = BorderStroke(1.5.dp, VitalColors.NearBlackRowStroke)
+                    border = BorderStroke(1.5.dp, VitalColors.wellStroke)
                 ) {
                     Box(
                         modifier = Modifier.fillMaxSize(),
                         contentAlignment = Alignment.Center
                     ) {
-                        Icon(imageVector = Icons.Default.Close, contentDescription = "Close", tint = VitalColors.PrimaryText, modifier = Modifier.padding(12.dp))
+                        Icon(imageVector = Icons.Default.Close, contentDescription = "Close", tint = VitalColors.textPrimary, modifier = Modifier.padding(12.dp))
                     }
                 }
             }
@@ -129,7 +129,7 @@ fun CoachChatScreen(
                     ChatBubble(
                         text = message.text,
                         isUser = message.isUser,
-                        accentColor = if (message.isUser) VitalColors.AccentTDY else VitalColors.AccentMLS
+                        accentColor = if (message.isUser) VitalColors.orange else VitalColors.orange
                     )
                 }
 
@@ -138,7 +138,7 @@ fun CoachChatScreen(
                         ChatBubble(
                             text = "Thinking...",
                             isUser = false,
-                            accentColor = VitalColors.AccentMLS,
+                            accentColor = VitalColors.orange,
                             isLoading = true
                         )
                     }
@@ -150,9 +150,9 @@ fun CoachChatScreen(
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(horizontal = 16.dp, vertical = 12.dp),
-                color = VitalColors.Card,
+                color = VitalColors.wellFill,
                 shape = RoundedCornerShape(12.dp),
-                border = BorderStroke(1.dp, VitalColors.NearBlackRowStroke)
+                border = BorderStroke(1.dp, VitalColors.wellStroke)
             ) {
                 Row(
                     modifier = Modifier.fillMaxSize().padding(12.dp),
@@ -161,7 +161,7 @@ fun CoachChatScreen(
                     Icon(
                         imageVector = Icons.Default.PhotoCamera,
                         contentDescription = "Attach photo",
-                        tint = VitalColors.MutedText,
+                        tint = VitalColors.textMuted,
                         modifier = Modifier.padding(end = 8.dp).clickable { /* TODO: Attach photo for food analysis */ }
                     )
 
@@ -171,7 +171,7 @@ fun CoachChatScreen(
                         modifier = Modifier
                             .weight(1f)
                             .padding(vertical = 8.dp),
-                        placeholder = { Text(text = "ASK COACH...", color = VitalColors.MutedText, fontSize = 12.sp, fontWeight = FontWeight.Medium, letterSpacing = 1.sp) },
+                        placeholder = { Text(text = "ASK COACH...", color = VitalColors.textMuted, fontSize = 12.sp, fontWeight = FontWeight.Medium, letterSpacing = 1.sp) },
                         singleLine = false,
                         maxLines = 4,
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Text, imeAction = androidx.compose.ui.text.input.ImeAction.Send),
@@ -179,9 +179,9 @@ fun CoachChatScreen(
                         colors = TextFieldDefaults.colors(
                             unfocusedContainerColor = Color.Transparent,
                             focusedContainerColor = Color.Transparent,
-                            cursorColor = VitalColors.AccentTDY,
-                            focusedPlaceholderColor = VitalColors.MutedText,                             unfocusedPlaceholderColor = VitalColors.MutedText,
-                            focusedTextColor = VitalColors.PrimaryText,                             unfocusedTextColor = VitalColors.PrimaryText,
+                            cursorColor = VitalColors.orange,
+                            focusedPlaceholderColor = VitalColors.textMuted,                             unfocusedPlaceholderColor = VitalColors.textMuted,
+                            focusedTextColor = VitalColors.textPrimary,                             unfocusedTextColor = VitalColors.textPrimary,
                             focusedIndicatorColor = Color.Transparent,
                             unfocusedIndicatorColor = Color.Transparent,
                             disabledIndicatorColor = Color.Transparent,
@@ -200,7 +200,7 @@ fun CoachChatScreen(
                                     inputText = ""
                                 }
                             },
-                        color = if (inputText.isNotBlank()) VitalColors.AccentTDY else VitalColors.NearBlackRow,
+                        color = if (inputText.isNotBlank()) VitalColors.orange else VitalColors.wellFill,
                         shape = CircleShape
                     ) {
                         Box(
@@ -210,7 +210,7 @@ fun CoachChatScreen(
                             Icon(
                                 imageVector = Icons.Default.Send,
                                 contentDescription = "Send",
-                                tint = if (inputText.isNotBlank()) Color.Black else VitalColors.MutedText
+                                tint = if (inputText.isNotBlank()) Color.Black else VitalColors.textMuted
                             )
                         }
                     }
@@ -256,18 +256,18 @@ fun ChatBubble(
                 modifier = Modifier
                     .wrapContentSize()
                     .padding(vertical = 4.dp),
-                color = if (isUser) accentColor else VitalColors.NearBlackRow,
+                color = if (isUser) accentColor else VitalColors.wellFill,
                 shape = RoundedCornerShape(
                     topStart = 16.dp,
                     topEnd = 16.dp,
                     bottomStart = if (isUser) 16.dp else 4.dp,
                     bottomEnd = if (isUser) 4.dp else 16.dp
                 ),
-                border = BorderStroke(1.dp, if (isUser) Color.Transparent else VitalColors.NearBlackRowStroke)
+                border = BorderStroke(1.dp, if (isUser) Color.Transparent else VitalColors.wellStroke)
             ) {
                 Text(
                     text = text,
-                    color = if (isUser) Color.Black else VitalColors.PrimaryText,
+                    color = if (isUser) Color.Black else VitalColors.textPrimary,
                     fontSize = 14.sp,
                     fontWeight = if (isLoading) FontWeight.Normal else FontWeight.Medium,
                     modifier = Modifier.padding(horizontal = 16.dp, vertical = 10.dp)
@@ -280,14 +280,14 @@ fun ChatBubble(
             // User avatar
             Surface(
                 modifier = Modifier.size(32.dp),
-                color = VitalColors.AccentTDY.copy(alpha = 0.2f),
+                color = VitalColors.orange.copy(alpha = 0.2f),
                 shape = CircleShape
             ) {
                 Box(
                     modifier = Modifier.fillMaxSize(),
                     contentAlignment = Alignment.Center
                 ) {
-                    Text(text = "U", color = VitalColors.AccentTDY, fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                    Text(text = "U", color = VitalColors.orange, fontSize = 12.sp, fontWeight = FontWeight.Bold)
                 }
             }
         }

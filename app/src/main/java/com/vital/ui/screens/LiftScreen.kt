@@ -88,30 +88,43 @@ fun LiftScreen(
     val weeklyVolumeData by viewModel.weeklyVolumeData.collectAsStateWithLifecycle(emptyList())
     val weeklyLabels by viewModel.weeklyLabels.collectAsStateWithLifecycle(emptyList())
     val workoutsToday by viewModel.workoutsToday.collectAsStateWithLifecycle(emptyList())
+    val currentWeight by viewModel.currentWeight.collectAsStateWithLifecycle(0f)
+    val restPresetSec by viewModel.restPresetSec.collectAsStateWithLifecycle(180)
 
     var searchText by remember { mutableStateOf("") }
+
+    // Empty state: REST LEFT 0:00, dial EXERCISE —, SET —, OF 3:00
+    val heroValue = if (restTimerActive && restTimerRemaining > 0) {
+        "${restTimerRemaining / 60}:${"%02d".format(restTimerRemaining % 60)}"
+    } else {
+        "0:00"
+    }
+    val dialInnerLabel = "EXERCISE"
+    val dialInnerValue = if (currentWeight > 0) currentWeight.toInt().toString() else "—"
+    val dialPillText = "SET —"
+    val dialTopPill = "OF ${restPresetSec / 60}:${"%02d".format(restPresetSec % 60)}"
 
     ScreenScaffold(
         variant = ScreenVariant.OrangeHero,
         title = "LIFT",
         heroLabel = "REST LEFT",
-        heroValue = "2:34",
+        heroValue = heroValue,
         onShowMore = onShowSummary,
         // OrangeDial parameters for Lift
         dialLetters = listOf("2", "3", "4"),
-        dialHighlightedIndex = 1, // 3 highlighted (0-indexed: 0=2, 1=3, 2=4)
-        dialInnerLabel = "BENCH PRESS",
-        dialInnerValue = "80",
+        dialHighlightedIndex = 1,
+        dialInnerLabel = dialInnerLabel,
+        dialInnerValue = dialInnerValue,
         dialInnerUnit = "KG",
-        dialPillText = "SET 3 · ×8",
-        dialTopPill = "OF 3:00",
+        dialPillText = dialPillText,
+        dialTopPill = dialTopPill,
         dialFabGlyph = FabGlyph.Plus
     ) {
         Column(
             modifier = Modifier.fillMaxSize(),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            // Exercise title row
+            // Exercise title row (empty state: "EXERCISE", "—")
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -120,14 +133,14 @@ fun LiftScreen(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Text(
-                    text = "BENCH PRESS",
+                    text = "EXERCISE",
                     color = VitalColors.textMuted,
                     fontSize = 13.duToSp(),
                     fontWeight = FontWeight.Medium,
                     fontFamily = androidx.compose.ui.text.font.FontFamily.Monospace
                 )
                 Text(
-                    text = "LAST 80 × 8",
+                    text = "—",
                     color = VitalColors.textMuted,
                     fontSize = 10.duToSp(),
                     fontWeight = FontWeight.Medium,
@@ -159,7 +172,7 @@ fun LiftScreen(
                             letterSpacing = 1.sp
                         )
                         Text(
-                            text = "80",
+                            text = if (currentWeight > 0) currentWeight.toInt().toString() else "—",
                             color = VitalColors.textPrimary,
                             fontSize = 24.duToSp(),
                             fontWeight = FontWeight.Bold,
@@ -167,7 +180,7 @@ fun LiftScreen(
                         )
                     }
                 }
-                // Reps well
+                // Reps well (empty state: "—")
                 WellRow(modifier = Modifier.weight(1f)) {
                     Column(
                         modifier = Modifier
@@ -184,7 +197,7 @@ fun LiftScreen(
                             letterSpacing = 1.sp
                         )
                         Text(
-                            text = "8",
+                            text = "—",
                             color = VitalColors.textPrimary,
                             fontSize = 24.duToSp(),
                             fontWeight = FontWeight.Bold,
@@ -216,34 +229,38 @@ fun LiftScreen(
                 }
             }
 
-            // Rest preset row
+            // Rest preset row - calculate presets from restPresetSec (e.g., 180 = 3:00, so presets are 2:00, 3:00, 4:00)
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(horizontal = 16.dp, vertical = 8.dp),
                 horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
+                val presetSec = restPresetSec
+                val preset1 = "${(presetSec - 60) / 60}:${"%02d".format((presetSec - 60) % 60)}"
+                val preset2 = "${presetSec / 60}:${"%02d".format(presetSec % 60)}"
+                val preset3 = "${(presetSec + 60) / 60}:${"%02d".format((presetSec + 60) % 60)}"
                 RestPresetButton(
                     modifier = Modifier.weight(1f),
-                    label = "2:00",
+                    label = preset1,
                     isSelected = false,
                     onClick = { /* Set rest preset */ }
                 )
                 RestPresetButton(
                     modifier = Modifier.weight(1f),
-                    label = "3:00",
+                    label = preset2,
                     isSelected = true,
                     onClick = { /* Set rest preset */ }
                 )
                 RestPresetButton(
                     modifier = Modifier.weight(1f),
-                    label = "4:00",
+                    label = preset3,
                     isSelected = false,
                     onClick = { /* Set rest preset */ }
                 )
             }
 
-            // Plate panel
+            // Plate panel - use currentWeight for target
             SectionLabel(title = "PLATES")
             GreyPanel(modifier = Modifier
                 .fillMaxWidth()
@@ -254,8 +271,9 @@ fun LiftScreen(
                     modifier = Modifier.fillMaxSize(),
                     horizontalAlignment = Alignment.Start
                 ) {
+                    val targetWeight = if (currentWeight > 0) currentWeight.toInt() else 80
                     Text(
-                        text = "PLATES · TARGET 80 KG · BAR 20 KG",
+                        text = "PLATES · TARGET $targetWeight KG · BAR 20 KG",
                         color = VitalColors.textPrimary,
                         fontSize = 10.duToSp(),
                         fontWeight = FontWeight.Bold,
@@ -277,7 +295,8 @@ fun LiftScreen(
                             strokeWidth = 8.dp.toPx()
                         )
                     }
-                    // Plate visualization placeholder
+                    // Plate visualization - calculated from targetWeight
+                    // For empty state, show nothing or default 80kg plates
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
@@ -286,22 +305,27 @@ fun LiftScreen(
                         horizontalArrangement = Arrangement.spacedBy(8.dp),
                         verticalAlignment = Alignment.Bottom
                     ) {
-                        // 25 kg plate (black, taller)
-                        Surface(
-                            modifier = Modifier
-                                .width(16.dp)
-                                .height(80.dp),
-                            color = VitalColors.black,
-                            shape = RoundedCornerShape(4.dp)
-                        ) {}
-                        // 5 kg plate (orange, shorter)
-                        Surface(
-                            modifier = Modifier
-                                .width(13.dp)
-                                .height(40.dp),
-                            color = VitalColors.orange,
-                            shape = RoundedCornerShape(4.dp)
-                        ) {}
+                        // Show plates based on target weight (simplified)
+                        if (currentWeight > 0) {
+                            // 25 kg plate (black, taller) - always show for >= 25kg per side
+                            Surface(
+                                modifier = Modifier
+                                    .width(16.dp)
+                                    .height(80.dp),
+                                color = VitalColors.black,
+                                shape = RoundedCornerShape(4.dp)
+                            ) {}
+                            // 5/15 kg plate (orange, shorter) - show if needed
+                            if (targetWeight >= 60) { // 25+15=40 per side = 80 total, so 60 means some orange plate
+                                Surface(
+                                    modifier = Modifier
+                                        .width(13.dp)
+                                        .height(65.dp),
+                                    color = VitalColors.orange,
+                                    shape = RoundedCornerShape(4.dp)
+                                ) {}
+                            }
+                        }
                     }
                     // Result
                     Row(
@@ -310,27 +334,41 @@ fun LiftScreen(
                             .padding(horizontal = 10.dp, vertical = 8.dp),
                         horizontalArrangement = Arrangement.SpaceBetween
                     ) {
-                        Text(
-                            text = "30 KG PER SIDE · NEAREST",
-                            color = VitalColors.textMuted,
-                            fontSize = 10.duToSp(),
-                            fontWeight = FontWeight.Bold,
-                            fontFamily = androidx.compose.ui.text.font.FontFamily.Monospace
-                        )
+                        if (currentWeight > 0) {
+                            val perSide = (targetWeight - 20) / 2
+                            val has25 = perSide >= 25
+                            val remainder = perSide - (if (has25) 25 else 0)
+                            val platesText = if (has25) "25 + ${remainder} KG PER SIDE" else "${perSide} KG PER SIDE"
+                            Text(
+                                text = "$platesText · ${if (remainder == 5 || remainder == 15) "EXACT" else "NEAREST"}",
+                                color = VitalColors.textMuted,
+                                fontSize = 10.duToSp(),
+                                fontWeight = FontWeight.Bold,
+                                fontFamily = androidx.compose.ui.text.font.FontFamily.Monospace
+                            )
+                        } else {
+                            Text(
+                                text = "— KG PER SIDE",
+                                color = VitalColors.textMuted,
+                                fontSize = 10.duToSp(),
+                                fontWeight = FontWeight.Bold,
+                                fontFamily = androidx.compose.ui.text.font.FontFamily.Monospace
+                            )
+                        }
                     }
                 }
             }
 
-            // Session row
+            // Session row - use volumeToday and workouts count
             CapsuleRow(
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(horizontal = 16.dp, vertical = 8.dp),
                 icon = { Icon(Icons.Default.LocalFireDepartment, "", tint = VitalColors.orange) },
                 label = "SESSION",
-                value = "3 SETS",
-                secondaryText = "1,880 KG",
-                sparklineData = listOf(0.3f, 0.5f, 0.4f, 0.6f, 0.55f),
+                value = "${workoutsToday.size} SETS",
+                secondaryText = "${volumeToday.toInt()} KG",
+                sparklineData = if (weeklyVolumeData.isNotEmpty()) weeklyVolumeData else null,
                 onClick = null
             )
 

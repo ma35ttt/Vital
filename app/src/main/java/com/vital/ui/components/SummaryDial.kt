@@ -759,7 +759,7 @@ fun SummaryDialPreview() {
             fatPercent = 0.3f,
             period = period,
             onPeriodChange = { period = it },
-            accentColor = VitalColors.AccentTDY,
+            accentColor = VitalColors.orange,
             onKnobProgressChange = { knobProgress = it }
         )
     }
