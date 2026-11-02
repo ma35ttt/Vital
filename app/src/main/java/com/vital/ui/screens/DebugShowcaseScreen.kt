@@ -31,6 +31,8 @@ import androidx.compose.ui.unit.sp
 import com.vital.ui.components.HeroLineGraph
 import com.vital.ui.components.KnurledKnob
 import com.vital.ui.components.Period
+import com.vital.ui.components.ScreenScaffold
+import com.vital.ui.components.ScreenVariant
 import com.vital.ui.components.Sparkline
 import com.vital.ui.components.SummaryDial
 import com.vital.ui.components.Tag
@@ -201,6 +203,43 @@ fun DebugShowcaseScreen() {
                             fontWeight = FontWeight.Bold,
                             letterSpacing = 1.5.sp
                         )
+                    }
+                }
+            }
+
+            item {
+                SectionLabel("7 SCREEN SCAFFOLD - ORANGE HERO (MEALS)")
+                ScreenScaffold(
+                    variant = ScreenVariant.OrangeHero,
+                    title = "MEALS",
+                    heroLabel = "KCAL LEFT",
+                    heroValue = "1,240",
+                    onShowMore = { /* TODO */ }
+                ) {
+                    Column(
+                        modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        Text(text = "Sheet content area", color = VitalColors.textPrimary)
+                        androidx.compose.foundation.layout.Spacer(modifier = Modifier.padding(vertical = 32.dp))
+                        Text(text = "Bottom of sheet", color = VitalColors.textMuted)
+                    }
+                }
+            }
+
+            item {
+                SectionLabel("8 SCREEN SCAFFOLD - BLACK PAGE (WEEKS)")
+                ScreenScaffold(
+                    variant = ScreenVariant.BlackPage,
+                    title = "WEEKS"
+                ) {
+                    Column(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        Text(text = "Black page content", color = VitalColors.textPrimary)
+                        androidx.compose.foundation.layout.Spacer(modifier = Modifier.padding(vertical = 32.dp))
+                        Text(text = "Scrolls with black backing", color = VitalColors.textMuted)
                     }
                 }
             }
