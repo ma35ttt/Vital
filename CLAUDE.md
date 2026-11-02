@@ -1,6 +1,14 @@
 # Vital
 
-Local-first Android app (2 users, OnePlus 11R, Android 14+ / API 35). Full requirements in SPEC.md. Build decisions and versions live in NOTES.md.
+Local-first Android app (2 users, OnePlus 11R, Android 14+, minSdk 28, compile/target SDK 36). Full requirements in SPEC.md. Build decisions and versions live in NOTES.md.
+
+## DESIGN SOURCE OF TRUTH
+- Summary and Activity: pixel references (`Notes/docs/Summary.png`, `Notes/docs/Activity.png`). Their measured numbers win over any number in this file.
+- All other tabs (Meals, Lift, Cardio, Weeks, Settings) and the shared chrome: `design/tabs/<screen>.md` (measured numbers) and `REMAINING_TABS_BRIEF.md` (repo root). The PNGs in `design/tabs/` are for human review. Build from the .md numbers, because the model cannot reliably view images. If `design/tabs/<screen>.md` is missing, stop and ask before building that screen.
+- One accent, orange `#FD3F00`, plus black and `#5F6971`. No per-tab accents.
+- Where files disagree: `design/tabs/*.md` wins on look, `REMAINING_TABS_BRIEF.md` wins on behaviour, SPEC.md wins on data and logic.
+- `Notes/old/` and every earlier brief are obsolete. Do not read them.
+
 
 ## Current Build State (as of 2026-10-31)
 
@@ -40,7 +48,7 @@ Local-first Android app (2 users, OnePlus 11R, Android 14+ / API 35). Full requi
    - Root cause of the final codegen crash ("Couldn't inline method call Row"): legacy `composeOptions { kotlinCompilerExtensionVersion = "1.5.14" }` is incompatible with built-in Kotlin 2.2.10. Fix: removed `composeOptions` block, applied `org.jetbrains.kotlin.plugin.compose` version 2.2.10 (root `build.gradle.kts` apply false + app module) — this supplies the matching Compose compiler.
    - Source fixes landed (Kotlin 2.2.10 / Compose ui 1.7.4 / M3 1.3.1): icons are extension properties needing per-icon imports (`androidx.compose.material.icons.filled.*`, `Icons.Default.X` — never fully-qualified or bare); `TextFieldDefaults.colors(...)` with focused/unfocused param names (no `textFieldColors`, no `textColor`/`containerColor`); `contentAlignment = Alignment.Center` in Box; `Modifier.weight` only inside Row/Column scope (moved to call sites via `modifier` param on CardioTypeButton/RestTimerPresetButton/PeriodButton/InfoPill); direct composable calls inside `LazyColumn {}` content must be wrapped in `item { }`; `SideEffect` block is not composable (hoisted `LocalContext.current` in Theme.kt); `VitalNavigation` uses `androidx.navigation.compose.NavHost/composable`; `GeminiClient`/`OpenRouterClient` parse fns use expression-body `= try {...} catch { null }`; `FoodAnalysisService` maps both clients' `FoodAnalysisResult` to `GeminiClient.FoodAnalysisResult`; `SeedLoader` imports `kotlinx.serialization.encodeToString`; `AuthModule` uses security-crypto 1.1.0 `EncryptedSharedPreferences.create(context, name, masterKey, ...)` with explicit `: SharedPreferences` return, unused BiometricPrompt provider deleted; `RestTimerForegroundService` implements `LifecycleOwner`; deleted unused `VitalAppContent` from MainActivity; `SummaryDial.Period` → top-level `com.vital.ui.components.Period`; Canvas code uses top-level `Stroke(w)`, `drawText(textMeasurer, ...)`, `PI.toFloat()/180f`, `Path.Direction.Clockwise`.
    - DEVICE TEST 2026-10-31 (OnePlus CPH2487 / OnePlus 11R, Android 16, `adb devices` = e281c7): `installDebug` OK; `am start -n com.vital/.ui.MainActivity` launches with **0 `AndroidRuntime:E` entries** after `adb logcat -c` — no crash. Screenshot shows TODAY tab rendering with sample data (top bar SAT/TODAY/OCT.31, orange hero card "KCAL REMAINING 850", P/C/F macro row, weekly graph, WORKOUTS capsules). Manifest fix required for launch: `android:name=".MainActivity"` → `".ui.MainActivity"` (class lives in `com.vital.ui`; the manifest `package` attr is ignored under AGP 9.5.0).
-   - **Front end NOT complete vs reference**: current UI does not match `Notes/docs/frame-01..12.png` / `reference.png`. Known gaps visible in screenshot: hero-card graph is a clipped flat line at the card's bottom edge (reference has an inset grey graph panel with tooltip pill); capsule sparklines float without the reference's grey panel; Summary dial screen not yet compared on device; no bottom tab bar visible in launch screenshot. SPEC.md Section 9 steps 2-6 (canvas-vs-reference comparison, tab nav, meals/lift, cardio/progress/weeks/coach, polish) still open.
+   - **Front end status (updated 2026-11-01)**: the six-tab bar exists but the tabs are Step 1 placeholders. The pixel references are only `Notes/docs/Summary.png` and `Notes/docs/Activity.png` (the older `frame-01..12.png` / `reference.png` are not references any more). Remaining UI work follows the design source of truth above. SPEC.md Section 9 steps 2-6 are still open.
    - AuthActivity.kt issues listed in the previous revision did not appear in the final error set; compile is clean, but runtime behavior beyond launch is unverified.
 
 3. **JDK Warning**
@@ -56,7 +64,7 @@ Kotlin, Jetpack Compose (Material3 + custom Canvas), single activity, MVVM, Hilt
 
 ## Package layout
 
-com.vital: data (entity, dao, repository, seed), domain, ui (theme, components, screens), ai, sync, service, auth.
+com.vital: data (entity, dao, repository, seed), domain, ui (theme, components, screens), ai, sync, service, auth. New shared UI: `ui/components/ScreenScaffold.kt`. Design files live in `design/tabs/` at the repo root.
 
 ---
 
@@ -67,6 +75,11 @@ com.vital: data (entity, dao, repository, seed), domain, ui (theme, components, 
 - Never write a library or plugin version you did not see in a fetched result (use curl against Google Maven, Maven Central, GitHub releases). Mark each version in NOTES.md as "verified: <url>" or "UNVERIFIED".
 - When a build fails, read the FULL error (expand hidden lines), fix only that error, and do not change unrelated versions, themes or plugins.
 - Do not interrupt-loop: do not retry the same failed fix more than twice; explain and ask instead.
+- Build files are frozen for all of Step 2 and the tabs work until the user says "unfreeze": build.gradle.kts (root and app), settings.gradle.kts, gradle.properties, gradle/libs.versions.toml, gradle/wrapper, AndroidManifest.xml. A compile error is a code error; fix it in the .kt file. Check after every sub-step: `git diff --stat -- '*.gradle.kts' gradle.properties gradle/ app/src/main/AndroidManifest.xml` must be empty (ignore `.DS_Store`). `.claude/settings.json` denies Edit/Write on these files.
+- You cannot reliably view images. Never write that a screen "matches" a reference. Build from the measured numbers, then write `NOT TESTED: visual comparison` and stop; the user measures the device screenshot and sends numeric differences.
+- Run `./gradlew --stop` after each build session. Never run builds in a loop or in the background. If any command fails with `fork failed`, stop and tell the user.
+- Stay in manual (approve-each-edit) mode. Do exactly the sub-step you were given and stop; do not start the next one.
+- Temporary sample data used only to see a component on the device is allowed in one block marked `// TEMP sample data, remove in Step 3`. Components take data as parameters; no sample data inside components.
 
 ## Build rules (do not change without a verified reason)
 
@@ -93,6 +106,8 @@ com.vital: data (entity, dao, repository, seed), domain, ui (theme, components, 
 - Verify any notification API (chronometer, foreground service types) against the installed android.jar before using it.
 - AI API keys stored encrypted via Android Keystore / EncryptedSharedPreferences.
 - Biometric authentication via BiometricPrompt with PIN fallback (argon2 hash).
+- Header chips (day tag and date tag) on every tab come from the system date. Per-tab accent tokens and the Settings theme-colour picker are removed (one accent: orange `#FD3F00`).
+- New screens are built from `design/tabs/<screen>.md` numbers and `REMAINING_TABS_BRIEF.md`; positions and sizes in du, text sizes via `.dp.toSp()`. No `// TODO`, no stubs; if something cannot be finished, write it in NOTES.md.
 
 ## Diagnosis rules
 
@@ -115,18 +130,10 @@ com.vital: data (entity, dao, repository, seed), domain, ui (theme, components, 
 
 - **2A (dial): DONE** — dial face, inner dial, four tick tracks (RIM/BARS/MID/FINE) rendered from generated `DialTicks.kt`.
 - **2B (knob, FAB, icons, text): DONE** — `ActivityGlyphs.kt` is now the single source for the five glyphs (Steps, Walk, Run, Bike, Moto). Deleted `DialIcons.kt`/`ActivityIcons.kt`. Knob fan (`drawKnurledKnob`) draws all five via `ActivityGlyphs.all.forEachIndexed` with transform `{ translate(pxCentreX, pxCentreY); scale(s, s, pivot=Offset.Zero); translate(-12f,-12f) }` and `VitalColors.ActivityFanIcon`. FAB (`drawFab`) draws `ActivityGlyphs.Walk.path` with same transform pattern and `VitalColors.FabIcon`. Fixed `.du()` @Composable calls to local `px()` helper in DrawScope.
-- **2C (hero graph + sparklines): IN PROGRESS** — measurements received from `Activity.png` (393×855 frame, scale 1.675 px/du). Key findings vs draft:
-  - Grey panel is **FLAT #5F6971** (not gradient), radius ~6, 6 du inset from card
-  - Panel has **inner shadow** on top/left edges (~#424143 fading over ~7 du)
-  - Two **guide lines** at 15% and 50% panel height (darker than panel)
-  - Bottom labels: "6m ... 13m" with dashes, tiny ~5-6 du, at ~87% panel height
-  - End dot at 85.6% panel width, 53% panel height; polyline STOPS at dot
-  - Tooltip pill centred on guide line 1 & end dot x; thin outline; text "111BMP"
-  - Capsule rows: 90.7 du height, half-height radius, #0D0D0D fill, darker outer ring ~6.5 du, light rim line at bottom
-  - Thumbnail: 108.7×73 du, flat #5F6971; bottom ruler shows **numbers (960/980/990)**, active dark, NOT "MIN AVG MAX"
-  - Hero card radius ~11 (not 16), "MOVE" label mono ~21, time font ~83, superscript ~29
-- **Verified**: `assembleDebug` ✅, `installDebug` ✅ on OnePlus 11R, launch 0 `AndroidRuntime:E`, `tmp/step2c.png` captured.
-- **Next**: implement measured values in `Color.kt`, `Graphs.kt`, `Components.kt`, `TodayScreen.kt`.
+- **2C (hero graph + sparklines): IN PROGRESS, UNVERIFIED** — hero card and `HeroLineGraph` code written from the measurement table in NOTES.md (section "2C measurements", measured from `Activity.png`, 393 x 855 frame, 1.675 px/du). Not verified on the device: a numeric diff of the device screenshot against that table is pending. Capsule rows and sparklines: not verified. Do not mark 2C DONE.
+  - Key measured facts: grey panel FLAT `#5F6971` with inner shadow (top/left `#424143`, ~7 du); guide lines at 15% and 50% of panel height; end dot at 85.6% / 53% and the polyline stops there; tooltip pill outlined 55 x 19 du centred on guide line 1 and the dot; hero card at y 121.8 du from the screen top, radius ~11; capsule rows 90.7 du with half-height radius; thumbnail 108.7 x 73 du with numeric ruler.
+  - Known open issues from the first device measurement: layout was 13.1 du too high (hero must sit at y 121.8 from the physical screen top), panel 25 du too short, inner shadow ~1.3 du instead of ~7 du, hero text not yet restyled.
+- **Next**: finish 2C against the NOTES.md table, then 2D (insetShadow + debug screen). After Step 2 is accepted: the tabs work per REMAINING_TABS_BRIEF.md.
 
 ## Compose Canvas facts (Compose UI 1.7.4 / BOM 2024.10.00, learned on 2026-11-01)
 
@@ -141,4 +148,6 @@ com.vital: data (entity, dao, repository, seed), domain, ui (theme, components, 
 - `to` (Pair), `Stroke` as a drawStyle, and `Path.Direction.Clockwise` are all valid; if they "do not resolve", an earlier error in the file is the cause.
 - When a build fails: `./gradlew compileDebugKotlin 2>&1 | grep "^e: " | head -10`. Fix only the FIRST error, rebuild, repeat. Do not rewrite a working component to avoid an import.
 - Dial data: app/src/main/java/com/vital/ui/components/DialTicks.kt is GENERATED from the measured prototype. Never hand edit it. Its hex colours are measured data, the only allowed exception to the Theme.kt colour rule. Design units: `ui/theme/DesignUnits.kt` (393 x 855 frame, scale = screenWidthDp / 393).
-- Do not read Notes/old/ACTIVITY_SCREEN_BRIEF.md or Notes/old/ANDROID_PORT_BRIEF.md (superseded by Notes/STEP2_PROMPT.md).
+- Text size in du: `fontSize = (du * scale).dp.toSp()` (ignores system font scale). Never `.sp` with a du value. In a DrawScope, `px.toSp()` works because DrawScope is a Density.
+- `Cannot access constructor ... TextStyle: it is internal` is a side effect of an argument type mismatch (usually `fontSize` given a Float instead of a TextUnit). Fix the argument. Do not switch to `TextStyle.Default.copy()` or rewrite the component.
+- Do not read Notes/old/ACTIVITY_SCREEN_BRIEF.md or Notes/old/ANDROID_PORT_BRIEF.md (superseded by Notes/STEP2_PROMPT.md). `Notes/docs/frame-*.png` and `motion-notes.md` are for the later animation step: do not read them yet.

@@ -10,8 +10,8 @@
 | AGP (Android Gradle Plugin) | TBD | Google Maven |  |
 | Kotlin | TBD | Kotlin GitHub Releases |  |
 | KSP (Kotlin Symbol Processing) | TBD | KSP GitHub Releases |  |
-| Compile SDK | 35 | Android 14 (API 35) |  |
-| Target SDK | 35 | Android 14 (API 35) |  |
+| Compile SDK | 36 | SDK 36 installed; matches CLAUDE.md |  |
+| Target SDK | 36 | SDK 36 installed; matches CLAUDE.md |  |
 | Min SDK | 28 | Android 9 |  |
 
 ### AndroidX Libraries
@@ -28,7 +28,6 @@
 | Activity Compose | TBD | Google Maven |  |
 | ConstraintLayout Compose | TBD | Google Maven |  |
 | WorkManager | TBD | Google Maven |  |
-| Glance (Widgets) | TBD | Google Maven |  |
 
 ### Network & Serialization
 | Component | Version | Source | Verified |
@@ -63,7 +62,20 @@
 *To be filled during Step 1*
 
 ## Changes to Spec
-*None yet*
+
+2026-11-01 UI redesign (all tabs except Today and Summary). SPEC.md and CLAUDE.md were updated to match:
+- One accent: orange `#FD3F00` plus black and `#5F6971`. Per-tab accents (lime, blue, teal, amber, light grey) removed. Old Safety Orange `#FF4D00` replaced by the measured `#FD3F00`.
+- Theme colour picker removed from Settings. `User.themeColor` stays in the Room schema unused (avoids a schema change).
+- TRUE BLACK is ON by default (background `#000000`; `#141414` when off).
+- Bottom nav is a glass pill with a centre `+` and a QUICK ADD sheet. No blur library; glass drawn with translucent fills and highlights.
+- Fonts: JetBrains Mono + Inter Tight (Space Grotesk dropped), after Step 2 only. Text sizes in du via `.dp.toSp()` (ignores font scale).
+- Dial sizes are in du, not fractions of W/H (Step 2 decision, now also in SPEC).
+- Weeks period switch: L = 7 days, M = 4 weeks, H = 12 weeks (the Step 1 placeholder had it reversed).
+- Widgets stay REMOVED (2026-10-31). SPEC sections marked removed.
+- compileSdk / targetSdk set to 36 in SPEC and NOTES to match CLAUDE.md (what is installed and built).
+- Tabs brief cleanup (2026-11-01): build from `design/tabs/*.md`, not PNGs; dial L / M / H letters are decoration on Meals, Lift and Cardio; Lift calculator follows the WEIGHT field (80 kg = 25 + 5); Settings WIDGETS section on hold; stale widget lines removed from SPEC step 5/6 and NOTES.
+- Mockup bugs to build corrected (brief 0A): Weeks W12 pill and bar 11 colour, Meals dial letter circles, Settings flame icon (n/a while widgets are on hold), Weeks P/C/F spacing, two-line row height 52 to 56 du, text at least 10 du, FAB rim, chart bar contrast 3:1.
+- Two pixel references only: `Notes/docs/Summary.png`, `Notes/docs/Activity.png` (`reference.png` / `frame-*.png` are no longer references).
 
 ## Unverified Items (to be verified)
 - Food kcal values vs 4×protein + 4×carbs + 9×fat (check each seed food)
@@ -72,15 +84,27 @@
 - OCR parsing accuracy on real treadmill displays
 - AI photo analysis accuracy with free tier models
 - Coach chat response quality with free tier models
-- Widget update frequency and battery impact
 - Knob drag smoothness at 60 fps on mid-range device
 - Notification exact timing on Android 14+
+- Inter Tight font files bundled in `res/font` (OFL); not yet added
+- Glass nav look without real blur (device review)
+- Header must sit at y 121.8 du from the physical screen top on the OnePlus 11R (edge-to-edge); first device measurement was 13.1 du too high
+- Mock numbers in the tab designs are consistent (Meals 420+560+280 = 1,260 eaten; Cardio 6 km/h, 2%, 68 kg, 32:10 = 187 kcal)
+
+## Open design questions (need the user's answer; defaults in brackets)
+
+1. Widgets: the new Settings design has a WIDGETS section, but widgets were removed on 2026-10-31 and Glance needs a build-file change. [Default: widgets stay removed, WIDGETS section omitted.]
+2. L/M/H letters and knob on the Meals, Lift, Cardio dial art. [Default: decorative, non-focusable, non-draggable. Real L/M/H control lives on Summary and in the Weeks hero.]
+3. `SHOW MORE` next to section labels (WORKOUTS, TODAY, TRENDS, VOLUME). [No default: ask when building that tab. Hero `SHOW MORE` opens Summary.]
+4. Weeks default period. [Default: M = 4 weeks, as in the mockup.]
+5. Settings header while scrolling. [Default: header fixed, content scrolls beneath it with a black backing, as in the mockup.]
+6. Progress and Coach Chat screens have no mockup. [Default: do not build until designs exist.]
+
 
 ## Manual Device Checklist (for OnePlus 11R)
 - [ ] Knob drag smoothness on Summary Dial
 - [ ] Rest timer chronometer notification countdown
 - [ ] Daily reminder notifications fire at exact times
-- [ ] Widget updates reflect live data
 - [ ] Biometric auth / PIN fallback works
 - [ ] Camera and OCR on real treadmill display
 - [ ] AI photo analysis returns usable food data
@@ -90,93 +114,44 @@
 ## Build Investigation Status
 *To be updated during each step*
 
-### 2C Measurements Table (from Activity.png, 393×855 frame, scale 1.675 px/du)
+### Corrected 2C measurements table (2026-11-01)
 
-| Element | Value | Unit | Notes |
-|---------|-------|------|-------|
-| **Hero Card** | | | |
-| Card x | 13.1 | du | |
-| Card y | 121.8 | du | |
-| Card width | 365.4 | du | |
-| Card height | 326.6 | du | |
-| Card radius | 11 | du | (not 16) |
-| Card fill | #FD3F00 | hex | |
-| **"MOVE" label** | | | |
-| x | 122 | du | |
-| y | 312 | du | |
-| Font size | ~21 | du | Monospace |
-| **KCAL Remaining** | | | |
-| x | 125 | du | |
-| y | 402 | du | |
-| Font size | ~60.5 | du | Sans, weight 600, letter-spacing -1.2 |
-| **SHOW MORE** | | | |
-| x | 636.5 | du (centered) | |
-| y | 378 | du | |
-| Font size | 14 | du | Monospace, weight 500, letter-spacing 2.2 |
-| **Time pill (09:24)** | | | |
-| Pill rect | 505–668, 561–607 | du | rx 8.5 |
-| Pill gradient | #3a4144 → #5b656c → #5f6a72 → #5e6870 → #5a646b → #3c4346 | | Vertical linear |
-| Time font size | 22 | du | Monospace, weight 500 |
-| **Inset Grey Panel (inside hero card)** | | | |
-| Panel inset from card edges | 6 | du | |
-| Panel radius | ~6 | du | |
-| Panel fill | #5F6971 | hex | FLAT, NOT gradient |
-| Inner shadow top/left | ~#424143 at edge, fading over ~7 du | | |
-| **Guide Lines** | | | |
-| Line 1 y | 15% | panel height | |
-| Line 2 y | 50% | panel height | |
-| Line thickness | 1.8 | du | Darker than panel |
-| **Polyline / End Dot** | | | |
-| End dot x | 85.6% | panel width | Polyline STOPS here |
-| End dot y | 53% | panel height | |
-| End dot radius | 6 | du | |
-| Polyline color | Black (RefInk #070707) | | With soft shadow |
-| **Tooltip Pill** | | | |
-| Size | ~55 × 19 | du | |
-| Center x | End dot x | | |
-| Center y | Guide line 1 y | | |
-| Outline | Thin, accent color | | |
-| Text | "111BMP" | | |
-| **Vertical Leader** | | | |
-| From | Pill bottom | | |
-| To | End dot | | |
-| Thin, guide line color | | | |
-| **Bottom Labels** | | | |
-| Y position | ~87% | panel height | |
-| Labels | "6m — 7m — 8m — 9m — 10m — 11m — 12m — 13m" | | With dashes |
-| Font size | ~5–6 | du | Tiny, clipped at panel edges |
-| Color | #3D454A | | |
-| **Capsule Rows** | | | |
-| Height | 90.7 | du | |
-| Radius | Half height | | |
-| Fill | #0D0D0D | hex | |
-| Dark outer ring | ~6.5 du, #030303 | | |
-| Light rim line | Bottom edge, #1A1A1A | | |
-| **Thumbnail (in capsule)** | | | |
-| Size | 108.7 × 73 | du | |
-| Fill | #5F6971 | hex | Flat |
-| Bottom ruler | Numbers 960/980/990 | | Active dark, NOT "MIN AVG MAX" |
-| **Hero Card Text (additional)** | | | |
-| Time font | ~83 | du | Monospace |
-| Superscript | ~29 | du | |
-| **Dial / Summary (from vital-ui)** | | | |
-| Dial radius | 147.5 | du | From dial.js |
-| Inner dial | 115.5 | du | |
-| Knob radius | 34 | du | From knob.js |
-| FAB radius | 40 | du | From fab.js |
+The previous table here mixed numbers from the Summary SVG (vital-ui) into an "Activity.png" table and ended with a pasted prompt. It was replaced by the table below, which was measured from pixels of `Notes/docs/Activity.png`.
 
----
+## 2C measurements (Activity.png, du, frame 393x855, scale 1.675 px/du)
+MEASURED = read from pixels; EST = judged from the picture. All y values are from the top of the physical screen (edge-to-edge); the device status bar overlays the top.
 
-Then do Step 2C part 1 only: hero card + HeroLineGraph. No sparklines or capsule rows yet.
+| Element | x | y | w | h | Notes |
+|---|---|---|---|---|---|
+| Hero card | 13.1 | 121.8 | 365.4 | 326.6 | fill #FD3F00 (MEASURED); radius ~11 (MEASURED) |
+| "MOVE" label | 29.3 | 143.3 | 57.9 | 15.5 | black text, mono, cap height 15.5 -> font ~21 (EST) |
+| "Now" | 340.3 | 139.7 | 28.7 | 11.3 | colour #D33100 (MEASURED) |
+| Big time "09:24" | 26.3 | 174.3 | 254.9 | 60.9 | digit height 60.9 -> font ~83 (EST), thin mono |
+| Superscript "24" | 285.4 | 174.9 | 33.4 | 21.5 | digit height 21.5 -> font ~29 (EST) |
+| Stat labels row | 28.1 | 262.7 | - | 11.9 | dim orange #D33100; columns at x ~28 / ~153 / ~284 (EST) |
+| Stat values row | 29.9 | 283.0 | - | 16.1 | black, bold; unit (CAL/KM/BMP) smaller (EST) |
+| Grey panel | 19.7 | 321.2 | 353.4 | 121.2 | ~6 du inset from card; FLAT #5F6971; radius ~6 (EST) |
+| Panel inner shadow | | | | | top edge darkest ~#424143, fades to flat over ~7 du; left edge same |
+| Guide line 1 | | 339.1 | | 1.8 | at 15% of panel height; darker than panel (red 74 vs 95) |
+| Guide line 2 | | 381.2 | | 1.8 | at 50% of panel height |
+| Bottom label row | | ~427 | | | at ~87% of panel height; "6m ... 13m" with dashes, tiny (~5-6 du, EST) |
+| End dot | centre 322 | 385.4 | 6 | 6 | at 85.6% panel width, 53% panel height; polyline STOPS here |
+| Tooltip pill | ~55 wide | ~19 tall | | | centred on guide line 1 and on end dot x (EST); thin outline; text 111BMP |
+| Leader line | 322 | pill bottom -> dot | 1px | | thin vertical |
+| Capsule rows | 13.1 | 529.0 / 626.3 / 723.6 | 366.6 | 90.7 | pitch 97.3; radius = half height (~45) |
+| Capsule fill | | | | | #0D0D0D; darker outer ring ~6.5 du (#010101-#060606); light rim line at bottom edge |
+| Icon circle | ~21 | | ~74 dia | | EST |
+| Thumbnail | 262.7 | 537.3 | 108.7 | 73 | flat #5F6971 (matches 0.28W x 0.185W) |
+| Thumb bottom ruler | | | | | tick numbers (960 / 980 / 990), active one dark, others faded; NOT "MIN AVG MAX" |
 
-Rules:
-- Use only numbers from the table. Where it says EST, keep the value but mark it "// EST" in a comment so we can tune it later.
-- Panel is a FLAT #5F6971 (put it in Theme.kt) with a real inner shadow on its top and left edges (darkest ~#424143 at the edge, fading to flat over ~7 du). It is NOT a gradient. Remove InsetGreyPanelStart/End if nothing else uses them.
-- Guide lines at 15% and 50% of panel height (not 1/3, 2/3), 1.8 du thick, darker than the panel.
-- Polyline stops at the end dot (85.6% of panel width, 53% of panel height). End dot is 6 du. Tooltip pill ~55 x 19 du, centred on guide line 1 and on the end dot x, thin outline, text 111BMP. Thin vertical leader from pill to dot.
-- Bottom label row at ~87% of panel height: "6m ... 13m" with dashes, tiny, clipped at both panel edges.
-- Hero card: 13.1, 121.8, 365.4 x 326.6 du, radius 11, fill #FD3F00. Text positions and sizes from the table. Sizes in du, converted without font scale.
-- HeroLineGraph takes data as a parameter; sample data only in @Preview.
-- Do not edit any build file or any other component.
+### Summary screen numbers (separate screen; unverified copy)
 
-Build, install, check logcat, and take tmp/step2c1.png with adb exec-out screencap. Do not say it matches the reference. Write "NOT TESTED: visual comparison" and stop; I will measure the screenshot and send you the numeric differences.
+These were copied by Claude Code from `Notes/vital-ui/src/*.js`. The files win. Do not use them for the Activity/Today hero.
+
+| Element | Value | Source |
+|---|---|---|
+| Dial radius | 147.5 du | dial.js |
+| Inner dial | 115.5 du | dial.js |
+| Knob radius | 34 du | knob.js |
+| FAB radius | 40 du | fab.js |
+| Header text, SHOW MORE, 09:24 pill | see main.js | main.js |
