@@ -79,7 +79,7 @@ fun HeroLineGraph(
                 bottom = panelBottom
             )
             drawRoundRect(
-                color = com.vital.ui.theme.VitalColors.InsetGreyPanel,
+                color = com.vital.ui.theme.VitalColors.panelGrey,
                 topLeft = panelRect.topLeft,
                 size = panelRect.size,
                 cornerRadius = CornerRadius(panelRadius, panelRadius)
@@ -135,7 +135,7 @@ fun HeroLineGraph(
             bottom = panelBottom
         )
         drawRoundRect(
-            color = com.vital.ui.theme.VitalColors.InsetGreyPanel, // #5F6971 flat
+            color = com.vital.ui.theme.VitalColors.panelGrey, // #5F6971 flat
             topLeft = panelRect.topLeft,
             size = panelRect.size,
             cornerRadius = CornerRadius(panelRadius, panelRadius)
@@ -144,7 +144,7 @@ fun HeroLineGraph(
         // ===== INNER SHADOW on top/left edges (~#424143 fading over ~7 du) =====
         // Use real blur via BlurMaskFilter on a path for authentic inner shadow
         val shadowDepth = 7f * duScale
-        val shadowColor = com.vital.ui.theme.VitalColors.InsetGreyPanelShadow // #424143
+        val shadowColor = com.vital.ui.theme.VitalColors.panelGreyShadow // #424143
         val shadowPaint = android.graphics.Paint().apply {
             color = android.graphics.Color.argb(180,
                 (shadowColor.red * 255).toInt(),
@@ -317,7 +317,7 @@ fun HeroLineGraph(
 
             // Pill outline ONLY (thin, accent color), no fill background
             drawRoundRect(
-                color = com.vital.ui.theme.VitalColors.AccentTDY,
+                color = com.vital.ui.theme.VitalColors.orange,
                 topLeft = bubbleRect.topLeft,
                 size = bubbleRect.size,
                 cornerRadius = CornerRadius(bubbleRect.height / 2f),
@@ -375,7 +375,7 @@ fun Sparkline(
         val h = size.height.toFloat()
 
         // Thumbnail: 108.7×73 du, flat #5F6971
-        val panelColor = com.vital.ui.theme.VitalColors.InsetGreyPanel // #5F6971 flat
+        val panelColor = com.vital.ui.theme.VitalColors.panelGrey // #5F6971 flat
         val padding = 4f.du(duScale)
         val topPadding = 14f.du(duScale) // space for date label
         val bottomPadding = 18f.du(duScale) // space for ruler
@@ -459,9 +459,9 @@ fun Sparkline(
         for (i in rulerLabels.indices) {
             val x = padding + (i / (rulerCount - 1).toFloat()) * graphWidth
             val isActive = i == activeRulerIndex
-            // Active = dark (PrimaryText), inactive = lighter (InsetGreyBottomLabels)
+            // Active = dark (textPrimary), inactive = lighter (InsetGreyBottomLabels)
             val labelColor = if (isActive) {
-                com.vital.ui.theme.VitalColors.PrimaryText
+                com.vital.ui.theme.VitalColors.textPrimary
             } else {
                 com.vital.ui.theme.VitalColors.InsetGreyBottomLabels
             }
@@ -522,7 +522,7 @@ fun SparklinePreview() {
         Sparkline(
             modifier = Modifier.fillMaxSize(),
             dataPoints = data,
-            accentColor = com.vital.ui.theme.VitalColors.AccentTDY,
+            accentColor = com.vital.ui.theme.VitalColors.orange,
             dateLabel = "OCT 31",
             rulerLabels = listOf("960", "980", "990"),
             activeRulerIndex = 1

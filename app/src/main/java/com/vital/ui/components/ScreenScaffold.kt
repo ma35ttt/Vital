@@ -13,8 +13,6 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.wrapContentWidth
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.clickable
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -135,8 +133,6 @@ private fun OrangeHeroScaffold(
     dialFabGlyph: FabGlyph,
     content: @Composable () -> Unit
 ) {
-    val scrollState = rememberScrollState()
-
     // Header row - fixed at top
     val headerHeight = 82.dp // chips y 50 + height 32 = 82
     val sheetHighlightTop = 404.dp // 1 du highlight at y 404
@@ -240,7 +236,7 @@ private fun OrangeHeroScaffold(
         )
 
         // Black sheet with rounded top corners (radius 26) starting at y 405
-        // Content scrolls within the sheet
+        // Content scrolls within the sheet (each screen handles its own scrolling)
         androidx.compose.material3.Surface(
             modifier = Modifier
                 .fillMaxSize()
@@ -251,8 +247,7 @@ private fun OrangeHeroScaffold(
             Column(
                 modifier = Modifier
                     .fillMaxSize()
-                    .padding(top = 8.dp) // small gap after sheet top
-                    .verticalScroll(scrollState),
+                    .padding(top = 8.dp), // small gap after sheet top
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 // Sheet content - left/right 16 (from chrome.md: content left/right edge 16 and 376)
@@ -269,14 +264,11 @@ private fun BlackPageScaffold(
     dateTag: String,
     content: @Composable () -> Unit
 ) {
-    val scrollState = rememberScrollState()
-
     val headerHeight = 82.dp
 
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .verticalScroll(scrollState)
             .padding(bottom = 100.dp) // bottom padding for nav
     ) {
         // Fixed header with chips and title

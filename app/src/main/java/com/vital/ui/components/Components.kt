@@ -40,14 +40,14 @@ fun Tag(
     text: String,
     modifier: Modifier = Modifier,
     backgroundColor: Color = com.vital.ui.theme.VitalColors.TagButtonFill,
-    textColor: Color = com.vital.ui.theme.VitalColors.PrimaryText,
+    textColor: Color = com.vital.ui.theme.VitalColors.textPrimary,
     fontSize: TextUnit = 11.sp,
     elevation: androidx.compose.ui.unit.Dp = 2.dp
 ) {
     androidx.compose.material3.Surface(
         modifier = modifier
             .padding(horizontal = 4.dp, vertical = 2.dp)
-            .insetShadow(elevation = elevation, cornerRadius = 4.dp, shadowColor = com.vital.ui.theme.VitalColors.BackgroundTrueBlack.copy(alpha = 0.4f)),
+            .insetShadow(elevation = elevation, cornerRadius = 4.dp, shadowColor = com.vital.ui.theme.VitalColors.black.copy(alpha = 0.4f)),
         color = backgroundColor,
         shape = RoundedCornerShape(4.dp)
     ) {
@@ -80,7 +80,7 @@ fun capsuleRow(
             .fillMaxWidth()
             .padding(vertical = 4.dp)
             .height(90.7.dp), // ~90.7 du at 1x scale
-        color = com.vital.ui.theme.VitalColors.CapsuleFill, // #0D0D0D
+        color = com.vital.ui.theme.VitalColors.wellFill, // #0D0D0D
         shape = RoundedCornerShape(45.35.dp), // half height
         border = BorderStroke(1.dp, com.vital.ui.theme.VitalColors.CapsuleDarkRing) // #030303 darker ring ~6.5 du
     ) {
@@ -115,7 +115,7 @@ fun capsuleRow(
             ) {
                 Text(
                     text = label.uppercase(),
-                    color = com.vital.ui.theme.VitalColors.MutedText,
+                    color = com.vital.ui.theme.VitalColors.textMuted,
                     fontSize = 10.sp,
                     fontWeight = FontWeight.Medium,
                     letterSpacing = 1.sp,
@@ -123,7 +123,7 @@ fun capsuleRow(
                 )
                 Text(
                     text = value,
-                    color = com.vital.ui.theme.VitalColors.PrimaryText,
+                    color = com.vital.ui.theme.VitalColors.textPrimary,
                     fontSize = 20.sp,
                     fontWeight = FontWeight.Bold,
                     fontFamily = androidx.compose.ui.text.font.FontFamily.Monospace
@@ -137,8 +137,8 @@ fun capsuleRow(
                         .width(108.7.dp)  // 108.7 du
                         .height(73.dp)    // 73 du
                         .padding(4.dp)
-                        .insetShadow(elevation = 2.dp, cornerRadius = 6.dp, shadowColor = com.vital.ui.theme.VitalColors.BackgroundTrueBlack.copy(alpha = 0.5f)),
-                    color = com.vital.ui.theme.VitalColors.InsetGreyPanel, // #5F6971 flat
+                        .insetShadow(elevation = 2.dp, cornerRadius = 6.dp, shadowColor = com.vital.ui.theme.VitalColors.black.copy(alpha = 0.5f)),
+                    color = com.vital.ui.theme.VitalColors.panelGrey, // #5F6971 flat
                     shape = RoundedCornerShape(6.dp) // small radius for thumbnail
                 ) {
                     Sparkline(
@@ -210,7 +210,7 @@ fun SectionHeader(
     title: String,
     modifier: Modifier = Modifier,
     showMoreAction: (() -> Unit)? = null,
-    accentColor: Color = com.vital.ui.theme.VitalColors.AccentTDY
+    accentColor: Color = com.vital.ui.theme.VitalColors.orange
 ) {
     Row(
         modifier = modifier
@@ -221,7 +221,7 @@ fun SectionHeader(
     ) {
         Text(
             text = title.uppercase(),
-            color = com.vital.ui.theme.VitalColors.PrimaryText,
+            color = com.vital.ui.theme.VitalColors.textPrimary,
             fontSize = 14.sp,
             fontWeight = FontWeight.Bold,
             fontFamily = jetbrainsMono,
@@ -319,14 +319,14 @@ fun MacroStat(
         ) {
             Text(
                 text = current.toString(),
-                color = com.vital.ui.theme.VitalColors.PrimaryText,
+                color = com.vital.ui.theme.VitalColors.textPrimary,
                 fontSize = (17.3f * duScale).sp,
                 fontWeight = FontWeight.Medium,
                 fontFamily = jetbrainsMono
             )
             Text(
                 text = "/$target",
-                color = com.vital.ui.theme.VitalColors.PrimaryText.copy(alpha = 0.7f),
+                color = com.vital.ui.theme.VitalColors.textPrimary.copy(alpha = 0.7f),
                 fontSize = (17.3f * duScale * 0.6f).sp,
                 fontWeight = FontWeight.Medium,
                 fontFamily = jetbrainsMono
@@ -339,7 +339,7 @@ fun MacroStat(
 fun BigKcalDisplay(
     remaining: Float,
     unit: String = "KCAL",
-    accentColor: Color = com.vital.ui.theme.VitalColors.AccentTDY,
+    accentColor: Color = com.vital.ui.theme.VitalColors.orange,
     modifier: Modifier = Modifier
 ) {
     val duScale = LocalDesignUnitsScale.current

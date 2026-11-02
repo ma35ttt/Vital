@@ -70,7 +70,7 @@ import com.vital.ui.components.FabGlyph
 @Composable
 fun CardioScreen(
     modifier: Modifier = Modifier,
-    onShowSummary: () -> Unit,
+    onShowMore: () -> Unit,
     onNavigateToToday: () -> Unit,
     onNavigateToMeals: () -> Unit,
     onNavigateToLift: () -> Unit,
@@ -84,25 +84,31 @@ fun CardioScreen(
     val cardioToday by viewModel.cardioToday.collectAsStateWithLifecycle(emptyList())
 
     var selectedCardioType by remember { mutableStateOf(0) } // 0=RUN, 1=BIKE, 2=WALK, 3=OTHER
-    var durationText by remember { mutableStateOf("32:10") }
-    var distanceText by remember { mutableStateOf("3.22") }
-    var speedText by remember { mutableStateOf("6.0") }
-    var inclineText by remember { mutableStateOf("2.0") }
+    var durationText by remember { mutableStateOf("") }
+    var distanceText by remember { mutableStateOf("") }
+    var speedText by remember { mutableStateOf("") }
+    var inclineText by remember { mutableStateOf("") }
+
+    // Empty state: hero 0, dial SPEED —, INCL —, top pill —:—
+    val heroValue = cardioKcalToday.toInt().toString()
+    val dialInnerValue = if (speedText.isNotBlank()) speedText else "—"
+    val dialPillText = if (inclineText.isNotBlank()) "INCL ${inclineText}%" else "INCL —%"
+    val dialTopPill = if (durationText.isNotBlank()) durationText else "—:—"
 
     ScreenScaffold(
         variant = ScreenVariant.OrangeHero,
         title = "CARDIO",
         heroLabel = "CARDIO KCAL",
-        heroValue = "187",
-        onShowMore = onShowSummary,
+        heroValue = heroValue,
+        onShowMore = onShowMore,
         // OrangeDial parameters for Cardio
         dialLetters = listOf("R", "B", "W"),
         dialHighlightedIndex = 0, // R (Run) highlighted
         dialInnerLabel = "SPEED",
-        dialInnerValue = "6.0",
+        dialInnerValue = dialInnerValue,
         dialInnerUnit = "KM/H",
-        dialPillText = "INCL 2.0%",
-        dialTopPill = "32:10",
+        dialPillText = dialPillText,
+        dialTopPill = dialTopPill,
         dialFabGlyph = FabGlyph.Camera
     ) {
         Column(
@@ -385,21 +391,41 @@ fun CardioField(
                 modifier = Modifier.fillMaxWidth(),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Text(
-                    text = value,
-                    color = VitalColors.textPrimary,
-                    fontSize = 15.duToSp(),
-                    fontWeight = FontWeight.Bold,
-                    fontFamily = androidx.compose.ui.text.font.FontFamily.Monospace
-                )
-                if (unit.isNotBlank()) {
+                if (value.isNotBlank()) {
                     Text(
-                        text = " $unit",
-                        color = VitalColors.textMuted,
-                        fontSize = 10.duToSp(),
+                        text = value,
+                        color = VitalColors.textPrimary,
+                        fontSize = 15.duToSp(),
+                        fontWeight = FontWeight.Bold,
+                        fontFamily = androidx.compose.ui.text.font.FontFamily.Monospace
+                    )
+                    if (unit.isNotBlank()) {
+                        Text(
+                            text = " $unit",
+                            color = VitalColors.textMuted,
+                            fontSize = 10.duToSp(),
+                            fontWeight = FontWeight.Medium,
+                            fontFamily = androidx.compose.ui.text.font.FontFamily.Monospace
+                        )
+                    }
+                } else {
+                    // Show hint as muted placeholder
+                    Text(
+                        text = hint,
+                        color = VitalColors.textMuted.copy(alpha = 0.5f),
+                        fontSize = 15.duToSp(),
                         fontWeight = FontWeight.Medium,
                         fontFamily = androidx.compose.ui.text.font.FontFamily.Monospace
                     )
+                    if (unit.isNotBlank()) {
+                        Text(
+                            text = " $unit",
+                            color = VitalColors.textMuted.copy(alpha = 0.3f),
+                            fontSize = 10.duToSp(),
+                            fontWeight = FontWeight.Medium,
+                            fontFamily = androidx.compose.ui.text.font.FontFamily.Monospace
+                        )
+                    }
                 }
             }
         }

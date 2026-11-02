@@ -48,7 +48,7 @@ fun DebugShowcaseScreen() {
     var knobProgress by remember { mutableStateOf(0.5f) }
     var period by remember { mutableStateOf(Period.M) }
 
-    Surface(modifier = Modifier.fillMaxSize(), color = VitalColors.Background) {
+    Surface(modifier = Modifier.fillMaxSize(), color = VitalColors.black) {
         LazyColumn(
             modifier = Modifier.fillMaxSize(),
             contentPadding = PaddingValues(16.dp),
@@ -57,7 +57,7 @@ fun DebugShowcaseScreen() {
             item {
                 Text(
                     text = "STEP2 CANVAS SHOWCASE",
-                    color = VitalColors.PrimaryText,
+                    color = VitalColors.textPrimary,
                     fontSize = 16.sp,
                     fontWeight = FontWeight.Bold,
                     letterSpacing = 1.5.sp
@@ -68,7 +68,7 @@ fun DebugShowcaseScreen() {
                 SectionLabel("1 SUMMARY DIAL (ref frame-01 right)")
                 Surface(
                     modifier = Modifier.fillMaxWidth().height(560.dp),
-                    color = VitalColors.AccentTDY,
+                    color = VitalColors.orange,
                     shape = RoundedCornerShape(16.dp)
                 ) {
                     SummaryDial(
@@ -80,7 +80,7 @@ fun DebugShowcaseScreen() {
                         fatPercent = 0.27f,
                         period = period,
                         onPeriodChange = { period = it },
-                        accentColor = VitalColors.AccentTDY,
+                        accentColor = VitalColors.orange,
                         showKnob = true,
                         onKnobProgressChange = {}
                     )
@@ -101,7 +101,7 @@ fun DebugShowcaseScreen() {
                     )
                     Text(
                         text = "PROGRESS ${(knobProgress * 100).toInt()}%",
-                        color = VitalColors.PrimaryText,
+                        color = VitalColors.textPrimary,
                         fontSize = 20.sp,
                         fontWeight = FontWeight.Bold,
                         modifier = Modifier.padding(top = 12.dp)
@@ -113,7 +113,7 @@ fun DebugShowcaseScreen() {
                 SectionLabel("3 HERO CARD + GRAPH (ref frame-01 left)")
                 Surface(
                     modifier = Modifier.fillMaxWidth().height(380.dp),
-                    color = VitalColors.AccentTDY,
+                    color = VitalColors.orange,
                     shape = RoundedCornerShape(16.dp)
                 ) {
                     Column(modifier = Modifier.fillMaxSize().padding(16.dp)) {
@@ -151,11 +151,11 @@ fun DebugShowcaseScreen() {
                 SectionLabel("4 CAPSULE + SPARKLINE (ref frame-01 capsules)")
                 capsuleRow(
                     modifier = Modifier.fillMaxWidth(),
-                    icon = { Icon(Icons.Default.DirectionsRun, "", tint = VitalColors.AccentTDY) },
+                    icon = { Icon(Icons.Default.DirectionsRun, "", tint = VitalColors.orange) },
                     label = "HIKING",
                     value = ".980KM",
                     sparklineData = listOf(0.3f, 0.5f, 0.4f, 0.6f, 0.55f, 0.62f),
-                    accentColor = VitalColors.AccentTDY
+                    accentColor = VitalColors.orange
                 )
             }
 
@@ -163,23 +163,23 @@ fun DebugShowcaseScreen() {
                 SectionLabel("5 SPARKLINE IN GREY PANEL")
                 Surface(
                     modifier = Modifier.fillMaxWidth().height(90.dp),
-                    color = VitalColors.InsetGreyPanel,
+                    color = VitalColors.panelGrey,
                     shape = RoundedCornerShape(8.dp)
                 ) {
                     Column(modifier = Modifier.fillMaxSize().padding(12.dp)) {
-                        Text("TODAY", color = VitalColors.Background, fontSize = 10.sp, fontWeight = FontWeight.Bold)
+                        Text("TODAY", color = VitalColors.black, fontSize = 10.sp, fontWeight = FontWeight.Bold)
                         Sparkline(
                             modifier = Modifier.fillMaxWidth().height(40.dp).padding(top = 2.dp),
                             dataPoints = listOf(0.3f, 0.5f, 0.4f, 0.6f, 0.55f, 0.62f),
-                            accentColor = VitalColors.Background
+                            accentColor = VitalColors.black
                         )
                         Row(
                             modifier = Modifier.fillMaxWidth(),
                             horizontalArrangement = Arrangement.SpaceBetween
                         ) {
-                            Text("960", color = VitalColors.Background, fontSize = 8.sp)
-                            Text("980", color = VitalColors.Background, fontSize = 8.sp)
-                            Text("990", color = VitalColors.Background, fontSize = 8.sp)
+                            Text("960", color = VitalColors.black, fontSize = 8.sp)
+                            Text("980", color = VitalColors.black, fontSize = 8.sp)
+                            Text("990", color = VitalColors.black, fontSize = 8.sp)
                         }
                     }
                 }
@@ -192,13 +192,13 @@ fun DebugShowcaseScreen() {
                         .fillMaxWidth()
                         .height(110.dp)
                         .insetShadow(elevation = 10.dp, cornerRadius = 16.dp),
-                    color = VitalColors.Card,
+                    color = VitalColors.wellFill,
                     shape = RoundedCornerShape(16.dp)
                 ) {
                     Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                         Text(
                             text = "INSET SHADOW",
-                            color = VitalColors.MutedText,
+                            color = VitalColors.textMuted,
                             fontSize = 14.sp,
                             fontWeight = FontWeight.Bold,
                             letterSpacing = 1.5.sp
@@ -251,7 +251,7 @@ fun DebugShowcaseScreen() {
 private fun SectionLabel(text: String) {
     Text(
         text = text,
-        color = VitalColors.MutedText,
+        color = VitalColors.textMuted,
         fontSize = 11.sp,
         fontWeight = FontWeight.Medium,
         letterSpacing = 1.sp,

@@ -55,7 +55,7 @@ fun AllComponentsPreview() {
                 modifier = Modifier.fillMaxWidth().height(180.dp),
                 dataPoints = listOf(0.2f, 0.35f, 0.45f, 0.38f, 0.52f, 0.61f, 0.55f),
                 labels = listOf("MON", "TUE", "WED", "THU", "FRI", "SAT", "SUN"),
-                accentColor = com.vital.ui.theme.VitalColors.AccentTDY,
+                accentColor = com.vital.ui.theme.VitalColors.orange,
                 showTooltip = true,
                 tooltipIndex = 4,
                 tooltipValue = 0.52f
@@ -69,17 +69,17 @@ fun AllComponentsPreview() {
                 Sparkline(
                     modifier = Modifier.weight(1f).height(60.dp),
                     dataPoints = listOf(0.2f, 0.35f, 0.45f, 0.38f, 0.52f),
-                    accentColor = com.vital.ui.theme.VitalColors.AccentTDY
+                    accentColor = com.vital.ui.theme.VitalColors.orange
                 )
                 Sparkline(
                     modifier = Modifier.weight(1f).height(60.dp),
                     dataPoints = listOf(0.4f, 0.5f, 0.45f, 0.6f, 0.55f),
-                    accentColor = com.vital.ui.theme.VitalColors.AccentMLS
+                    accentColor = com.vital.ui.theme.VitalColors.orange
                 )
                 Sparkline(
                     modifier = Modifier.weight(1f).height(60.dp),
                     dataPoints = listOf(0.3f, 0.4f, 0.5f, 0.45f, 0.5f),
-                    accentColor = com.vital.ui.theme.VitalColors.AccentLFT
+                    accentColor = com.vital.ui.theme.VitalColors.orange
                 )
             }
 
@@ -96,20 +96,20 @@ fun AllComponentsPreview() {
             // Capsule Rows
             capsuleRow(
                 modifier = Modifier.fillMaxWidth(),
-                icon = { Icon(Icons.Default.LocalFireDepartment, "", tint = com.vital.ui.theme.VitalColors.AccentTDY) },
+                icon = { Icon(Icons.Default.LocalFireDepartment, "", tint = com.vital.ui.theme.VitalColors.orange) },
                 label = "Calories Burned",
                 value = "420 kcal",
                 sparklineData = listOf(0.3f, 0.5f, 0.4f, 0.6f, 0.55f),
-                accentColor = com.vital.ui.theme.VitalColors.AccentTDY
+                accentColor = com.vital.ui.theme.VitalColors.orange
             )
 
             capsuleRow(
                 modifier = Modifier.fillMaxWidth(),
-                icon = { Icon(Icons.Default.DirectionsRun, "", tint = com.vital.ui.theme.VitalColors.AccentLFT) },
+                icon = { Icon(Icons.Default.DirectionsRun, "", tint = com.vital.ui.theme.VitalColors.orange) },
                 label = "Volume",
                 value = "12,450 kg",
                 sparklineData = listOf(0.4f, 0.6f, 0.5f, 0.7f, 0.65f),
-                accentColor = com.vital.ui.theme.VitalColors.AccentLFT
+                accentColor = com.vital.ui.theme.VitalColors.orange
             )
         }
     }
