@@ -10,15 +10,17 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.itemsIndexed
-import androidx.compose.material3.Icon
+import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.DirectionsRun
 import androidx.compose.material.icons.filled.DirectionsBike
 import androidx.compose.material.icons.filled.DirectionsWalk
 import androidx.compose.material.icons.filled.PhotoCamera
 import androidx.compose.material.icons.filled.Timer
+import androidx.compose.material3.Icon
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -33,6 +35,14 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.layout.wrapContentWidth
+import androidx.compose.foundation.layout.wrapContentHeight
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.em
 import com.vital.ui.components.BigKcalDisplay
 import com.vital.ui.components.MacroRow
 import com.vital.ui.components.SectionHeader
@@ -41,18 +51,21 @@ import com.vital.ui.components.ShowMoreButton
 import com.vital.ui.components.HeroLineGraph
 import com.vital.ui.components.SummaryDial
 import com.vital.ui.components.QuickStat
+import com.vital.ui.components.SectionLabel
+import com.vital.ui.components.WellRow
+import com.vital.ui.components.CapsuleRow
+import com.vital.ui.components.GreyPanel
 import com.vital.ui.theme.VitalColors
 import com.vital.ui.theme.VitalTypography
+import com.vital.ui.theme.duToSp
+import com.vital.ui.theme.duToDp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import java.time.LocalDate
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.vital.ui.MainViewModel
-import androidx.compose.material.icons.Icons
-import com.vital.ui.components.Tag
-import androidx.compose.foundation.clickable
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.BorderStroke
+import com.vital.ui.components.ScreenScaffold
+import com.vital.ui.components.ScreenVariant
+import com.vital.ui.components.FabGlyph
 
 @Composable
 fun CardioScreen(
@@ -65,195 +78,227 @@ fun CardioScreen(
     onNavigateToSettings: () -> Unit,
     viewModel: MainViewModel = viewModel()
 ) {
-    val today = LocalDate.now()
-    val dayTag = today.dayOfWeek.name.take(3)
-    val dateTag = today.month.name.take(3) + ".${today.dayOfMonth}"
-
     val cardioKcalToday by viewModel.cardioKcalToday.collectAsStateWithLifecycle(0f)
     val weeklyCardioData by viewModel.weeklyCardioData.collectAsStateWithLifecycle(emptyList())
     val weeklyLabels by viewModel.weeklyLabels.collectAsStateWithLifecycle(emptyList())
     val cardioToday by viewModel.cardioToday.collectAsStateWithLifecycle(emptyList())
 
-    Surface(
-        modifier = modifier.fillMaxSize(),
-        color = VitalColors.Background
+    var selectedCardioType by remember { mutableStateOf(0) } // 0=RUN, 1=BIKE, 2=WALK, 3=OTHER
+    var durationText by remember { mutableStateOf("32:10") }
+    var distanceText by remember { mutableStateOf("3.22") }
+    var speedText by remember { mutableStateOf("6.0") }
+    var inclineText by remember { mutableStateOf("2.0") }
+
+    ScreenScaffold(
+        variant = ScreenVariant.OrangeHero,
+        title = "CARDIO",
+        heroLabel = "CARDIO KCAL",
+        heroValue = "187",
+        onShowMore = onShowSummary,
+        // OrangeDial parameters for Cardio
+        dialLetters = listOf("R", "B", "W"),
+        dialHighlightedIndex = 0, // R (Run) highlighted
+        dialInnerLabel = "SPEED",
+        dialInnerValue = "6.0",
+        dialInnerUnit = "KM/H",
+        dialPillText = "INCL 2.0%",
+        dialTopPill = "32:10",
+        dialFabGlyph = FabGlyph.Camera
     ) {
         Column(
             modifier = Modifier.fillMaxSize(),
-            verticalArrangement = Arrangement.spacedBy(0.dp)
+            horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            // Top Bar
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 16.dp, vertical = 12.dp),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Tag(text = dayTag, backgroundColor = VitalColors.AccentCRD)
-                Text(
-                    text = "CARDIO",
-                    color = VitalColors.PrimaryText,
-                    fontSize = 16.sp,
-                    fontWeight = FontWeight.Bold,
-                    letterSpacing = 1.5.sp
-                )
-                Tag(text = dateTag, backgroundColor = VitalColors.AccentCRD)
-            }
-
-            // Cardio type selector
+            // Type tiles row (RUN, BIKE, WALK, OTHER)
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(horizontal = 16.dp, vertical = 8.dp),
-                horizontalArrangement = Arrangement.SpaceEvenly
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                CardioTypeButton(modifier = Modifier.weight(1f), label = "RUN", icon = Icons.Default.DirectionsRun, isSelected = true, accentColor = VitalColors.AccentCRD)
-                CardioTypeButton(modifier = Modifier.weight(1f), label = "BIKE", icon = Icons.Default.DirectionsBike, isSelected = false, accentColor = VitalColors.AccentCRD)
-                CardioTypeButton(modifier = Modifier.weight(1f), label = "WALK", icon = Icons.Default.DirectionsWalk, isSelected = false, accentColor = VitalColors.AccentCRD)
-                CardioTypeButton(modifier = Modifier.weight(1f), label = "OTHER", icon = Icons.Default.Timer, isSelected = false, accentColor = VitalColors.AccentCRD)
+                CardioTypeTile(
+                    modifier = Modifier.weight(1f),
+                    label = "RUN",
+                    icon = Icons.Default.DirectionsRun,
+                    isSelected = selectedCardioType == 0,
+                    onClick = { selectedCardioType = 0 }
+                )
+                CardioTypeTile(
+                    modifier = Modifier.weight(1f),
+                    label = "BIKE",
+                    icon = Icons.Default.DirectionsBike,
+                    isSelected = selectedCardioType == 1,
+                    onClick = { selectedCardioType = 1 }
+                )
+                CardioTypeTile(
+                    modifier = Modifier.weight(1f),
+                    label = "WALK",
+                    icon = Icons.Default.DirectionsWalk,
+                    isSelected = selectedCardioType == 2,
+                    onClick = { selectedCardioType = 2 }
+                )
+                CardioTypeTile(
+                    modifier = Modifier.weight(1f),
+                    label = "OTHER",
+                    icon = Icons.Default.Timer,
+                    isSelected = selectedCardioType == 3,
+                    onClick = { selectedCardioType = 3 }
+                )
             }
 
-            // Treadmill OCR button
-            Box(
+            // Scan row
+            WellRow(
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(horizontal = 16.dp, vertical = 8.dp)
             ) {
-                Surface(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(56.dp)
-                        .clickable { /* TODO: Open ML Kit OCR scanner */ },
-                    color = VitalColors.NearBlackRow,
-                    shape = RoundedCornerShape(8.dp),
-                    border = BorderStroke(1.5.dp, VitalColors.NearBlackRowStroke)
-                ) {
-                    Row(
-                        modifier = Modifier.fillMaxSize().padding(16.dp),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            androidx.compose.material3.Surface(
-                                modifier = Modifier.size(40.dp),
-                                color = VitalColors.AccentCRD.copy(alpha = 0.2f),
-                                shape = CircleShape
-                            ) {
-                                Box(
-                                    modifier = Modifier.fillMaxSize(),
-                                    contentAlignment = Alignment.Center
-                                ) {
-                                    Icon(imageVector = Icons.Default.PhotoCamera, contentDescription = "OCR", tint = VitalColors.AccentCRD)
-                                }
-                            }
-                            Column(modifier = Modifier.padding(start = 12.dp)) {
-                                Text(text = "SCAN TREADMILL", color = VitalColors.PrimaryText, fontSize = 14.sp, fontWeight = FontWeight.Bold)
-                                Text(text = "OCR: duration, distance, speed, incline, kcal", color = VitalColors.MutedText, fontSize = 10.sp, fontWeight = FontWeight.Medium)
-                            }
-                        }
-                        Icon(imageVector = Icons.Default.PhotoCamera, contentDescription = "Scan", tint = VitalColors.AccentCRD)
-                    }
-                }
-            }
-
-            // Hero Card on Accent Fill
-            Surface(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 16.dp, vertical = 8.dp)
-                    .height(280.dp),
-                color = VitalColors.AccentCRD,
-                shape = RoundedCornerShape(16.dp)
-            ) {
-                Column(
+                val centerV = Alignment.CenterVertically
+                Row(
                     modifier = Modifier.fillMaxSize().padding(16.dp),
-                    verticalArrangement = Arrangement.SpaceBetween
+                    verticalAlignment = centerV
                 ) {
-                    // Top row: label and "Now"
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
+                    // Camera icon well
+                    Surface(
+                        modifier = Modifier.size(30.dp),
+                        color = VitalColors.iconWellFill,
+                        shape = CircleShape,
+                        border = BorderStroke(1.dp, VitalColors.iconWellStroke)
                     ) {
-                        Tag(
-                            text = "CARDIO KCAL",
-                            backgroundColor = Color.Black.copy(alpha = 0.3f),
-                            textColor = Color.Black
+                        Box(
+                            modifier = Modifier.fillMaxSize(),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.PhotoCamera,
+                                contentDescription = "OCR",
+                                tint = VitalColors.orange,
+                                modifier = Modifier.size(17.dp, 14.dp)
+                            )
+                        }
+                    }
+                    Column(modifier = Modifier
+                        .weight(1f)
+                        .padding(start = 12.dp)
+                    ) {
+                        Text(
+                            text = "SCAN TREADMILL",
+                            color = VitalColors.textPrimary,
+                            fontSize = 14.duToSp(),
+                            fontWeight = FontWeight.Bold,
+                            fontFamily = androidx.compose.ui.text.font.FontFamily.Monospace
                         )
                         Text(
-                            text = "NOW",
-                            color = Color.Black.copy(alpha = 0.7f),
-                            fontSize = 12.sp,
-                            fontWeight = FontWeight.Medium
-                        )
-                    }
-
-                    // Big Kcal Display
-                    BigKcalDisplay(
-                        remaining = cardioKcalToday,
-                        accentColor = Color.Black
-                    )
-
-                    // Quick stats row
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceEvenly
-                    ) {
-                        QuickStat(label = "DIST", value = "0.0 km", color = Color.Black)
-                        QuickStat(label = "TIME", value = "0:00", color = Color.Black)
-                        QuickStat(label = "AVG HR", value = "--", color = Color.Black)
-                    }
-
-                    // Hero Line Graph (inset grey panel)
-                    Surface(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(120.dp)
-                            .padding(top = 8.dp),
-                        color = VitalColors.InsetGreyPanel,
-                        shape = RoundedCornerShape(12.dp)
-                    ) {
-                        HeroLineGraph(
-                            modifier = Modifier.fillMaxSize(),
-                            dataPoints = weeklyCardioData,
-                            labels = weeklyLabels,
-                            accentColor = Color.Black,
-                            showTooltip = true,
-                            tooltipIndex = weeklyCardioData.lastIndex,
-                            tooltipValue = weeklyCardioData.lastOrNull() ?: 0f
+                            text = "ON-DEVICE OCR",
+                            color = VitalColors.textMuted,
+                            fontSize = 10.duToSp(),
+                            fontWeight = FontWeight.Medium,
+                            fontFamily = androidx.compose.ui.text.font.FontFamily.Monospace
                         )
                     }
                 }
             }
 
-            // CARDIO Section
-            SectionHeader(
-                title = "CARDIO",
-                accentColor = VitalColors.AccentCRD,
-                showMoreAction = onShowSummary
+            // Four fields row: DURATION, DISTANCE, SPEED, INCLINE
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp, vertical = 8.dp),
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                CardioField(
+                    modifier = Modifier.weight(1f),
+                    label = "DURATION",
+                    value = durationText,
+                    unit = "",
+                    hint = "32:10"
+                )
+                CardioField(
+                    modifier = Modifier.weight(1f),
+                    label = "DISTANCE",
+                    value = distanceText,
+                    unit = "KM",
+                    hint = "3.22"
+                )
+            }
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp, vertical = 8.dp),
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                CardioField(
+                    modifier = Modifier.weight(1f),
+                    label = "SPEED",
+                    value = speedText,
+                    unit = "KM/H",
+                    hint = "6.0"
+                )
+                CardioField(
+                    modifier = Modifier.weight(1f),
+                    label = "INCLINE",
+                    value = inclineText,
+                    unit = "%",
+                    hint = "2.0"
+                )
+            }
+
+            // Footer note
+            Text(
+                text = "ACSM EST · VALID ≤ 6 KM/H",
+                color = VitalColors.orange,
+                fontSize = 11.duToSp(),
+                fontWeight = FontWeight.Bold,
+                fontFamily = androidx.compose.ui.text.font.FontFamily.Monospace,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp, vertical = 8.dp)
+                    .wrapContentWidth(Alignment.Start)
             )
 
-            // Cardio capsules
+            // SAVE button
+            Surface(
+                modifier = Modifier
+                    .width(80.dp)
+                    .height(36.dp)
+                    .padding(horizontal = 16.dp, vertical = 8.dp)
+                    .align(Alignment.End),
+                color = VitalColors.orange,
+                shape = RoundedCornerShape(8.dp)
+            ) {
+                Text(
+                    text = "SAVE",
+                    color = VitalColors.black,
+                    fontSize = 12.duToSp(),
+                    fontWeight = FontWeight.Bold,
+                    fontFamily = androidx.compose.ui.text.font.FontFamily.Monospace,
+                    letterSpacing = 0.5.sp,
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .wrapContentWidth(Alignment.CenterHorizontally)
+                        .wrapContentHeight(Alignment.CenterVertically)
+                )
+            }
+
+            // RECENT section label
+            SectionLabel(title = "RECENT")
+
+            // Recent capsules
             LazyColumn(
                 modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
                 verticalArrangement = Arrangement.spacedBy(8.dp),
                 contentPadding = androidx.compose.foundation.layout.PaddingValues(bottom = 16.dp)
             ) {
                 itemsIndexed(cardioToday) { index, cardio ->
-                    capsuleRow(
+                    CapsuleRow(
                         modifier = Modifier.fillMaxWidth(),
                         icon = { Icon(cardio.icon, "", tint = cardio.accentColor) },
                         label = cardio.name,
                         value = cardio.value,
                         sparklineData = cardio.sparklineData,
-                        accentColor = cardio.accentColor
+                        onClick = null
                     )
                 }
 
-                // Empty state
                 if (cardioToday.isEmpty()) {
                     item {
                         Box(
@@ -262,7 +307,7 @@ fun CardioScreen(
                         ) {
                             Text(
                                 text = "NO CARDIO LOGGED TODAY",
-                                color = VitalColors.MutedText,
+                                color = VitalColors.textMuted,
                                 fontSize = 12.sp,
                                 fontWeight = FontWeight.Medium,
                                 letterSpacing = 1.sp
@@ -276,40 +321,87 @@ fun CardioScreen(
 }
 
 @Composable
-fun CardioTypeButton(
+fun CardioTypeTile(
     modifier: Modifier = Modifier,
     label: String,
     icon: androidx.compose.ui.graphics.vector.ImageVector,
     isSelected: Boolean,
-    accentColor: Color
+    onClick: () -> Unit
 ) {
     Surface(
         modifier = modifier
-            .padding(horizontal = 4.dp)
-            .clickable { /* TODO: Select cardio type */ },
-        color = if (isSelected) accentColor else VitalColors.NearBlackRow,
-        shape = RoundedCornerShape(8.dp),
-        border = BorderStroke(1.5.dp, if (isSelected) Color.Transparent else VitalColors.NearBlackRowStroke)
+            .height(54.dp)
+            .clickable(onClick = onClick),
+        color = if (isSelected) VitalColors.orange else VitalColors.wellFill,
+        shape = RoundedCornerShape(12.dp),
+        border = BorderStroke(1.5.dp, if (isSelected) Color.Transparent else VitalColors.wellStroke)
     ) {
         Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(vertical = 12.dp),
+            modifier = Modifier.fillMaxSize().padding(vertical = 12.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             Icon(
                 imageVector = icon,
                 contentDescription = label,
-                tint = if (isSelected) Color.Black else accentColor,
+                tint = if (isSelected) VitalColors.black else VitalColors.orange,
                 modifier = Modifier.padding(bottom = 4.dp)
             )
             Text(
                 text = label,
-                color = if (isSelected) Color.Black else accentColor,
-                fontSize = 10.sp,
+                color = if (isSelected) VitalColors.black else VitalColors.textMuted,
+                fontSize = 10.duToSp(),
                 fontWeight = FontWeight.Bold,
+                fontFamily = androidx.compose.ui.text.font.FontFamily.Monospace,
                 letterSpacing = 1.sp
             )
+        }
+    }
+}
+
+@Composable
+fun CardioField(
+    modifier: Modifier = Modifier,
+    label: String,
+    value: String,
+    unit: String,
+    hint: String
+) {
+    WellRow(modifier = modifier) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 14.dp, vertical = 10.dp),
+            horizontalAlignment = Alignment.Start
+        ) {
+            Text(
+                text = label,
+                color = VitalColors.textMuted,
+                fontSize = 10.duToSp(),
+                fontWeight = FontWeight.Bold,
+                fontFamily = androidx.compose.ui.text.font.FontFamily.Monospace,
+                letterSpacing = 1.sp
+            )
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    text = value,
+                    color = VitalColors.textPrimary,
+                    fontSize = 15.duToSp(),
+                    fontWeight = FontWeight.Bold,
+                    fontFamily = androidx.compose.ui.text.font.FontFamily.Monospace
+                )
+                if (unit.isNotBlank()) {
+                    Text(
+                        text = " $unit",
+                        color = VitalColors.textMuted,
+                        fontSize = 10.duToSp(),
+                        fontWeight = FontWeight.Medium,
+                        fontFamily = androidx.compose.ui.text.font.FontFamily.Monospace
+                    )
+                }
+            }
         }
     }
 }
@@ -324,8 +416,8 @@ data class CardioCapsule(
 
 object CardioScreenPreviewData {
     val sampleCardio = listOf(
-        CardioCapsule("Morning Run", "5.2 km • 28:45 • 420 kcal", Icons.Default.DirectionsRun, VitalColors.AccentCRD, listOf(0.2f, 0.4f, 0.35f, 0.5f, 0.45f)),
-        CardioCapsule("Evening Bike", "15.0 km • 42:10 • 380 kcal", Icons.Default.DirectionsBike, VitalColors.AccentCRD, listOf(0.3f, 0.5f, 0.4f, 0.6f, 0.55f))
+        CardioCapsule("Morning Run", "5.2 km • 28:45 • 420 kcal", Icons.Default.DirectionsRun, VitalColors.orange, listOf(0.2f, 0.4f, 0.35f, 0.5f, 0.45f)),
+        CardioCapsule("Evening Bike", "15.0 km • 42:10 • 380 kcal", Icons.Default.DirectionsBike, VitalColors.orange, listOf(0.3f, 0.5f, 0.4f, 0.6f, 0.55f))
     )
     val weeklyCardio = listOf(0.2f, 0.35f, 0.45f, 0.38f, 0.52f, 0.61f, 0.55f)
     val weeklyLabels = listOf("MON", "TUE", "WED", "THU", "FRI", "SAT", "SUN")

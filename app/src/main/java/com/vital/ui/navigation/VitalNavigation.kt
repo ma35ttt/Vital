@@ -23,6 +23,8 @@ import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import com.vital.ui.components.GlassBottomNav
+import com.vital.ui.components.QuickAddSheet
 import com.vital.ui.screens.CardioScreen
 import com.vital.ui.screens.CoachChatScreen
 import com.vital.ui.screens.DebugShowcaseScreen
@@ -45,10 +47,11 @@ import androidx.compose.material3.Text
 fun VitalNavigation() {
     val navController = rememberNavController()
     val selectedTab = remember { mutableStateOf(0) }
+    val quickAddSheetOpen = remember { mutableStateOf(false) }
 
     Scaffold(
         bottomBar = {
-            TabBar(
+            GlassBottomNav(
                 selectedTab = selectedTab.value,
                 onTabSelected = { index ->
                     selectedTab.value = index
@@ -61,91 +64,103 @@ fun VitalNavigation() {
                         5 -> navController.navigate("settings") { popUpTo("today") { inclusive = true }; launchSingleTop = true }
                     }
                 },
-                tabs = MAIN_TABS
+                onPlusClick = { quickAddSheetOpen.value = true }
             )
         }
     ) { innerPadding ->
-        NavHost(navController, "today") {
-            composable("today") {
-                TodayScreen(
-                    modifier = Modifier.padding(innerPadding),
-                    onShowSummary = { navController.navigate("summary") },
-                    onNavigateToMeals = { navController.navigate("meals") },
-                    onNavigateToLift = { navController.navigate("lift") },
-                    onNavigateToCardio = { navController.navigate("cardio") },
-                    onNavigateToWeeks = { navController.navigate("weeks") },
-                    onNavigateToSettings = { navController.navigate("settings") }
-                )
+        Box(modifier = Modifier.fillMaxSize()) {
+            NavHost(navController, "today") {
+                composable("today") {
+                    TodayScreen(
+                        modifier = Modifier.padding(innerPadding),
+                        onShowSummary = { navController.navigate("summary") },
+                        onNavigateToMeals = { navController.navigate("meals") },
+                        onNavigateToLift = { navController.navigate("lift") },
+                        onNavigateToCardio = { navController.navigate("cardio") },
+                        onNavigateToWeeks = { navController.navigate("weeks") },
+                        onNavigateToSettings = { navController.navigate("settings") }
+                    )
+                }
+                composable("meals") {
+                    MealsScreen(
+                        modifier = Modifier.padding(innerPadding),
+                        onShowSummary = { navController.navigate("summary") },
+                        onNavigateToToday = { navController.popBackStack("today", false) },
+                        onNavigateToLift = { navController.navigate("lift") },
+                        onNavigateToCardio = { navController.navigate("cardio") },
+                        onNavigateToWeeks = { navController.navigate("weeks") },
+                        onNavigateToSettings = { navController.navigate("settings") }
+                    )
+                }
+                composable("lift") {
+                    LiftScreen(
+                        modifier = Modifier.padding(innerPadding),
+                        onShowSummary = { navController.navigate("summary") },
+                        onNavigateToToday = { navController.popBackStack("today", false) },
+                        onNavigateToMeals = { navController.navigate("meals") },
+                        onNavigateToCardio = { navController.navigate("cardio") },
+                        onNavigateToWeeks = { navController.navigate("weeks") },
+                        onNavigateToSettings = { navController.navigate("settings") }
+                    )
+                }
+                composable("cardio") {
+                    CardioScreen(
+                        modifier = Modifier.padding(innerPadding),
+                        onShowSummary = { navController.navigate("summary") },
+                        onNavigateToToday = { navController.popBackStack("today", false) },
+                        onNavigateToMeals = { navController.navigate("meals") },
+                        onNavigateToLift = { navController.navigate("lift") },
+                        onNavigateToWeeks = { navController.navigate("weeks") },
+                        onNavigateToSettings = { navController.navigate("settings") }
+                    )
+                }
+                composable("weeks") {
+                    WeeksScreen(
+                        modifier = Modifier.padding(innerPadding),
+                        onShowSummary = { navController.navigate("summary") },
+                        onNavigateToToday = { navController.popBackStack("today", false) },
+                        onNavigateToMeals = { navController.navigate("meals") },
+                        onNavigateToLift = { navController.navigate("lift") },
+                        onNavigateToCardio = { navController.navigate("cardio") },
+                        onNavigateToSettings = { navController.navigate("settings") }
+                    )
+                }
+                composable("settings") {
+                    SettingsScreen(
+                        modifier = Modifier.padding(innerPadding),
+                        onNavigateToToday = { navController.popBackStack("today", false) },
+                        onNavigateToMeals = { navController.navigate("meals") },
+                        onNavigateToLift = { navController.navigate("lift") },
+                        onNavigateToCardio = { navController.navigate("cardio") },
+                        onNavigateToWeeks = { navController.navigate("weeks") }
+                    )
+                }
+                composable("summary") {
+                    SummaryDialScreen(
+                        onClose = { navController.popBackStack() }
+                    )
+                }
+                composable("coach") {
+                    CoachChatScreen(
+                        onClose = { navController.popBackStack() }
+                    )
+                }
+                composable("progress") {
+                    ProgressScreen(
+                        onClose = { navController.popBackStack() }
+                    )
+                }
             }
-            composable("meals") {
-                MealsScreen(
-                    modifier = Modifier.padding(innerPadding),
-                    onShowSummary = { navController.navigate("summary") },
-                    onNavigateToToday = { navController.popBackStack("today", false) },
-                    onNavigateToLift = { navController.navigate("lift") },
-                    onNavigateToCardio = { navController.navigate("cardio") },
-                    onNavigateToWeeks = { navController.navigate("weeks") },
-                    onNavigateToSettings = { navController.navigate("settings") }
-                )
-            }
-            composable("lift") {
-                LiftScreen(
-                    modifier = Modifier.padding(innerPadding),
-                    onShowSummary = { navController.navigate("summary") },
-                    onNavigateToToday = { navController.popBackStack("today", false) },
-                    onNavigateToMeals = { navController.navigate("meals") },
-                    onNavigateToCardio = { navController.navigate("cardio") },
-                    onNavigateToWeeks = { navController.navigate("weeks") },
-                    onNavigateToSettings = { navController.navigate("settings") }
-                )
-            }
-            composable("cardio") {
-                CardioScreen(
-                    modifier = Modifier.padding(innerPadding),
-                    onShowSummary = { navController.navigate("summary") },
-                    onNavigateToToday = { navController.popBackStack("today", false) },
-                    onNavigateToMeals = { navController.navigate("meals") },
-                    onNavigateToLift = { navController.navigate("lift") },
-                    onNavigateToWeeks = { navController.navigate("weeks") },
-                    onNavigateToSettings = { navController.navigate("settings") }
-                )
-            }
-            composable("weeks") {
-                WeeksScreen(
-                    modifier = Modifier.padding(innerPadding),
-                    onShowSummary = { navController.navigate("summary") },
-                    onNavigateToToday = { navController.popBackStack("today", false) },
-                    onNavigateToMeals = { navController.navigate("meals") },
-                    onNavigateToLift = { navController.navigate("lift") },
-                    onNavigateToCardio = { navController.navigate("cardio") },
-                    onNavigateToSettings = { navController.navigate("settings") }
-                )
-            }
-            composable("settings") {
-                SettingsScreen(
-                    modifier = Modifier.padding(innerPadding),
-                    onNavigateToToday = { navController.popBackStack("today", false) },
-                    onNavigateToMeals = { navController.navigate("meals") },
-                    onNavigateToLift = { navController.navigate("lift") },
-                    onNavigateToCardio = { navController.navigate("cardio") },
-                    onNavigateToWeeks = { navController.navigate("weeks") }
-                )
-            }
-            composable("summary") {
-                SummaryDialScreen(
-                    onClose = { navController.popBackStack() }
-                )
-            }
-            composable("coach") {
-                CoachChatScreen(
-                    onClose = { navController.popBackStack() }
-                )
-            }
-            composable("progress") {
-                ProgressScreen(
-                    onClose = { navController.popBackStack() }
-                )
-            }
+
+            // Quick Add Sheet
+            QuickAddSheet(
+                isOpen = quickAddSheetOpen.value,
+                onDismiss = { quickAddSheetOpen.value = false },
+                onLogMeal = { navController.navigate("meals") },
+                onLogSet = { navController.navigate("lift") },
+                onLogCardio = { navController.navigate("cardio") },
+                onLogBodyWeight = { navController.navigate("settings") }
+            )
         }
     }
 }

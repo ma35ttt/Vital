@@ -14,12 +14,14 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.ui.Modifier
 import androidx.compose.material3.Icon
+import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.PhotoCamera
 import androidx.compose.material.icons.filled.Keyboard
+import androidx.compose.material.icons.filled.Language
+import androidx.compose.material.icons.filled.Restaurant
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
@@ -30,6 +32,9 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
@@ -50,11 +55,23 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import java.time.LocalDate
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.vital.ui.MainViewModel
-import androidx.compose.material.icons.Icons
+import com.vital.ui.MealCapsule
 import com.vital.ui.components.Tag
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.filled.Favorite
+import com.vital.ui.components.ScreenScaffold
+import com.vital.ui.components.ScreenVariant
+import com.vital.ui.components.FabGlyph
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.BorderStroke
+import com.vital.ui.theme.duToSp
+import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.foundation.layout.wrapContentWidth
+import androidx.compose.foundation.layout.wrapContentHeight
+import androidx.compose.ui.unit.em
+import androidx.compose.ui.graphics.drawscope.Stroke
 
 @Composable
 fun MealsScreen(
@@ -67,10 +84,6 @@ fun MealsScreen(
     onNavigateToSettings: () -> Unit,
     viewModel: MainViewModel = viewModel()
 ) {
-    val today = LocalDate.now()
-    val dayTag = today.dayOfWeek.name.take(3)
-    val dateTag = today.month.name.take(3) + ".${today.dayOfMonth}"
-
     val consumedKcal by viewModel.consumedKcal.collectAsStateWithLifecycle(0f)
     val remainingKcal by viewModel.remainingKcal.collectAsStateWithLifecycle(2500f)
     val proteinCurrent by viewModel.proteinCurrent.collectAsStateWithLifecycle(0f)
@@ -86,190 +99,147 @@ fun MealsScreen(
     var searchText by remember { mutableStateOf("") }
     var isSearchFocused by remember { mutableStateOf(false) }
 
-    Surface(
-        modifier = modifier.fillMaxSize(),
-        color = VitalColors.Background
+    ScreenScaffold(
+        variant = ScreenVariant.OrangeHero,
+        title = "MEALS",
+        heroLabel = "KCAL LEFT",
+        heroValue = "${remainingKcal.toInt()}",
+        onShowMore = onShowSummary,
+        // OrangeDial parameters for Meals
+        dialLetters = listOf("P", "C", "F"),
+        dialHighlightedIndex = 0, // P highlighted
+        dialInnerLabel = "EATEN",
+        dialInnerValue = "${consumedKcal.toInt()}",
+        dialInnerUnit = "KCAL",
+        dialPillText = "OF 2,500",
+        dialTopPill = "LUNCH",
+        dialFabGlyph = FabGlyph.Plus
     ) {
         Column(
-            modifier = Modifier.fillMaxSize(),
-            verticalArrangement = Arrangement.spacedBy(0.dp)
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp),
+            horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            // Top Bar
+            // Four method tiles (54 high, radius 12)
             Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 16.dp, vertical = 12.dp),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                Tag(text = dayTag, backgroundColor = VitalColors.AccentMLS)
-                Text(
-                    text = "MEALS",
-                    color = VitalColors.PrimaryText,
-                    fontSize = 16.sp,
-                    fontWeight = FontWeight.Bold,
-                    letterSpacing = 1.5.sp
-                )
-                Tag(text = dateTag, backgroundColor = VitalColors.AccentMLS)
+                MethodTile(label = "SEARCH", icon = Icons.Default.Search, isSelected = true, modifier = Modifier.weight(1f), onClick = { /* switch to search */ })
+                MethodTile(label = "TEXT", icon = Icons.Default.Keyboard, isSelected = false, modifier = Modifier.weight(1f), onClick = { /* switch to text parser */ })
+                MethodTile(label = "WEB", icon = Icons.Default.Language, isSelected = false, modifier = Modifier.weight(1f), onClick = { /* switch to web search */ })
+                MethodTile(label = "RECIPE", icon = Icons.Default.Restaurant, isSelected = false, modifier = Modifier.weight(1f), onClick = { /* switch to recipe */ })
             }
 
-            // Search Bar
+            // Smart-text field (44 high) with ADD button
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = 16.dp, vertical = 8.dp)
+                    .padding(top = 8.dp)
+                    .height(44.dp)
             ) {
                 TextField(
                     value = searchText,
                     onValueChange = { searchText = it },
                     modifier = Modifier.fillMaxWidth(),
-                    placeholder = { Text(text = "SEARCH FOODS...", color = VitalColors.MutedText, fontSize = 12.sp, fontWeight = FontWeight.Medium, letterSpacing = 1.sp) },
+                    placeholder = { Text(text = "CHICKEN BREAST COOKED 200G, RICE 150G", color = VitalColors.textMuted, fontSize = 14.sp, fontWeight = FontWeight.Medium) },
                     singleLine = true,
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Text),
                     visualTransformation = VisualTransformation.None,
                     colors = TextFieldDefaults.colors(
-                        unfocusedContainerColor = VitalColors.NearBlackRow,
-                        focusedContainerColor = VitalColors.NearBlackRow,
-                        cursorColor = VitalColors.AccentMLS,
-                        focusedPlaceholderColor = VitalColors.MutedText,                         unfocusedPlaceholderColor = VitalColors.MutedText,
-                        focusedTextColor = VitalColors.PrimaryText,                         unfocusedTextColor = VitalColors.PrimaryText,
-                        focusedLeadingIconColor = VitalColors.MutedText,                         unfocusedLeadingIconColor = VitalColors.MutedText,
-                        focusedTrailingIconColor = VitalColors.MutedText,                         unfocusedTrailingIconColor = VitalColors.MutedText,
-                        disabledContainerColor = VitalColors.NearBlackRow,
-                        disabledTextColor = VitalColors.MutedText,
+                        unfocusedContainerColor = VitalColors.wellFill,
+                        focusedContainerColor = VitalColors.wellFill,
+                        cursorColor = VitalColors.orange,
+                        focusedPlaceholderColor = VitalColors.textMuted,
+                        unfocusedPlaceholderColor = VitalColors.textMuted,
+                        focusedTextColor = VitalColors.textPrimary,
+                        unfocusedTextColor = VitalColors.textPrimary,
+                        focusedLeadingIconColor = VitalColors.textMuted,
+                        unfocusedLeadingIconColor = VitalColors.textMuted,
+                        focusedTrailingIconColor = VitalColors.textMuted,
+                        unfocusedTrailingIconColor = VitalColors.textMuted,
+                        disabledContainerColor = VitalColors.wellFill,
+                        disabledTextColor = VitalColors.textMuted,
                         focusedIndicatorColor = Color.Transparent,
                         unfocusedIndicatorColor = Color.Transparent,
                         disabledIndicatorColor = Color.Transparent,
                         errorContainerColor = Color.Transparent,
                         errorTextColor = Color.Transparent
                     ),
-                    leadingIcon = { Icon(imageVector = androidx.compose.material.icons.Icons.Default.Search, contentDescription = "Search", tint = VitalColors.MutedText) },
+                    shape = RoundedCornerShape(10.dp),
                     trailingIcon = {
-                        Row(modifier = Modifier.padding(end = 8.dp)) {
-                            Icon(imageVector = androidx.compose.material.icons.Icons.Default.PhotoCamera, contentDescription = "Photo", tint = VitalColors.AccentMLS, modifier = Modifier
-                                .fillMaxSize()
-                                .clickable { /* TODO: Open food photo sheet */ }
-                                .padding(16.dp)
-                            )
-                            Icon(imageVector = androidx.compose.material.icons.Icons.Default.Keyboard, contentDescription = "Text entry", tint = VitalColors.AccentMLS, modifier = Modifier
-                                .fillMaxSize()
-                                .clickable { /* TODO: Open smart text parser */ }
-                                .padding(16.dp)
+                        androidx.compose.material3.Surface(
+                            modifier = Modifier
+                                .size(51.dp, 30.dp)
+                                .padding(end = 8.dp, top = 7.dp)
+                                .clickable { /* ADD action */ },
+                            color = VitalColors.orange,
+                            shape = RoundedCornerShape(8.dp)
+                        ) {
+                            Text(
+                                text = "ADD",
+                                color = VitalColors.black,
+                                fontSize = 11.duToSp(),
+                                fontWeight = FontWeight.Bold,
+                                fontFamily = FontFamily.Monospace,
+                                modifier = Modifier
+                                    .fillMaxSize()
+                                    .wrapContentWidth(Alignment.CenterHorizontally)
+                                    .wrapContentHeight(Alignment.CenterVertically)
                             )
                         }
-                    },
-                    shape = RoundedCornerShape(8.dp)
+                    }
                 )
             }
 
-            // Hero Card on Accent Fill
-            Surface(
+            // Ambiguity pill (shown conditionally - for now always shown as placeholder)
+            androidx.compose.material3.Surface(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = 16.dp, vertical = 8.dp)
-                    .height(280.dp),
-                color = VitalColors.AccentMLS,
-                shape = RoundedCornerShape(16.dp)
+                    .height(24.dp)
+                    .padding(top = 8.dp),
+                color = Color.Transparent,
+                shape = RoundedCornerShape(12.dp),
+                border = BorderStroke(1.5.dp, VitalColors.orange)
             ) {
-                Column(
-                    modifier = Modifier.fillMaxSize().padding(16.dp),
-                    verticalArrangement = Arrangement.SpaceBetween
-                ) {
-                    // Top row: label and "Now"
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Tag(
-                            text = "KCAL CONSUMED",
-                            backgroundColor = Color.Black.copy(alpha = 0.3f),
-                            textColor = Color.Black
-                        )
-                        Text(
-                            text = "NOW",
-                            color = Color.Black.copy(alpha = 0.7f),
-                            fontSize = 12.sp,
-                            fontWeight = FontWeight.Medium
-                        )
-                    }
-
-                    // Big Kcal Display
-                    BigKcalDisplay(
-                        remaining = consumedKcal,
-                        accentColor = Color.Black
-                    )
-
-                    // Macro Row
-                    MacroRow(
-                        protein = proteinCurrent,
-                        carbs = carbsCurrent,
-                        fat = fatCurrent,
-                        proteinTarget = proteinTarget,
-                        carbsTarget = carbsTarget,
-                        fatTarget = fatTarget
-                    )
-
-                    // Hero Line Graph (inset grey panel)
-                    Surface(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(120.dp)
-                            .padding(top = 8.dp),
-                        color = VitalColors.InsetGreyPanel,
-                        shape = RoundedCornerShape(12.dp)
-                    ) {
-                        HeroLineGraph(
-                            modifier = Modifier.fillMaxSize(),
-                            dataPoints = weeklyKcalData,
-                            labels = weeklyLabels,
-                            accentColor = Color.Black,
-                            showTooltip = true,
-                            tooltipIndex = weeklyKcalData.lastIndex,
-                            tooltipValue = weeklyKcalData.lastOrNull() ?: 0f
-                        )
-                    }
-                }
+                Text(
+                    text = "RICE 150G · RAW OR COOKED?",
+                    color = VitalColors.orange,
+                    fontSize = 10.duToSp(),
+                    fontWeight = FontWeight.Bold,
+                    fontFamily = FontFamily.Monospace,
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .wrapContentWidth(Alignment.CenterHorizontally)
+                        .wrapContentHeight(Alignment.CenterVertically)
+                        .padding(horizontal = 16.dp)
+                )
             }
 
-            // MEALS Section
-            SectionHeader(
-                title = "MEALS",
-                accentColor = VitalColors.AccentMLS,
-                showMoreAction = onShowSummary
-            )
-
-            // Meal capsules
+            // Four meal-slot capsule rows
             LazyColumn(
-                modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
+                modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
                 verticalArrangement = Arrangement.spacedBy(8.dp),
                 contentPadding = androidx.compose.foundation.layout.PaddingValues(bottom = 16.dp)
             ) {
-                itemsIndexed(mealsToday) { index, meal ->
-                    capsuleRow(
-                        modifier = Modifier.fillMaxWidth(),
-                        icon = { Icon(meal.icon, "", tint = meal.accentColor) },
-                        label = meal.name,
-                        value = meal.value,
-                        sparklineData = meal.sparklineData,
-                        accentColor = meal.accentColor
-                    )
-                }
-
-                // Empty state
-                if (mealsToday.isEmpty()) {
-                    item {
-                        Box(
-                            modifier = Modifier.fillMaxWidth().padding(vertical = 32.dp),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Text(
-                                text = "NO MEALS LOGGED TODAY",
-                                color = VitalColors.MutedText,
-                                fontSize = 12.sp,
-                                fontWeight = FontWeight.Medium,
-                                letterSpacing = 1.sp
+                val slots = listOf("BREAKFAST", "LUNCH", "DINNER", "SNACK")
+                slots.forEachIndexed { index, slotName ->
+                    val meal = mealsToday.firstOrNull { it.slot == slotName }
+                    if (meal != null) {
+                        item {
+                            capsuleRow(
+                                modifier = Modifier.fillMaxWidth(),
+                                icon = { Icon(meal.icon, "", tint = meal.accentColor) },
+                                label = meal.name,
+                                value = meal.value,
+                                sparklineData = meal.sparklineData,
+                                accentColor = meal.accentColor
                             )
+                        }
+                    } else {
+                        item {
+                            EmptySlotRow(slot = slotName)
                         }
                     }
                 }
@@ -278,19 +248,193 @@ fun MealsScreen(
     }
 }
 
-data class MealCapsule(
-    val name: String,
-    val value: String,
-    val icon: androidx.compose.ui.graphics.vector.ImageVector,
-    val accentColor: Color,
-    val sparklineData: List<Float>
-)
+@Composable
+private fun MethodTile(
+    label: String,
+    icon: androidx.compose.ui.graphics.vector.ImageVector,
+    isSelected: Boolean,
+    modifier: Modifier = Modifier,
+    onClick: () -> Unit
+) {
+    Surface(
+        modifier = modifier
+            .height(54.dp)
+            .clickable(onClick = onClick),
+        color = if (isSelected) VitalColors.orange else VitalColors.wellFill,
+        shape = RoundedCornerShape(12.dp),
+        border = if (isSelected) BorderStroke(0.dp, Color.Transparent) else BorderStroke(1.5.dp, VitalColors.wellStroke)
+    ) {
+        Column(
+            modifier = Modifier.fillMaxSize(),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center
+        ) {
+            Icon(
+                imageVector = icon,
+                contentDescription = label,
+                tint = if (isSelected) VitalColors.black else VitalColors.orange,
+                modifier = Modifier.size(15.dp)
+            )
+            Text(
+                text = label,
+                color = if (isSelected) VitalColors.black else VitalColors.textMuted,
+                fontSize = 10.duToSp(),
+                fontWeight = FontWeight.Bold,
+                fontFamily = FontFamily.Monospace,
+                letterSpacing = 0.1.em,
+                modifier = Modifier.padding(top = 4.dp)
+            )
+        }
+    }
+}
 
-object MealsScreenPreviewData {
-    val sampleMeals = listOf(
-        MealCapsule("Breakfast", "520 kcal", Icons.Default.Favorite, VitalColors.AccentMLS, listOf(0.2f, 0.35f, 0.45f, 0.38f, 0.52f)),
-        MealCapsule("Lunch", "890 kcal", Icons.Default.Favorite, VitalColors.AccentMLS, listOf(0.4f, 0.6f, 0.5f, 0.7f, 0.65f)),
-        MealCapsule("Dinner", "720 kcal", Icons.Default.Favorite, VitalColors.AccentMLS, listOf(0.3f, 0.4f, 0.5f, 0.45f, 0.5f)),
-        MealCapsule("Snacks", "180 kcal", Icons.Default.Favorite, VitalColors.AccentMLS, listOf(0.1f, 0.2f, 0.15f, 0.25f, 0.2f))
-    )
+@Composable
+private fun EmptySlotRow(slot: String) {
+    // Dashed border using a Canvas overlay
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(42.dp)
+            .clickable { /* TODO: Open log meal for this slot */ }
+    ) {
+        // Background with rounded corners
+        androidx.compose.material3.Surface(
+            modifier = Modifier.fillMaxSize(),
+            color = Color.Transparent,
+            shape = RoundedCornerShape(21.dp)
+        ) {}
+        // Dashed border drawn in Canvas
+        androidx.compose.foundation.Canvas(
+            modifier = Modifier.fillMaxSize()
+        ) {
+            val cornerRadius = 21.dp.toPx()
+            val dashLength = 8f
+            val dashGap = 8f
+            val strokeWidth = 1.5.dp.toPx()
+            val color = VitalColors.wellStroke.copy(alpha = 0.5f)
+            val width = size.width
+            val height = size.height
+            val diameter = cornerRadius * 2
+
+            // Top line (left to right, minus corners)
+            var x = cornerRadius
+            val rightX = width - cornerRadius
+            while (x < rightX) {
+                val endX = kotlin.math.min(x + dashLength, rightX)
+                drawLine(color, Offset(x, 0f), Offset(endX, 0f), strokeWidth)
+                x = endX + dashGap
+            }
+            // Top-right corner arc (0° to 90°)
+            drawArc(
+                color = color,
+                startAngle = 0f,
+                sweepAngle = 90f,
+                useCenter = false,
+                topLeft = Offset(rightX, 0f),
+                size = Size(diameter, diameter),
+                style = Stroke(width = strokeWidth)
+            )
+            // Right line (top to bottom, minus corners)
+            var y = cornerRadius
+            val bottomY = height - cornerRadius
+            while (y < bottomY) {
+                val endY = kotlin.math.min(y + dashLength, bottomY)
+                drawLine(color, Offset(width, y), Offset(width, endY), strokeWidth)
+                y = endY + dashGap
+            }
+            // Bottom-right corner arc (90° to 180°)
+            drawArc(
+                color = color,
+                startAngle = 90f,
+                sweepAngle = 90f,
+                useCenter = false,
+                topLeft = Offset(rightX, bottomY),
+                size = Size(diameter, diameter),
+                style = Stroke(width = strokeWidth)
+            )
+            // Bottom line (right to left, minus corners)
+            x = width - cornerRadius
+            val leftX = cornerRadius
+            while (x > leftX) {
+                val startX = kotlin.math.max(x - dashLength, leftX)
+                drawLine(color, Offset(startX, height), Offset(x, height), strokeWidth)
+                x = startX - dashGap
+            }
+            // Bottom-left corner arc (180° to 270°)
+            drawArc(
+                color = color,
+                startAngle = 180f,
+                sweepAngle = 90f,
+                useCenter = false,
+                topLeft = Offset(0f, bottomY),
+                size = Size(diameter, diameter),
+                style = Stroke(width = strokeWidth)
+            )
+            // Left line (bottom to top, minus corners)
+            y = height - cornerRadius
+            while (y > cornerRadius) {
+                val startY = kotlin.math.max(y - dashLength, cornerRadius)
+                drawLine(color, Offset(0f, startY), Offset(0f, y), strokeWidth)
+                y = startY - dashGap
+            }
+            // Top-left corner arc (270° to 360° / -90° to 0°)
+            drawArc(
+                color = color,
+                startAngle = 270f,
+                sweepAngle = 90f,
+                useCenter = false,
+                topLeft = Offset(0f, 0f),
+                size = Size(diameter, diameter),
+                style = Stroke(width = strokeWidth)
+            )
+        }
+        Row(
+            modifier = Modifier.fillMaxSize().padding(horizontal = 16.dp),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            // Time-letter circle
+            Box(
+                modifier = Modifier.size(30.dp),
+                contentAlignment = Alignment.Center
+            ) {
+                // Draw circle with border using Canvas
+                androidx.compose.foundation.Canvas(modifier = Modifier.size(30.dp)) {
+                    drawCircle(
+                        color = VitalColors.iconWellFill,
+                        center = Offset(size.width / 2, size.height / 2),
+                        radius = size.width / 2
+                    )
+                    drawCircle(
+                        color = VitalColors.iconWellStroke,
+                        center = Offset(size.width / 2, size.height / 2),
+                        radius = size.width / 2,
+                        style = Stroke(width = 1.5.dp.toPx())
+                    )
+                }
+                Text(
+                    text = slot.first().toString(),
+                    color = VitalColors.orange,
+                    fontSize = 11.duToSp(),
+                    fontWeight = FontWeight.Bold,
+                    fontFamily = FontFamily.Monospace
+                )
+            }
+            Text(
+                text = slot,
+                color = VitalColors.textMuted,
+                fontSize = 10.duToSp(),
+                fontWeight = FontWeight.Bold,
+                fontFamily = FontFamily.Monospace,
+                letterSpacing = 0.1.em
+            )
+            Text(
+                text = "+ LOG $slot",
+                color = VitalColors.orange,
+                fontSize = 14.sp,
+                fontWeight = FontWeight.Bold,
+                fontFamily = FontFamily.Monospace
+            )
+        }
+    }
 }

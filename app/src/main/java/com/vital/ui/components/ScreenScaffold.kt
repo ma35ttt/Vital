@@ -44,6 +44,7 @@ import com.vital.ui.theme.VitalColors
 import androidx.compose.ui.tooling.preview.Preview
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
+import com.vital.ui.components.FabGlyph
 
 enum class ScreenVariant {
     OrangeHero,
@@ -57,6 +58,15 @@ fun ScreenScaffold(
     heroLabel: String? = null,
     heroValue: String? = null,
     onShowMore: (() -> Unit)? = null,
+    // OrangeDial parameters (only used for OrangeHero variant)
+    dialLetters: List<String> = listOf("L", "M", "H"),
+    dialHighlightedIndex: Int = 1,
+    dialInnerLabel: String = "KCAL LEFT",
+    dialInnerValue: String = "1,240",
+    dialInnerUnit: String = "KCAL",
+    dialPillText: String = "TODAY",
+    dialTopPill: String = "MOVE",
+    dialFabGlyph: FabGlyph = FabGlyph.Plus,
     content: @Composable () -> Unit
 ) {
     val context = LocalContext.current
@@ -85,6 +95,14 @@ fun ScreenScaffold(
                     heroLabel = heroLabel,
                     heroValue = heroValue,
                     onShowMore = onShowMore,
+                    dialLetters = dialLetters,
+                    dialHighlightedIndex = dialHighlightedIndex,
+                    dialInnerLabel = dialInnerLabel,
+                    dialInnerValue = dialInnerValue,
+                    dialInnerUnit = dialInnerUnit,
+                    dialPillText = dialPillText,
+                    dialTopPill = dialTopPill,
+                    dialFabGlyph = dialFabGlyph,
                     content = content
                 )
             } else {
@@ -107,17 +125,22 @@ private fun OrangeHeroScaffold(
     heroLabel: String?,
     heroValue: String?,
     onShowMore: (() -> Unit)?,
+    dialLetters: List<String>,
+    dialHighlightedIndex: Int,
+    dialInnerLabel: String,
+    dialInnerValue: String,
+    dialInnerUnit: String,
+    dialPillText: String,
+    dialTopPill: String,
+    dialFabGlyph: FabGlyph,
     content: @Composable () -> Unit
 ) {
     val scrollState = rememberScrollState()
 
     // Header row - fixed at top
     val headerHeight = 82.dp // chips y 50 + height 32 = 82
-    val heroLabelTop = 98.dp // cap top y 98
-    val heroValueTop = 131.dp // digit top y 131 (61 tall = 192)
-    val showMoreTop = 118.dp // SHOW MORE y 118
-    val sheetTop = 405.dp // black sheet starts at y 405
     val sheetHighlightTop = 404.dp // 1 du highlight at y 404
+    val sheetTop = 405.dp // black sheet starts at y 405
 
     Column(
         modifier = Modifier.fillMaxSize(),
@@ -162,43 +185,26 @@ private fun OrangeHeroScaffold(
             )
         }
 
-        // Hero area - orange background with label, value, SHOW MORE
+        // Orange hero area with OrangeDial
         Box(
             modifier = Modifier
                 .fillMaxWidth()
-                .height(sheetHighlightTop) // up to the sheet highlight
+                .height(sheetHighlightTop) // up to the sheet highlight at y 404
         ) {
-            // Hero label
-            heroLabel?.let { label ->
-                Text(
-                    text = label,
-                    color = VitalColors.black,
-                    fontSize = 23.duToSp(), // cap height 17 / 0.73 ≈ 23
-                    fontWeight = FontWeight.SemiBold,
-                    fontFamily = FontFamily.Monospace,
-                    letterSpacing = 1.sp,
-                    modifier = Modifier
-                        .padding(start = 16.dp)
-                        .padding(top = 98.dp) // cap top y 98
-                )
-            }
+            // OrangeDial fills the orange area
+            OrangeDial(
+                modifier = Modifier.fillMaxSize(),
+                letters = dialLetters,
+                highlightedIndex = dialHighlightedIndex,
+                innerLabel = dialInnerLabel,
+                innerValue = dialInnerValue,
+                innerUnit = dialInnerUnit,
+                pillText = dialPillText,
+                topPill = dialTopPill,
+                fabGlyph = dialFabGlyph
+            )
 
-            // Hero value
-            heroValue?.let { value ->
-                Text(
-                    text = value,
-                    color = VitalColors.black,
-                    fontSize = 84.duToSp(), // digit height 61 / 0.73 ≈ 84
-                    fontWeight = FontWeight.Bold,
-                    fontFamily = FontFamily.Monospace,
-                    letterSpacing = -0.045.em,
-                    modifier = Modifier
-                        .padding(start = 16.dp)
-                        .padding(top = 131.dp) // digit top y 131
-                )
-            }
-
-            // SHOW MORE button
+            // SHOW MORE button overlaid on top right of dial area
             onShowMore?.let { action ->
                 androidx.compose.material3.Surface(
                     modifier = Modifier
@@ -225,23 +231,33 @@ private fun OrangeHeroScaffold(
             }
         }
 
-        // Black sheet with content - starts at y 405 with 1 du highlight at y 404
+        // 1 du highlight line at y 404 (top of sheet)
         Box(
             modifier = Modifier
                 .fillMaxWidth()
-                .height(sheetHighlightTop - sheetHighlightTop) // 1 du highlight
+                .height(1.dp)
                 .background(VitalColors.sheetTopHighlight) // #1C1C1C highlight
         )
 
-        // Sheet content area - scrollable
-        Column(
+        // Black sheet with rounded top corners (radius 26) starting at y 405
+        // Content scrolls within the sheet
+        androidx.compose.material3.Surface(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(top = 8.dp) // small gap after sheet top
-                .verticalScroll(scrollState),
-            horizontalAlignment = Alignment.CenterHorizontally
+                .padding(top = 1.dp), // account for the 1 du highlight
+            color = VitalColors.black,
+            shape = androidx.compose.foundation.shape.RoundedCornerShape(topStart = 26.dp, topEnd = 26.dp)
         ) {
-            content()
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(top = 8.dp) // small gap after sheet top
+                    .verticalScroll(scrollState),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                // Sheet content - left/right 16 (from chrome.md: content left/right edge 16 and 376)
+                content()
+            }
         }
     }
 }

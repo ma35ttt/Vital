@@ -7,9 +7,11 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.LocalFireDepartment
 import androidx.compose.material.icons.filled.DirectionsRun
 import androidx.compose.material.icons.filled.DirectionsBike
+import androidx.compose.material.icons.filled.Favorite
 import com.vital.ui.theme.VitalColors
 import com.vital.ui.screens.WeeksPeriod
 import com.vital.ui.components.Period
@@ -53,7 +55,7 @@ class MainViewModel @Inject constructor() : ViewModel() {
 
     // Meals screen data
     val consumedKcal = MutableStateFlow(0f)
-    val mealsToday = MutableStateFlow<List<WorkoutCapsule>>(emptyList())
+    val mealsToday = MutableStateFlow<List<MealCapsule>>(emptyList())
 
     // Lift screen data
     val volumeToday = MutableStateFlow(0f)
@@ -98,6 +100,14 @@ class MainViewModel @Inject constructor() : ViewModel() {
             workoutsToday.value = com.vital.ui.screens.TodayScreenPreviewData.sampleWorkouts
             cardioToday.value = com.vital.ui.screens.TodayScreenPreviewData.sampleCardio
 
+            // Sample data for Meals screen
+            mealsToday.value = listOf(
+                MealCapsule("Breakfast", "520 kcal", Icons.Default.Favorite, VitalColors.orange, listOf(0.2f, 0.35f, 0.45f, 0.38f, 0.52f), "BREAKFAST"),
+                MealCapsule("Lunch", "890 kcal", Icons.Default.Favorite, VitalColors.orange, listOf(0.4f, 0.6f, 0.5f, 0.7f, 0.65f), "LUNCH"),
+                MealCapsule("Dinner", "720 kcal", Icons.Default.Favorite, VitalColors.orange, listOf(0.3f, 0.4f, 0.5f, 0.45f, 0.5f), "DINNER"),
+                MealCapsule("Snacks", "180 kcal", Icons.Default.Favorite, VitalColors.orange, listOf(0.1f, 0.2f, 0.15f, 0.25f, 0.2f), "SNACK")
+            )
+
             // Sample data for Progress screen
             progressPhotos.value = com.vital.ui.screens.ProgressScreenPreviewData.samplePhotos
             measurements.value = com.vital.ui.screens.ProgressScreenPreviewData.sampleMeasurements
@@ -115,6 +125,15 @@ data class WorkoutCapsule(
     val icon: ImageVector,
     val accentColor: androidx.compose.ui.graphics.Color,
     val sparklineData: List<Float>
+)
+
+data class MealCapsule(
+    val name: String,
+    val value: String,
+    val icon: ImageVector,
+    val accentColor: androidx.compose.ui.graphics.Color,
+    val sparklineData: List<Float>,
+    val slot: String = ""
 )
 
 data class CoachMessage(

@@ -9,14 +9,15 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.TrendingUp
 import androidx.compose.material.icons.filled.FitnessCenter
 import androidx.compose.material.icons.filled.MonitorWeight
-import androidx.compose.material.icons.filled.LocalFireDepartment
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -28,13 +29,22 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.BorderStroke
+import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.layout.wrapContentWidth
+import androidx.compose.foundation.layout.wrapContentHeight
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.em
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.geometry.CornerRadius
+import androidx.compose.ui.text.font.FontFamily
 import com.vital.ui.components.BigKcalDisplay
 import com.vital.ui.components.MacroRow
 import com.vital.ui.components.SectionHeader
@@ -45,12 +55,21 @@ import com.vital.ui.components.Sparkline
 import com.vital.ui.components.SummaryDial
 import com.vital.ui.components.Tag
 import com.vital.ui.components.QuickStat
+import com.vital.ui.components.SectionLabel
+import com.vital.ui.components.WellRow
+import com.vital.ui.components.CapsuleRow
+import com.vital.ui.components.GreyPanel
 import com.vital.ui.theme.VitalColors
 import com.vital.ui.theme.VitalTypography
+import com.vital.ui.theme.duToSp
+import com.vital.ui.theme.duToDp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import java.time.LocalDate
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.vital.ui.MainViewModel
+import com.vital.ui.components.ScreenScaffold
+import com.vital.ui.components.ScreenVariant
+import com.vital.ui.components.FabGlyph
 
 @Composable
 fun WeeksScreen(
@@ -63,10 +82,6 @@ fun WeeksScreen(
     onNavigateToSettings: () -> Unit,
     viewModel: MainViewModel = viewModel()
 ) {
-    val today = LocalDate.now()
-    val dayTag = today.dayOfWeek.name.take(3)
-    val dateTag = today.month.name.take(3) + ".${today.dayOfMonth}"
-
     val period by viewModel.weeksPeriod.collectAsStateWithLifecycle(WeeksPeriod.L)
     val weeklyMacroData by viewModel.weeklyMacroData.collectAsStateWithLifecycle(emptyList())
     val weeklyVolumeData by viewModel.weeklyVolumeData.collectAsStateWithLifecycle(emptyList())
@@ -74,151 +89,343 @@ fun WeeksScreen(
     val weeklyPrData by viewModel.weeklyPrData.collectAsStateWithLifecycle(emptyList())
     val weeklyLabels by viewModel.weeklyLabels12.collectAsStateWithLifecycle(emptyList())
 
-    Surface(
-        modifier = modifier.fillMaxSize(),
-        color = VitalColors.Background
+    // Current adherence value for display (last data point * 100)
+    val currentAdherence = (weeklyMacroData.lastOrNull() ?: 0f) * 100
+
+    ScreenScaffold(
+        variant = ScreenVariant.BlackPage,
+        title = "WEEKS"
     ) {
         Column(
-            modifier = Modifier.fillMaxSize(),
-            verticalArrangement = Arrangement.spacedBy(0.dp)
+            modifier = Modifier.fillMaxWidth(),
+            horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            // Top Bar with period switch
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 16.dp, vertical = 12.dp),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Tag(text = dayTag, backgroundColor = VitalColors.AccentWKS)
-                Text(
-                    text = "WEEKS",
-                    color = VitalColors.PrimaryText,
-                    fontSize = 16.sp,
-                    fontWeight = FontWeight.Bold,
-                    letterSpacing = 1.5.sp
-                )
-                Tag(text = dateTag, backgroundColor = VitalColors.AccentWKS)
-            }
-
-            // Period Switch (L / M / H = 12w / 4w / 7d)
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 16.dp, vertical = 8.dp),
-                horizontalArrangement = Arrangement.SpaceEvenly
-            ) {
-                PeriodButton(modifier = Modifier.weight(1f), label = "L", labelFull = "12 WEEKS", isSelected = period == WeeksPeriod.L, accentColor = VitalColors.AccentWKS) { /* viewModel.setWeeksPeriod(WeeksPeriod.L) */ }
-                PeriodButton(modifier = Modifier.weight(1f), label = "M", labelFull = "4 WEEKS", isSelected = period == WeeksPeriod.M, accentColor = VitalColors.AccentWKS) { /* viewModel.setWeeksPeriod(WeeksPeriod.M) */ }
-                PeriodButton(modifier = Modifier.weight(1f), label = "H", labelFull = "7 DAYS", isSelected = period == WeeksPeriod.H, accentColor = VitalColors.AccentWKS) { /* viewModel.setWeeksPeriod(WeeksPeriod.H) */ }
-            }
-
-            // Hero Card on Accent Fill - Macro Adherence
+            // Hero card - orange, radius ~18, at content top (y 98 from screen top)
+            // Content left/right edge 16 from ScreenScaffold, but design says 12/380 for weeks
+            // ScreenScaffold BlackPage uses 12dp horizontal padding, so we use that
             Surface(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = 16.dp, vertical = 8.dp)
-                    .height(280.dp),
-                color = VitalColors.AccentWKS,
-                shape = RoundedCornerShape(16.dp)
+                    .height(326.duToDp()),
+                color = VitalColors.orange,
+                shape = RoundedCornerShape(18.duToDp())
             ) {
                 Column(
-                    modifier = Modifier.fillMaxSize().padding(16.dp),
-                    verticalArrangement = Arrangement.SpaceBetween
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(horizontal = 14.dp, vertical = 23.dp), // 26-12=14 from left edge, 121-98=23 from top
+                    horizontalAlignment = Alignment.Start
                 ) {
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Tag(
-                            text = "MACRO ADHERENCE",
-                            backgroundColor = Color.Black.copy(alpha = 0.3f),
-                            textColor = Color.Black
-                        )
-                        Text(text = period.label, color = Color.Black.copy(alpha = 0.7f), fontSize = 12.sp, fontWeight = FontWeight.Medium)
-                    }
-
-                    // Adherence percentage
-                    BigKcalDisplay(
-                        remaining = (weeklyMacroData.lastOrNull() ?: 0f) * 100,
-                        unit = "%",
-                        accentColor = Color.Black
+                    // Tag: ADHERENCE · 4 WEEKS
+                    Text(
+                        text = "ADHERENCE · 4 WEEKS",
+                        color = VitalColors.black,
+                        fontSize = 11.duToSp(),
+                        fontWeight = FontWeight.Bold,
+                        fontFamily = FontFamily.Monospace
                     )
 
-                    // Macro breakdown
+                    // L / M / H switch row
                     Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceEvenly
-                    ) {
-                        QuickStat(label = "P", value = "95%", color = Color.Black)
-                        QuickStat(label = "C", value = "92%", color = Color.Black)
-                        QuickStat(label = "F", value = "98%", color = Color.Black)
-                    }
-
-                    // Hero Line Graph (inset grey panel)
-                    Surface(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .height(120.dp)
-                            .padding(top = 8.dp),
-                        color = VitalColors.InsetGreyPanel,
-                        shape = RoundedCornerShape(12.dp)
+                            .padding(top = 15.dp), // y 113 - y 98 = 15, but accounting for tag height
+                            horizontalArrangement = Arrangement.End
                     ) {
-                        HeroLineGraph(
+                        WeeksPeriodSwitch(
+                            currentPeriod = period,
+                            onPeriodChange = { viewModel.setWeeksPeriod(it) }
+                        )
+                    }
+
+                    // Giant number with % superscript
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(top = 20.dp),
+                        verticalAlignment = Alignment.Top
+                    ) {
+                        Text(
+                            text = currentAdherence.toInt().toString(),
+                            color = VitalColors.black,
+                            fontSize = 94.duToSp(),
+                            fontWeight = FontWeight.Normal, // JetBrains Mono 300
+                            fontFamily = FontFamily.Monospace,
+                            letterSpacing = -0.06.em
+                        )
+                        Text(
+                            text = "%",
+                            color = VitalColors.black,
+                            fontSize = 36.duToSp(),
+                            fontWeight = FontWeight.Normal,
+                            fontFamily = FontFamily.Monospace,
+                            modifier = Modifier.padding(top = 2.dp, start = 4.dp)
+                        )
+                    }
+
+                    // P / C / F labels and values
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(top = 30.dp),
+                        horizontalAlignment = Alignment.Start
+                    ) {
+                        // Labels row
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(0.dp)
+                        ) {
+                            MacroLabel("PROTEIN", modifier = Modifier.width(113.duToDp()))
+                            MacroLabel("CARBS", modifier = Modifier.width(113.duToDp()))
+                            MacroLabel("FAT", modifier = Modifier.width(113.duToDp()))
+                        }
+                        // Values row
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(top = 4.dp),
+                            horizontalArrangement = Arrangement.spacedBy(0.dp)
+                        ) {
+                            MacroValue("97%", modifier = Modifier.width(113.duToDp()))
+                            MacroValue("88%", modifier = Modifier.width(113.duToDp()))
+                            MacroValue("91%", modifier = Modifier.width(113.duToDp()))
+                        }
+                    }
+
+                    // Chart panel - grey with inset shadow
+                    GreyPanel(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(122.duToDp())
+                            .padding(top = 8.dp) // 5 du gap from value row bottom
+                    ) {
+                        WeeksChartPanel(
                             modifier = Modifier.fillMaxSize(),
-                            dataPoints = weeklyMacroData,
+                            macroData = weeklyMacroData,
                             labels = weeklyLabels,
-                            accentColor = Color.Black,
-                            showTooltip = true,
-                            tooltipIndex = weeklyMacroData.lastIndex,
-                            tooltipValue = (weeklyMacroData.lastOrNull() ?: 0f) * 100
+                            currentPeriod = period
                         )
                     }
                 }
             }
 
-            // VOLUME Chart
-            SectionHeader(
-                title = "VOLUME",
-                accentColor = VitalColors.AccentWKS,
-                showMoreAction = onShowSummary
+            // TRENDS section
+            SectionLabel(title = "TRENDS")
+
+            // Show More button for trends (dark style)
+            Surface(
+                modifier = Modifier
+                    .width(123.dp)
+                    .height(42.dp)
+                    .align(Alignment.End)
+                    .padding(bottom = 8.dp),
+                color = Color.Transparent,
+                shape = RoundedCornerShape(6.dp),
+                border = BorderStroke(1.5.dp, VitalColors.chipDarkStroke)
+            ) {
+                Text(
+                    text = "SHOW MORE",
+                    color = VitalColors.textPrimary,
+                    fontSize = 12.duToSp(),
+                    fontWeight = FontWeight.Bold,
+                    fontFamily = FontFamily.Monospace,
+                    letterSpacing = 0.22.em,
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .wrapContentWidth(Alignment.CenterHorizontally)
+                        .wrapContentHeight(Alignment.CenterVertically)
+                )
+            }
+
+            // Three capsule rows
+            // Row 1: BODY WEIGHT
+            CapsuleRow(
+                modifier = Modifier.fillMaxWidth(),
+                icon = { Icon(Icons.Default.MonitorWeight, "", tint = VitalColors.orange) },
+                label = "BODY WEIGHT",
+                value = "68.4 kg",
+                secondaryText = "−0.6 · 4W",
+                sparklineData = weeklyWeightData,
+                onClick = null
             )
 
-            ChartCard(
-                title = "WEEKLY VOLUME (KG)",
-                dataPoints = weeklyVolumeData,
-                labels = weeklyLabels,
-                accentColor = VitalColors.AccentLFT,
-                sparklineData = weeklyVolumeData
+            // Row 2: WEEKLY VOLUME
+            CapsuleRow(
+                modifier = Modifier.fillMaxWidth(),
+                icon = { Icon(Icons.Default.FitnessCenter, "", tint = VitalColors.orange) },
+                label = "WEEKLY VOLUME",
+                value = "18.4 t",
+                secondaryText = "PEAK 21.2",
+                sparklineData = weeklyVolumeData,
+                onClick = null
             )
 
-            // BODY WEIGHT Chart
-            SectionHeader(
-                title = "BODY WEIGHT",
-                accentColor = VitalColors.AccentWKS
+            // Row 3: BENCH PR
+            CapsuleRow(
+                modifier = Modifier.fillMaxWidth(),
+                icon = { Icon(Icons.Default.TrendingUp, "", tint = VitalColors.orange) },
+                label = "BENCH PR",
+                value = "100 × 5",
+                secondaryText = "+5 KG",
+                sparklineData = weeklyPrData,
+                onClick = null
+            )
+        }
+    }
+}
+
+@Composable
+private fun WeeksPeriodSwitch(
+    currentPeriod: WeeksPeriod,
+    onPeriodChange: (WeeksPeriod) -> Unit
+) {
+    Row(
+        horizontalArrangement = Arrangement.spacedBy(4.dp)
+    ) {
+        WeeksPeriod.values().forEach { p ->
+            val isSelected = (p == currentPeriod)
+            Surface(
+                modifier = Modifier
+                    .width(95.duToDp())
+                    .height(31.duToDp())
+                    .clickable { onPeriodChange(p) },
+                color = if (isSelected) VitalColors.black else VitalColors.chipDark,
+                shape = RoundedCornerShape(6.duToDp()),
+                border = BorderStroke(1.dp, if (isSelected) Color.Transparent else VitalColors.chipDarkStroke)
+            ) {
+                Text(
+                    text = p.label,
+                    color = if (isSelected) VitalColors.orange else VitalColors.textPrimary,
+                    fontSize = 14.duToSp(),
+                    fontWeight = FontWeight.Bold,
+                    fontFamily = FontFamily.Monospace,
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .wrapContentWidth(Alignment.CenterHorizontally)
+                        .wrapContentHeight(Alignment.CenterVertically)
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun MacroLabel(text: String, modifier: Modifier = Modifier) {
+    Text(
+        text = text,
+        color = VitalColors.black.copy(alpha = 0.7f),
+        fontSize = 10.duToSp(),
+        fontWeight = FontWeight.Bold,
+        fontFamily = FontFamily.Monospace,
+        modifier = modifier
+            .fillMaxWidth()
+            .wrapContentWidth(Alignment.Start)
+    )
+}
+
+@Composable
+private fun MacroValue(text: String, modifier: Modifier = Modifier) {
+    Text(
+        text = text,
+        color = VitalColors.black,
+        fontSize = 20.duToSp(),
+        fontWeight = FontWeight.Bold,
+        fontFamily = FontFamily.Monospace,
+        modifier = modifier
+            .fillMaxWidth()
+            .wrapContentWidth(Alignment.Start)
+    )
+}
+
+@Composable
+private fun WeeksChartPanel(
+    modifier: Modifier = Modifier,
+    macroData: List<Float>,
+    labels: List<String>,
+    currentPeriod: WeeksPeriod
+) {
+    androidx.compose.foundation.Canvas(modifier = modifier.fillMaxSize()) {
+        if (macroData.size < 2) return@Canvas
+
+        val width = size.width
+        val height = size.height
+        val padding = 12.dp.toPx()
+        val graphWidth = width - 2 * padding
+        val graphHeight = height - 2 * padding
+        val barWidth = graphWidth / 12f // 12 bars max
+        val barRadius = 3.dp.toPx()
+
+        // Determine number of bars based on period
+        val numBars = when (currentPeriod) {
+            WeeksPeriod.L -> 12
+            WeeksPeriod.M -> 4
+            WeeksPeriod.H -> 7
+        }
+        val dataToShow = macroData.take(numBars)
+        val labelsToShow = labels.take(numBars)
+
+        val minValue = dataToShow.minOrNull() ?: 0f
+        val maxValue = dataToShow.maxOrNull() ?: 1f
+        val range = if (maxValue > minValue) maxValue - minValue else 1f
+
+        // Draw bars
+        dataToShow.forEachIndexed { index, value ->
+            val x = padding + index * barWidth + (barWidth - 16.dp.toPx()) / 2
+            val normalizedValue = (value - minValue) / range
+            val barHeight = normalizedValue * graphHeight
+            val y = padding + graphHeight - barHeight
+
+            val isCurrentWeek = (index == numBars - 1 && currentPeriod == WeeksPeriod.L)
+            val barColor = if (isCurrentWeek) VitalColors.orange else Color(0xFF171A1D) // #171A1D
+
+            // Bar
+            drawRoundRect(
+                color = barColor,
+                topLeft = Offset(x, y),
+                size = Size(16.dp.toPx(), barHeight),
+                cornerRadius = CornerRadius(barRadius, barRadius)
             )
 
-            ChartCard(
-                title = "WEIGHT TREND (KG)",
-                dataPoints = weeklyWeightData,
-                labels = weeklyLabels,
-                accentColor = VitalColors.AccentCRD,
-                sparklineData = weeklyWeightData
+            // Black stroke for current week bar
+            if (isCurrentWeek) {
+                drawRoundRect(
+                    color = VitalColors.black,
+                    topLeft = Offset(x - 2.dp.toPx(), y - 2.dp.toPx()),
+                    size = Size(20.dp.toPx(), barHeight + 4.dp.toPx()),
+                    cornerRadius = CornerRadius(barRadius + 2.dp.toPx(), barRadius + 2.dp.toPx()),
+                    style = Stroke(width = 2.dp.toPx())
+                )
+            }
+        }
+
+        // Tooltip pill for current week (W12)
+        if (currentPeriod == WeeksPeriod.L && dataToShow.isNotEmpty()) {
+            val lastIndex = numBars - 1
+            val lastValue = dataToShow[lastIndex]
+            val lastX = padding + lastIndex * barWidth + 8.dp.toPx() // center of bar
+            val pillWidth = 81.dp.toPx()
+            val pillHeight = 22.dp.toPx()
+            val pillX = (lastX - pillWidth / 2).coerceIn(padding, width - padding - pillWidth)
+            val pillY = padding + 10.dp.toPx() // near top of panel
+
+            // Pill background
+            drawRoundRect(
+                color = VitalColors.black,
+                topLeft = Offset(pillX, pillY),
+                size = Size(pillWidth, pillHeight),
+                cornerRadius = CornerRadius(11.dp.toPx(), 11.dp.toPx())
             )
 
-            // PRs Chart
-            SectionHeader(
-                title = "PERSONAL RECORDS",
-                accentColor = VitalColors.AccentWKS
-            )
+            // Text (simplified - would need TextMeasurer for precise centering)
+            // For now just draw the pill, text rendering would need more setup
 
-            ChartCard(
-                title = "PR PROGRESSION",
-                dataPoints = weeklyPrData,
-                labels = weeklyLabels,
-                accentColor = VitalColors.AccentTDY,
-                sparklineData = weeklyPrData
+            // Leader line from pill right edge to bar left edge
+            val lineStartX = (pillX + pillWidth).coerceAtMost(lastX - 2.dp.toPx())
+            drawLine(
+                color = VitalColors.black,
+                start = Offset(lineStartX, pillY + pillHeight / 2),
+                end = Offset(lastX, pillY + pillHeight / 2),
+                strokeWidth = 1.dp.toPx()
             )
         }
     }
@@ -228,99 +435,6 @@ enum class WeeksPeriod(val label: String) {
     L("12W"),
     M("4W"),
     H("7D")
-}
-
-@Composable
-fun PeriodButton(
-    modifier: Modifier = Modifier,
-    label: String,
-    labelFull: String,
-    isSelected: Boolean,
-    accentColor: Color,
-    onClick: () -> Unit
-) {
-    Surface(
-        modifier = modifier
-            .padding(horizontal = 4.dp)
-            .clickable(onClick = onClick),
-        color = if (isSelected) accentColor else VitalColors.NearBlackRow,
-        shape = RoundedCornerShape(8.dp),
-        border = BorderStroke(1.5.dp, if (isSelected) Color.Transparent else VitalColors.NearBlackRowStroke)
-    ) {
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(vertical = 8.dp),
-            horizontalAlignment = Alignment.CenterHorizontally
-        ) {
-            Text(text = label, color = if (isSelected) Color.Black else accentColor, fontSize = 14.sp, fontWeight = FontWeight.Bold)
-            Text(text = labelFull, color = if (isSelected) Color.Black.copy(alpha = 0.7f) else VitalColors.MutedText, fontSize = 8.sp, fontWeight = FontWeight.Medium)
-        }
-    }
-}
-
-@Composable
-fun ChartCard(
-    title: String,
-    dataPoints: List<Float>,
-    labels: List<String>,
-    accentColor: Color,
-    sparklineData: List<Float>
-) {
-    Surface(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(horizontal = 16.dp, vertical = 8.dp)
-            .height(180.dp),
-        color = VitalColors.Card,
-        shape = RoundedCornerShape(12.dp),
-        border = BorderStroke(1.dp, VitalColors.NearBlackRowStroke)
-    ) {
-        Column(
-            modifier = Modifier.fillMaxSize().padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp)
-        ) {
-            // Title
-            Text(text = title, color = VitalColors.MutedText, fontSize = 10.sp, fontWeight = FontWeight.Bold, letterSpacing = 1.sp)
-
-            // Hero Line Graph
-            HeroLineGraph(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .weight(1f),
-                dataPoints = dataPoints,
-                labels = labels,
-                accentColor = accentColor,
-                showTooltip = true,
-                tooltipIndex = dataPoints.lastIndex,
-                tooltipValue = dataPoints.lastOrNull() ?: 0f
-            )
-
-            // Sparklines for sub-metrics
-            if (sparklineData.size > 1) {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    Sparkline(
-                        modifier = Modifier.weight(1f).height(40.dp),
-                        dataPoints = sparklineData,
-                        accentColor = accentColor
-                    )
-                    Sparkline(
-                        modifier = Modifier.weight(1f).height(40.dp),
-                        dataPoints = sparklineData.map { it * 0.8f },
-                        accentColor = accentColor.copy(alpha = 0.7f)
-                    )
-                    Sparkline(
-                        modifier = Modifier.weight(1f).height(40.dp),
-                        dataPoints = sparklineData.map { it * 1.2f },
-                        accentColor = accentColor.copy(alpha = 0.5f)
-                    )
-                }
-            }
-        }
-    }
 }
 
 object WeeksScreenPreviewData {
