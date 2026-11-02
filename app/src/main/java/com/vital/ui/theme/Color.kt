@@ -32,6 +32,7 @@ object VitalColors {
     val navTopHighlight = Color(0xFF7F7F7F)  // inner top edge white 38%
     val navBottomHighlight = Color(0xFF121212) // inner bottom edge white 7%
     val navGlow = Color(0xFFFD3F00).copy(alpha = 0.45f) // orange glow alpha .45
+    val tabInactive = Color(0xFFBDBDBD)      // inactive tab label
     val toggleOnFill = orange                // toggle on = orange fill
     val toggleOnKnob = black                 // toggle on = black knob
     val toggleOffFill = Color(0xFF1A1A1A)    // toggle off fill
