@@ -39,7 +39,7 @@ screenshot myself.
 
 1. I will add mockup exports to `design/tabs/`: `meals.png`, `lift.png`, `cardio.png`, `weeks.png`, `settings-top.png`, `settings-scrolled.png`.
    Each is a 393 x 855 frame, so 1 px in the mockup = 1 du. If a file is missing, stop and ask for it.
-2. Build from `design/tabs/<screen>.md` (measured numbers), not from the PNGs: you cannot reliably view images. Where this brief and a `.md` disagree, the `.md` wins on look and this brief wins on behaviour. Section 0A corrections beat the PNGs and the `.md` tables if a table still carries a mockup bug.
+2. Build from `design/tabs/<screen>.md` (measured numbers), primarily from these numbers, because they are exact. You can also view the PNGs to catch obvious mistakes. Where this brief and a `.md` disagree, the `.md` wins on look and this brief wins on behaviour. Section 0A corrections beat the PNGs and the `.md` tables if a table still carries a mockup bug.
 3. Reuse what exists: `LocalDesign`/`du`, `VitalColors`, `VitalType`, `insetShadow`, `HeroLineGraph`, `Sparkline`, the Today and Summary hero code.
    Add new tokens to `Theme.kt` only, never inline.
 4. Do not touch Today, Summary, auth, build files or the version catalog. If something needs a new dependency, stop and ask.

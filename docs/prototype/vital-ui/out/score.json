@@ -1,0 +1,70 @@
+{
+ "overallPercent": 4.756,
+ "regions": [
+  {
+   "region": "statusbar",
+   "mismatch": "4.93 %",
+   "px": 2279
+  },
+  {
+   "region": "header",
+   "mismatch": "10.04 %",
+   "px": 3975
+  },
+  {
+   "region": "hero",
+   "mismatch": "12.32 %",
+   "px": 12199
+  },
+  {
+   "region": "dial-top",
+   "mismatch": "3.14 %",
+   "px": 2600
+  },
+  {
+   "region": "knob",
+   "mismatch": "3.98 %",
+   "px": 3583
+  },
+  {
+   "region": "connector",
+   "mismatch": "6.82 %",
+   "px": 3901
+  },
+  {
+   "region": "time-pill",
+   "mismatch": "6.86 %",
+   "px": 1359
+  },
+  {
+   "region": "km-row",
+   "mismatch": "6.96 %",
+   "px": 2504
+  },
+  {
+   "region": "inner-dial",
+   "mismatch": "5.33 %",
+   "px": 9928
+  },
+  {
+   "region": "bars",
+   "mismatch": "2.29 %",
+   "px": 2626
+  },
+  {
+   "region": "dial-lower",
+   "mismatch": "2.95 %",
+   "px": 6624
+  },
+  {
+   "region": "fab",
+   "mismatch": "4.09 %",
+   "px": 2980
+  },
+  {
+   "region": "home",
+   "mismatch": "2.25 %",
+   "px": 466
+  }
+ ]
+}

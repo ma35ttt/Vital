@@ -131,6 +131,13 @@ object VitalColors {
     val FabIcon = orange
     val ActivityFanIcon = orange
 
+    // OrangeDial (Meals / Lift / Cardio hero art) from chrome.md + brief section 3
+    val dialOuterStroke = Color(0xFF1A1A1A)   // outer disc 1.5 du stroke
+    val dialThinRing = Color(0xFF141414)      // radius 100 thin ring
+    val dialInnerFill = Color(0xFF0A0A0A)     // inner disc fill
+    val dialInnerStroke = Color(0xFF222222)   // inner disc 3 du stroke
+    val dialInnerDashedRing = Color(0xFF2B2B2B) // radius 56 dashed ring
+
     // Dial components (updated to match reference)
     val DialDarkDisk = Color(0xFF141414)
     val DialTickRing = tickGrey

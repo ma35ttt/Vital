@@ -6,8 +6,11 @@ import androidx.activity.compose.setContent
 import androidx.activity.viewModels
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.setValue
+import com.vital.ui.theme.LocalTrueBlack
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.vital.ui.navigation.TabBar
 import com.vital.ui.navigation.VitalNavigation
@@ -29,12 +32,15 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContent {
-            VitalTheme {
-                Surface(
-                    modifier = androidx.compose.ui.Modifier.fillMaxSize(),
-                    color = VitalColors.Background
-                ) {
-                    VitalNavigation()
+            val trueBlack by viewModel.trueBlack.collectAsState()
+            CompositionLocalProvider(LocalTrueBlack provides trueBlack) {
+                VitalTheme(trueBlack = trueBlack) {
+                    Surface(
+                        modifier = androidx.compose.ui.Modifier.fillMaxSize(),
+                        color = if (trueBlack) VitalColors.trueBlackBackground else VitalColors.falseBlackBackground
+                    ) {
+                        VitalNavigation()
+                    }
                 }
             }
         }

@@ -13,7 +13,7 @@ data class User(
     val name: String,
     val email: String,
     val themeColor: String = "fudPink", // Theme color key
-    val trueBlack: Boolean = false,
+    val trueBlack: Boolean = true,
     val pinHash: String? = null, // Argon2 hash
     val biometricEnabled: Boolean = false,
     val createdAt: Long = System.currentTimeMillis(),

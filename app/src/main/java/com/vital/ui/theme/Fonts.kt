@@ -14,6 +14,14 @@ object VitalFonts {
     val JetBrainsMonoSemiBold = FontFamily(Font(R.font.jetbrainsmono_semibold, FontWeight.SemiBold))
     val JetBrainsMonoBold = FontFamily(Font(R.font.jetbrainsmono_bold, FontWeight.Bold))
 
+    // Inter Tight - headlines and big values (design system)
+    val InterTight = FontFamily(
+        Font(R.font.inter_tight_400, FontWeight.Normal),
+        Font(R.font.inter_tight_500, FontWeight.Medium),
+        Font(R.font.inter_tight_600, FontWeight.SemiBold),
+        Font(R.font.inter_tight_700, FontWeight.Bold)
+    )
+
     // Space Grotesk - for headlines and big values (variable font with wght axis)
     val SpaceGroteskRegular = FontFamily(Font(R.font.spacegrotesk_regular, FontWeight.Normal))
     val SpaceGroteskMedium = FontFamily(Font(R.font.spacegrotesk_medium, FontWeight.Medium))

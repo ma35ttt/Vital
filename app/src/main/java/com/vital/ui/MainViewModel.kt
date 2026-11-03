@@ -41,7 +41,7 @@ class MainViewModel @Inject constructor() : ViewModel() {
 
     // Summary dial data
     val kcalTarget = MutableStateFlow(2500)
-    val trueBlack = MutableStateFlow(false)
+    val trueBlack = MutableStateFlow(true)
     val aiProvider = MutableStateFlow("gemini")
     val bodyWeightKg = MutableStateFlow(80f)
     val restPresetSec = MutableStateFlow(180)

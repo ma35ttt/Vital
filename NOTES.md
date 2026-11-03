@@ -162,3 +162,14 @@ These were copied by Claude Code from `Notes/vital-ui/src/*.js`. The files win. 
 | Knob radius | 34 du | knob.js |
 | FAB radius | 40 du | fab.js |
 | Header text, SHOW MORE, 09:24 pill | see main.js | main.js |
+
+### M2 F3 — glass nav and QUICK ADD bottom sheet (2026-11-03)
+
+Built from FIXES_AND_GESTURES_BRIEF section 2 and chrome.md "Glass nav".
+
+- `GlassBottomNav.kt` rewritten: container 12..381 du, height 60, bottom 14, radius 30; fill white 16 % to 5 % vertical gradient, 1 du white 38 % top highlight, 1 du white 7 % bottom highlight, 1 du white 16 % border, black 65 % drop shadow (blur 24, y 10). Slots: three equal-weight tabs, fixed 54 du centre slot, three more. Tab item 48 x 46, radius 23, mono 700 10 tracking .12em, inactive `#BDBDBD`, active orange with black text, white 40 % inner top highlight and orange glow (alpha .45, blur 14). `+` drawn 48 du (black 55 % fill, 1.5 du orange 75 % stroke, orange plus 20 du stroke 2.6 round caps, faint orange glow) inside a 56 du tap target.
+- `QuickAddSheet.kt` (new): real bottom sheet, scrim black 50 % fading 120 ms, panel slides up 220 ms, bottom edge on the nav's top edge (74 du above the screen bottom), black fill, 26 du top corners, 1 du `#1C1C1C` top highlight, `QUICK ADD` label, four 52 du well rows (8 du gap) with stroke glyphs. Back dismisses. Tapping a nav tab while open closes the sheet.
+- `VitalNavigation.kt`: one `navigateToTab(index)` used by the nav, the sheet and every in-screen tab callback, so the highlight always matches the page (it did not before: in-screen navigation left the old tab highlighted).
+- Device measurements (OnePlus 11R, 3.155 px/du): nav top 804.6 du, bottom 864.6, height 60; slot centres 43.3 / 94.1 / 144.7 / 196.7 / 248.6 / 299.0 / 349.9 (target 43 / 93 / 144 / 196.5 / 249 / 299 / 349); TDY pill 48.2 du; `+` circle 48.2 du. Sheet top highlight 503 du, row pitch 60 du, panel bottom 803 du, nav top 804.8 du.
+- Deferred: "each row focuses the tab's primary input" (REMAINING_TABS_BRIEF section 2). Lift WEIGHT and Settings BODY WEIGHT are display-only wells today and Meals' field has no focus plumbing; wire focus when those tabs get real inputs in M4.
+- NOT TESTED: visual comparison (no QUICK ADD mockup exists; the nav has no separate mockup either).

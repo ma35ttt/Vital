@@ -7,6 +7,7 @@ import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.SideEffect
+import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.platform.LocalContext
@@ -75,11 +76,14 @@ private val LightColorScheme = lightColorScheme(
     onTertiaryContainer = VitalColors.orange,
 )
 
+// True black is ON by default. MainActivity provides the live value from Settings.
+val LocalTrueBlack = staticCompositionLocalOf { true }
+
 @Composable
 fun VitalTheme(
     darkTheme: Boolean = isSystemInDarkTheme(),
     // True black setting overrides background
-    trueBlack: Boolean = false,
+    trueBlack: Boolean = true,
     // Accent color for current tab - always orange now
     accentColor: Color = VitalColors.orange,
     content: @Composable () -> Unit
@@ -123,7 +127,4 @@ fun currentAccentColor(): Color {
 
 // Helper to check if true black is enabled
 @Composable
-fun isTrueBlackEnabled(): Boolean {
-    // This would be driven by Settings - for now return false
-    return false
-}
+fun isTrueBlackEnabled(): Boolean = LocalTrueBlack.current

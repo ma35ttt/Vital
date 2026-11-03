@@ -1,0 +1,28 @@
+{
+  "name": "vital-ui",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "serve": "node scripts/serve.mjs",
+    "diff": "node scripts/diff.mjs",
+    "ticks": "python3 -I scripts/extract_ticks.py",
+    "align": "python3 -I scripts/align.py"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "module",
+  "dependencies": {
+    "@fontsource/ibm-plex-mono": "^5.3.0",
+    "@fontsource/ibm-plex-sans": "^5.3.0",
+    "@fontsource/inter-tight": "^5.3.0",
+    "@fontsource/jetbrains-mono": "^5.3.0",
+    "pixelmatch": "^8.0.0",
+    "pngjs": "^7.0.0"
+  },
+  "devDependencies": {
+    "playwright": "^1.63.0"
+  }
+}

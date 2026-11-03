@@ -8,9 +8,11 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.foundation.clickable
@@ -39,6 +41,8 @@ import com.vital.ui.theme.DesignUnitsProvider
 import com.vital.ui.theme.duToDp
 import com.vital.ui.theme.duToSp
 import com.vital.ui.theme.VitalColors
+import com.vital.ui.theme.VitalFonts
+import com.vital.ui.theme.isTrueBlackEnabled
 import androidx.compose.ui.tooling.preview.Preview
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
@@ -76,9 +80,10 @@ fun ScreenScaffold(
         val jetbrainsMono = FontFamily.Monospace
 
         // Background
+        val trueBlack = isTrueBlackEnabled()
         val backgroundColor = when (variant) {
             ScreenVariant.OrangeHero -> VitalColors.orange
-            ScreenVariant.BlackPage -> VitalColors.falseBlackBackground // #141414 when trueBlack off
+            ScreenVariant.BlackPage -> if (trueBlack) VitalColors.trueBlackBackground else VitalColors.falseBlackBackground
         }
 
         Surface(
@@ -133,37 +138,136 @@ private fun OrangeHeroScaffold(
     dialFabGlyph: FabGlyph,
     content: @Composable () -> Unit
 ) {
-    // Header row - fixed at top
-    val headerHeight = 82.dp // chips y 50 + height 32 = 82
-    val sheetHighlightTop = 404.dp // 1 du highlight at y 404
-    val sheetTop = 405.dp // black sheet starts at y 405
+    // Orange hero area with OrangeDial: starts at screen top y=0, height 404 (up to sheet highlight)
+    val sheetHighlightTop = 404.duToDp() // 1 du highlight at y 404
 
-    Column(
-        modifier = Modifier.fillMaxSize(),
-        verticalArrangement = Arrangement.spacedBy(0.dp)
+    Box(
+        modifier = Modifier.fillMaxSize()
     ) {
-        // Fixed header with chips and title
+        // Main content column: hero area -> highlight -> sheet
+        Column(
+            modifier = Modifier.fillMaxSize(),
+            verticalArrangement = Arrangement.spacedBy(0.dp)
+        ) {
+            // Orange hero area with OrangeDial (starts at y=0, height 404)
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(sheetHighlightTop)
+            ) {
+                // OrangeDial fills the orange area. The FAB is drawn separately, above the
+                // sheet, so its rim stays visible where it crosses y 404.
+                OrangeDial(
+                    modifier = Modifier.fillMaxSize(),
+                    letters = dialLetters,
+                    highlightedIndex = dialHighlightedIndex,
+                    innerLabel = dialInnerLabel,
+                    innerValue = dialInnerValue,
+                    innerUnit = dialInnerUnit,
+                    pillText = dialPillText,
+                    topPill = dialTopPill,
+                    fabGlyph = dialFabGlyph,
+                    showFab = false
+                )
+
+                // Hero label + value overlay (top-left: label cap top y=100, value digit top y=133, x=16/17/18)
+                heroLabel?.let { label ->
+                    heroValue?.let { value ->
+                        HeroTag(
+                            label = label,
+                            value = value,
+                            modifier = Modifier
+                                .offset(x = 16.duToDp(), y = 96.duToDp())
+                        )
+                    }
+                }
+
+                // SHOW MORE button overlaid on top right of dial area (y=118 from screen top)
+                onShowMore?.let { action ->
+                    androidx.compose.material3.Surface(
+                        modifier = Modifier
+                            .size(123.duToDp(), 42.duToDp())
+                            .offset(x = 254.duToDp(), y = 118.duToDp())
+                            .clickable(onClick = action),
+                        color = Color.Transparent,
+                        shape = androidx.compose.foundation.shape.RoundedCornerShape(6.duToDp()),
+                        border = androidx.compose.foundation.BorderStroke(3.duToDp(), VitalColors.black)
+                    ) {
+                        Text(
+                            text = "SHOW MORE",
+                            color = VitalColors.black,
+                            fontSize = 12.duToSp(),
+                            fontWeight = FontWeight.Bold,
+                            fontFamily = FontFamily.Monospace,
+                            letterSpacing = 0.22.em,
+                            lineHeight = 12.duToSp(),
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .wrapContentWidth(Alignment.CenterHorizontally)
+                                .wrapContentHeight(Alignment.CenterVertically)
+                        )
+                    }
+                }
+            }
+
+            // 1 du highlight line at y 404 (top of sheet)
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(1.duToDp())
+                    .background(VitalColors.sheetTopHighlight)
+            )
+
+            // Black sheet with rounded top corners (radius 26) starting at y 405
+            androidx.compose.material3.Surface(
+                modifier = Modifier
+                    .fillMaxSize(),
+                color = VitalColors.black,
+                shape = androidx.compose.foundation.shape.RoundedCornerShape(topStart = 26.duToDp(), topEnd = 26.duToDp())
+            ) {
+                Column(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(top = 8.duToDp()),
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    // Sheet content - left/right 16
+                    content()
+                }
+            }
+        }
+
+        // FAB above the sheet: 60 x 60 du box centred on (50, 386), rim visible over black.
+        OrangeDialFab(
+            modifier = Modifier
+                .offset(x = 20.duToDp(), y = 356.duToDp())
+                .size(60.duToDp()),
+            fabGlyph = dialFabGlyph
+        )
+
+        // Fixed header overlay at top (chips y=50, title cap top ~61)
         Box(
             modifier = Modifier
                 .fillMaxWidth()
-                .height(headerHeight)
+                .height(82.duToDp())
         ) {
             // Left chip - day tag
             VitalChip(
                 text = dayTag,
                 modifier = Modifier
-                    .size(54.dp, 32.dp)
-                    .offset(x = 16.dp, y = 50.dp)
+                    .size(54.duToDp(), 32.duToDp())
+                    .offset(x = 16.duToDp(), y = 50.duToDp()),
+                minWidth = 54.duToDp()
             )
 
             // Right chip - date tag
             VitalChip(
                 text = dateTag,
                 modifier = Modifier
-                    .width(64.dp)
-                    .height(32.dp)
-                    .offset(x = 313.dp, y = 50.dp),
-                minWidth = 54.dp
+                    .width(64.duToDp())
+                    .height(32.duToDp())
+                    .offset(x = 313.duToDp(), y = 50.duToDp()),
+                minWidth = 54.duToDp()
             )
 
             // Centered title
@@ -174,85 +278,12 @@ private fun OrangeHeroScaffold(
                 fontWeight = FontWeight.Bold,
                 fontFamily = FontFamily.Monospace,
                 letterSpacing = 0.26.em,
+                lineHeight = 15.duToSp(),
                 modifier = Modifier
                     .fillMaxWidth()
                     .wrapContentWidth(Alignment.CenterHorizontally)
-                    .padding(top = 55.dp) // title cap top ~61, so ~55 top padding
+                    .padding(top = 55.duToDp())
             )
-        }
-
-        // Orange hero area with OrangeDial
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(sheetHighlightTop) // up to the sheet highlight at y 404
-        ) {
-            // OrangeDial fills the orange area
-            OrangeDial(
-                modifier = Modifier.fillMaxSize(),
-                letters = dialLetters,
-                highlightedIndex = dialHighlightedIndex,
-                innerLabel = dialInnerLabel,
-                innerValue = dialInnerValue,
-                innerUnit = dialInnerUnit,
-                pillText = dialPillText,
-                topPill = dialTopPill,
-                fabGlyph = dialFabGlyph
-            )
-
-            // SHOW MORE button overlaid on top right of dial area
-            onShowMore?.let { action ->
-                androidx.compose.material3.Surface(
-                    modifier = Modifier
-                        .size(123.dp, 42.dp)
-                        .offset(x = 254.dp, y = 118.dp)
-                        .clickable(onClick = action),
-                    color = Color.Transparent,
-                    shape = androidx.compose.foundation.shape.RoundedCornerShape(6.dp),
-                    border = androidx.compose.foundation.BorderStroke(3.dp, VitalColors.black)
-                ) {
-                    Text(
-                        text = "SHOW MORE",
-                        color = VitalColors.black,
-                        fontSize = 12.duToSp(),
-                        fontWeight = FontWeight.Bold,
-                        fontFamily = FontFamily.Monospace,
-                        letterSpacing = 0.22.em,
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .wrapContentWidth(Alignment.CenterHorizontally)
-                            .wrapContentHeight(Alignment.CenterVertically)
-                    )
-                }
-            }
-        }
-
-        // 1 du highlight line at y 404 (top of sheet)
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(1.dp)
-                .background(VitalColors.sheetTopHighlight) // #1C1C1C highlight
-        )
-
-        // Black sheet with rounded top corners (radius 26) starting at y 405
-        // Content scrolls within the sheet (each screen handles its own scrolling)
-        androidx.compose.material3.Surface(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(top = 1.dp), // account for the 1 du highlight
-            color = VitalColors.black,
-            shape = androidx.compose.foundation.shape.RoundedCornerShape(topStart = 26.dp, topEnd = 26.dp)
-        ) {
-            Column(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(top = 8.dp), // small gap after sheet top
-                horizontalAlignment = Alignment.CenterHorizontally
-            ) {
-                // Sheet content - left/right 16 (from chrome.md: content left/right edge 16 and 376)
-                content()
-            }
         }
     }
 }
@@ -264,37 +295,54 @@ private fun BlackPageScaffold(
     dateTag: String,
     content: @Composable () -> Unit
 ) {
-    val headerHeight = 82.dp
+    val trueBlack = isTrueBlackEnabled()
+    val pageBg = if (trueBlack) VitalColors.trueBlackBackground else VitalColors.falseBlackBackground
 
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(bottom = 100.dp) // bottom padding for nav
+    Box(
+        modifier = Modifier.fillMaxSize()
     ) {
-        // Fixed header with chips and title
+        // Body column: content starts at y=98 from screen top (not below header)
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(bottom = 100.duToDp()) // bottom padding for nav
+        ) {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 12.duToDp())
+                    .padding(top = 98.duToDp()),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                content()
+            }
+        }
+
+        // Fixed header overlay at top (chips y=50, title cap top ~61)
         Box(
             modifier = Modifier
                 .fillMaxWidth()
-                .height(headerHeight)
-                .background(VitalColors.black) // black backing for header
+                .height(82.duToDp())
+                .background(pageBg)
         ) {
             // Left chip - day tag (chipDark on black)
             VitalChip(
                 text = dayTag,
                 modifier = Modifier
-                    .size(54.dp, 32.dp)
-                    .offset(x = 16.dp, y = 50.dp),
-                isOnOrange = false
+                    .size(54.duToDp(), 32.duToDp())
+                    .offset(x = 16.duToDp(), y = 50.duToDp()),
+                isOnOrange = false,
+                minWidth = 54.duToDp()
             )
 
             // Right chip - date tag (chipDark on black)
             VitalChip(
                 text = dateTag,
                 modifier = Modifier
-                    .width(64.dp)
-                    .height(32.dp)
-                    .offset(x = 313.dp, y = 50.dp),
-                minWidth = 54.dp,
+                    .width(64.duToDp())
+                    .height(32.duToDp())
+                    .offset(x = 313.duToDp(), y = 50.duToDp()),
+                minWidth = 54.duToDp(),
                 isOnOrange = false
             )
 
@@ -306,22 +354,12 @@ private fun BlackPageScaffold(
                 fontWeight = FontWeight.Bold,
                 fontFamily = FontFamily.Monospace,
                 letterSpacing = 0.26.em,
+                lineHeight = 15.duToSp(),
                 modifier = Modifier
                     .fillMaxWidth()
                     .wrapContentWidth(Alignment.CenterHorizontally)
-                    .padding(top = 55.dp)
+                    .padding(top = 55.duToDp())
             )
-        }
-
-        // Body content - left/right 12, from top 98
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 12.dp)
-                .padding(top = 98.dp),
-            horizontalAlignment = Alignment.CenterHorizontally
-        ) {
-            content()
         }
     }
 }
@@ -339,26 +377,27 @@ fun VitalChip(
 
     androidx.compose.material3.Surface(
         modifier = modifier
-            .width(minWidth)
-            .height(32.dp)
-            .insetShadow(elevation = 2.dp, cornerRadius = 6.dp, shadowColor = VitalColors.black.copy(alpha = 0.4f)),
+            .widthIn(min = minWidth)
+            .heightIn(min = 32.duToDp())
+            .insetShadow(elevation = 2.duToDp(), cornerRadius = 6.duToDp(), shadowColor = VitalColors.black.copy(alpha = 0.4f)),
         color = backgroundColor,
-        shape = androidx.compose.foundation.shape.RoundedCornerShape(6.dp),
-        border = androidx.compose.foundation.BorderStroke(1.dp, strokeColor)
+        shape = androidx.compose.foundation.shape.RoundedCornerShape(6.duToDp()),
+        border = androidx.compose.foundation.BorderStroke(1.duToDp(), strokeColor)
     ) {
         Text(
             text = text,
             color = textColor,
-            fontSize = 12.duToSp(), // cap height 9 -> font ~12
+            fontSize = 12.duToSp(),
             fontWeight = FontWeight.Bold,
             fontFamily = FontFamily.Monospace,
             letterSpacing = 0.1.em,
             textAlign = TextAlign.Center,
+            lineHeight = 12.duToSp(),
             modifier = Modifier
                 .fillMaxSize()
                 .wrapContentWidth(Alignment.CenterHorizontally)
                 .wrapContentHeight(Alignment.CenterVertically)
-                .padding(horizontal = 8.dp)
+                .padding(horizontal = 8.duToDp())
         )
     }
 }
@@ -372,26 +411,26 @@ fun HeroTag(
 ) {
     Column(
         modifier = modifier
-            .fillMaxWidth()
-            .padding(horizontal = 16.dp)
-            .padding(top = 98.dp),
+            .fillMaxWidth(),
         horizontalAlignment = Alignment.Start
     ) {
         Text(
             text = label,
             color = VitalColors.black,
-            fontSize = 23.duToSp(),
+            fontSize = 21.5f.duToSp(),
             fontWeight = FontWeight.SemiBold,
-            fontFamily = FontFamily.Monospace,
-            letterSpacing = 1.sp
+            fontFamily = VitalFonts.InterTight,
+            lineHeight = 21.5f.duToSp()
         )
         Text(
             text = value,
             color = VitalColors.black,
             fontSize = 84.duToSp(),
             fontWeight = FontWeight.Bold,
-            fontFamily = FontFamily.Monospace,
-            letterSpacing = -0.045.em
+            fontFamily = VitalFonts.InterTight,
+            letterSpacing = -0.045.em,
+            lineHeight = 84.duToSp(),
+            modifier = Modifier.offset(y = (-8).duToDp())
         )
     }
 }
@@ -409,6 +448,7 @@ fun SectionLabel(
         fontWeight = FontWeight.Bold,
         fontFamily = FontFamily.Monospace,
         letterSpacing = 0.24.em,
+        lineHeight = 13.duToSp(),
         modifier = modifier
             .fillMaxWidth()
             .padding(horizontal = 16.dp)
@@ -491,14 +531,16 @@ fun CapsuleRow(
                     fontSize = 10.duToSp(),
                     fontWeight = FontWeight.Bold,
                     fontFamily = FontFamily.Monospace,
-                    letterSpacing = 1.sp
+                    letterSpacing = 1.sp,
+                    lineHeight = 10.duToSp()
                 )
                 Text(
                     text = value,
                     color = VitalColors.textPrimary,
                     fontSize = 19.duToSp(), // digit height 14 -> font ~19
                     fontWeight = FontWeight.Bold,
-                    fontFamily = FontFamily.Monospace
+                    fontFamily = FontFamily.Monospace,
+                    lineHeight = 19.duToSp()
                 )
                 secondaryText?.let {
                     Text(
@@ -506,7 +548,8 @@ fun CapsuleRow(
                         color = VitalColors.textMuted,
                         fontSize = 10.duToSp(),
                         fontWeight = FontWeight.Medium,
-                        fontFamily = FontFamily.Monospace
+                        fontFamily = FontFamily.Monospace,
+                        lineHeight = 10.duToSp()
                     )
                 }
             }

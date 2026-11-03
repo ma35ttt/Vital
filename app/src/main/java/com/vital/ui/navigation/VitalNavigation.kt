@@ -15,15 +15,18 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import android.content.pm.ApplicationInfo
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.vital.ui.components.GlassBottomNav
+import com.vital.ui.components.QuickAddAction
 import com.vital.ui.components.QuickAddSheet
 import com.vital.ui.screens.CardioScreen
 import com.vital.ui.screens.CoachChatScreen
@@ -49,21 +52,40 @@ fun VitalNavigation() {
     val selectedTab = remember { mutableStateOf(0) }
     val quickAddSheetOpen = remember { mutableStateOf(false) }
 
+    // Debug showcase route: only registered in a debuggable build, no BuildConfig needed.
+    val context = LocalContext.current
+    val isDebuggable = remember(context) {
+        (context.applicationInfo.flags and ApplicationInfo.FLAG_DEBUGGABLE) != 0
+    }
+    val openDebugShowcase: (() -> Unit)? = if (isDebuggable) {
+        { navController.navigate("debug") }
+    } else {
+        null
+    }
+
+    // One route for the nav and the QUICK ADD sheet, so the highlight always matches the page.
+    val navigateToTab: (Int) -> Unit = { index ->
+        selectedTab.value = index
+        quickAddSheetOpen.value = false
+        val route = when (index) {
+            0 -> "today"
+            1 -> "meals"
+            2 -> "lift"
+            3 -> "cardio"
+            4 -> "weeks"
+            else -> "settings"
+        }
+        navController.navigate(route) {
+            popUpTo("today") { inclusive = true }
+            launchSingleTop = true
+        }
+    }
+
     Scaffold(
         bottomBar = {
             GlassBottomNav(
                 selectedTab = selectedTab.value,
-                onTabSelected = { index ->
-                    selectedTab.value = index
-                    when (index) {
-                        0 -> navController.navigate("today") { popUpTo("today") { inclusive = true }; launchSingleTop = true }
-                        1 -> navController.navigate("meals") { popUpTo("today") { inclusive = true }; launchSingleTop = true }
-                        2 -> navController.navigate("lift") { popUpTo("today") { inclusive = true }; launchSingleTop = true }
-                        3 -> navController.navigate("cardio") { popUpTo("today") { inclusive = true }; launchSingleTop = true }
-                        4 -> navController.navigate("weeks") { popUpTo("today") { inclusive = true }; launchSingleTop = true }
-                        5 -> navController.navigate("settings") { popUpTo("today") { inclusive = true }; launchSingleTop = true }
-                    }
-                },
+                onTabSelected = navigateToTab,
                 onPlusClick = { quickAddSheetOpen.value = true }
             )
         }
@@ -74,65 +96,66 @@ fun VitalNavigation() {
                     TodayScreen(
                         modifier = Modifier.padding(innerPadding),
                         onShowSummary = { navController.navigate("summary") },
-                        onNavigateToMeals = { navController.navigate("meals") },
-                        onNavigateToLift = { navController.navigate("lift") },
-                        onNavigateToCardio = { navController.navigate("cardio") },
-                        onNavigateToWeeks = { navController.navigate("weeks") },
-                        onNavigateToSettings = { navController.navigate("settings") }
+                        onNavigateToMeals = { navigateToTab(1) },
+                        onNavigateToLift = { navigateToTab(2) },
+                        onNavigateToCardio = { navigateToTab(3) },
+                        onNavigateToWeeks = { navigateToTab(4) },
+                        onNavigateToSettings = { navigateToTab(5) }
                     )
                 }
                 composable("meals") {
                     MealsScreen(
                         modifier = Modifier.padding(innerPadding),
                         onShowSummary = { navController.navigate("summary") },
-                        onNavigateToToday = { navController.popBackStack("today", false) },
-                        onNavigateToLift = { navController.navigate("lift") },
-                        onNavigateToCardio = { navController.navigate("cardio") },
-                        onNavigateToWeeks = { navController.navigate("weeks") },
-                        onNavigateToSettings = { navController.navigate("settings") }
+                        onNavigateToToday = { navigateToTab(0) },
+                        onNavigateToLift = { navigateToTab(2) },
+                        onNavigateToCardio = { navigateToTab(3) },
+                        onNavigateToWeeks = { navigateToTab(4) },
+                        onNavigateToSettings = { navigateToTab(5) }
                     )
                 }
                 composable("lift") {
                     LiftScreen(
                         modifier = Modifier.padding(innerPadding),
                         onShowSummary = { navController.navigate("summary") },
-                        onNavigateToToday = { navController.popBackStack("today", false) },
-                        onNavigateToMeals = { navController.navigate("meals") },
-                        onNavigateToCardio = { navController.navigate("cardio") },
-                        onNavigateToWeeks = { navController.navigate("weeks") },
-                        onNavigateToSettings = { navController.navigate("settings") }
+                        onNavigateToToday = { navigateToTab(0) },
+                        onNavigateToMeals = { navigateToTab(1) },
+                        onNavigateToCardio = { navigateToTab(3) },
+                        onNavigateToWeeks = { navigateToTab(4) },
+                        onNavigateToSettings = { navigateToTab(5) }
                     )
                 }
                 composable("cardio") {
                     CardioScreen(
                         modifier = Modifier.padding(innerPadding),
                         onShowMore = { navController.navigate("summary") },
-                        onNavigateToToday = { navController.popBackStack("today", false) },
-                        onNavigateToMeals = { navController.navigate("meals") },
-                        onNavigateToLift = { navController.navigate("lift") },
-                        onNavigateToWeeks = { navController.navigate("weeks") },
-                        onNavigateToSettings = { navController.navigate("settings") }
+                        onNavigateToToday = { navigateToTab(0) },
+                        onNavigateToMeals = { navigateToTab(1) },
+                        onNavigateToLift = { navigateToTab(2) },
+                        onNavigateToWeeks = { navigateToTab(4) },
+                        onNavigateToSettings = { navigateToTab(5) }
                     )
                 }
                 composable("weeks") {
                     WeeksScreen(
                         modifier = Modifier.padding(innerPadding),
                         onShowSummary = { navController.navigate("summary") },
-                        onNavigateToToday = { navController.popBackStack("today", false) },
-                        onNavigateToMeals = { navController.navigate("meals") },
-                        onNavigateToLift = { navController.navigate("lift") },
-                        onNavigateToCardio = { navController.navigate("cardio") },
-                        onNavigateToSettings = { navController.navigate("settings") }
+                        onNavigateToToday = { navigateToTab(0) },
+                        onNavigateToMeals = { navigateToTab(1) },
+                        onNavigateToLift = { navigateToTab(2) },
+                        onNavigateToCardio = { navigateToTab(3) },
+                        onNavigateToSettings = { navigateToTab(5) }
                     )
                 }
                 composable("settings") {
                     SettingsScreen(
                         modifier = Modifier.padding(innerPadding),
-                        onNavigateToToday = { navController.popBackStack("today", false) },
-                        onNavigateToMeals = { navController.navigate("meals") },
-                        onNavigateToLift = { navController.navigate("lift") },
-                        onNavigateToCardio = { navController.navigate("cardio") },
-                        onNavigateToWeeks = { navController.navigate("weeks") }
+                        onNavigateToToday = { navigateToTab(0) },
+                        onNavigateToMeals = { navigateToTab(1) },
+                        onNavigateToLift = { navigateToTab(2) },
+                        onNavigateToCardio = { navigateToTab(3) },
+                        onNavigateToWeeks = { navigateToTab(4) },
+                        onOpenDebugShowcase = openDebugShowcase
                     )
                 }
                 composable("summary") {
@@ -150,16 +173,25 @@ fun VitalNavigation() {
                         onClose = { navController.popBackStack() }
                     )
                 }
+                if (isDebuggable) {
+                    composable("debug") {
+                        DebugShowcaseScreen(modifier = Modifier.padding(innerPadding))
+                    }
+                }
             }
 
-            // Quick Add Sheet
+            // QUICK ADD bottom sheet (tap on +)
             QuickAddSheet(
                 isOpen = quickAddSheetOpen.value,
                 onDismiss = { quickAddSheetOpen.value = false },
-                onLogMeal = { navController.navigate("meals") },
-                onLogSet = { navController.navigate("lift") },
-                onLogCardio = { navController.navigate("cardio") },
-                onLogBodyWeight = { navController.navigate("settings") }
+                onAction = { action ->
+                    when (action) {
+                        QuickAddAction.LogMeal -> navigateToTab(1)
+                        QuickAddAction.LogSet -> navigateToTab(2)
+                        QuickAddAction.LogCardio -> navigateToTab(3)
+                        QuickAddAction.LogBodyWeight -> navigateToTab(5)
+                    }
+                }
             )
         }
     }

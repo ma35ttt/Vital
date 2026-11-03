@@ -1,0 +1,21 @@
+@import "./tokens.css";
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { height: 100%; background: #060606; }
+body { display: grid; place-items: center; font-family: var(--font-sans); -webkit-font-smoothing: antialiased; }
+
+/* The design frame: an iPhone 14 Pro screen. Scales to the viewport, never reflows. */
+#frame {
+  position: relative; width: var(--frame-w); height: var(--frame-h);
+  border-radius: var(--frame-radius); overflow: hidden; background: var(--orange);
+  --s: min(1, calc(100vw / 393), calc(100vh / 855));
+  transform: scale(var(--s)); transform-origin: center;
+}
+#frame svg { position: absolute; inset: 0; display: block; }
+#frame svg text { user-select: none; font-kerning: normal; }
+.hit { position: absolute; background: transparent; border: 0; cursor: pointer; border-radius: 8px; }
+.hit:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; }
+
+/* diff mode: render the bare screen at an exact 393x855 so screenshots line up with the reference */
+html.capture body { display: block; background: transparent; }
+html.capture #frame { transform: none; margin: 0; }

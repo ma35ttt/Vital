@@ -1,0 +1,34 @@
+/* Design tokens - every value here was sampled/measured from design/reference-full.png.
+   Change a token and the whole screen follows; never hard-code these elsewhere. */
+
+@font-face { font-family: "Inter Tight"; font-weight: 400; src: url("./fonts/inter-tight-latin-400-normal.woff2") format("woff2"); }
+@font-face { font-family: "Inter Tight"; font-weight: 500; src: url("./fonts/inter-tight-latin-500-normal.woff2") format("woff2"); }
+@font-face { font-family: "Inter Tight"; font-weight: 600; src: url("./fonts/inter-tight-latin-600-normal.woff2") format("woff2"); }
+@font-face { font-family: "Inter Tight"; font-weight: 700; src: url("./fonts/inter-tight-latin-700-normal.woff2") format("woff2"); }
+@font-face { font-family: "JetBrains Mono"; font-weight: 400; src: url("./fonts/jetbrains-mono-latin-400-normal.woff2") format("woff2"); }
+@font-face { font-family: "JetBrains Mono"; font-weight: 500; src: url("./fonts/jetbrains-mono-latin-500-normal.woff2") format("woff2"); }
+@font-face { font-family: "JetBrains Mono"; font-weight: 700; src: url("./fonts/jetbrains-mono-latin-700-normal.woff2") format("woff2"); }
+
+:root {
+  /* colour (sampled with scripts/sample_colors) */
+  --orange:        #fd3f00;   /* screen background, knob, pills, icons */
+  --orange-chip:   #d93400;   /* SUN / APR.9 chips */
+  --ink:           #070707;   /* dial, text on orange, FAB */
+  --ink-deep:      #000000;   /* rim ring around the inner dial */
+  --pill-gray:     #5e6870;   /* 09:24 pill (centre colour; edges darker, see main.js gradient) */
+  --white:         #f4f4f4;
+  --label-gray:    #8a8a8a;   /* STEPS */
+  --ring-line:     #232323;   /* hairline on the inner dial */
+
+  /* type */
+  --font-sans: "Inter Tight", "Helvetica Neue", Arial, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, Menlo, monospace;
+
+  /* frame: the design is drawn on an iPhone 14 Pro screen, 393 x 855 css px */
+  --frame-w: 393px;
+  --frame-h: 855px;
+  --frame-radius: 55px;
+
+  /* tick rendering knobs used by the diff loop to calibrate */
+  --tick-width-scale: 0.8;
+}

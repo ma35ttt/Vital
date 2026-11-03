@@ -21,6 +21,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.material3.Icon
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.BugReport
 import androidx.compose.material.icons.filled.Code
 import androidx.compose.material.icons.filled.DeleteForever
 import androidx.compose.material.icons.filled.Description
@@ -89,6 +90,7 @@ fun SettingsScreen(
     onNavigateToLift: () -> Unit,
     onNavigateToCardio: () -> Unit,
     onNavigateToWeeks: () -> Unit,
+    onOpenDebugShowcase: (() -> Unit)? = null,
     viewModel: MainViewModel = viewModel()
 ) {
     val trueBlack by viewModel.trueBlack.collectAsStateWithLifecycle(false)
@@ -621,6 +623,26 @@ fun SettingsScreen(
                             label = "BUILD",
                             value = "Local build"
                         )
+                    }
+                }
+                onOpenDebugShowcase?.let { openShowcase ->
+                    item {
+                        WellRow(modifier = Modifier.fillMaxWidth()) {
+                            SettingRow(
+                                icon = { Icon(Icons.Default.BugReport, "", tint = VitalColors.orange) },
+                                label = "DEBUG SHOWCASE",
+                                trailing = {
+                                    Text(
+                                        text = "OPEN",
+                                        color = VitalColors.orange,
+                                        fontSize = 12.duToSp(),
+                                        fontWeight = FontWeight.Bold,
+                                        modifier = Modifier.padding(vertical = 8.dp)
+                                    )
+                                },
+                                onClick = openShowcase
+                            )
+                        }
                     }
                 }
                 item {
