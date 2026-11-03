@@ -8,22 +8,49 @@ import com.vital.data.entity.FoodSource
 import com.vital.data.entity.FoodVariant
 import com.vital.data.entity.MuscleGroup
 import com.vital.data.entity.Recipe
+import com.vital.data.entity.Settings
+import com.vital.data.entity.User
 import com.vital.data.repository.ExerciseRepository
 import com.vital.data.repository.FoodRepository
 import com.vital.data.repository.RecipeRepository
+import com.vital.data.repository.SettingsRepository
+import com.vital.data.repository.UserRepository
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.json.Json
 import javax.inject.Inject
 import javax.inject.Singleton
 import kotlinx.serialization.encodeToString
 
+/** The only user row until the M6 auth gate creates real ones. */
+const val LOCAL_USER_ID = "local-user"
+
 @Singleton
 class SeedLoader @Inject constructor(
     private val foodRepository: FoodRepository,
     private val recipeRepository: RecipeRepository,
-    private val exerciseRepository: ExerciseRepository
+    private val exerciseRepository: ExerciseRepository,
+    private val settingsRepository: SettingsRepository,
+    private val userRepository: UserRepository
 ) {
+
+    /**
+     * Writes the Settings and User rows on first launch so the Settings screen reads
+     * real persisted values instead of a hardcoded default. Safe to call every launch.
+     */
+    suspend fun seedUserAndSettings() = withContext(Dispatchers.IO) {
+        if (userRepository.getUserSync(LOCAL_USER_ID) == null) {
+            userRepository.insertUser(
+                User(id = LOCAL_USER_ID, name = "Mrityunjay", email = "")
+            )
+        }
+        if (settingsRepository.getSettings(LOCAL_USER_ID).first() == null) {
+            settingsRepository.insertSettings(
+                Settings.create(LOCAL_USER_ID).copy(bodyWeightKg = 80.0)
+            )
+        }
+    }
 
     suspend fun loadIfNeeded() = withContext(Dispatchers.IO) {
         val foodCount = foodRepository.getFoodCount()

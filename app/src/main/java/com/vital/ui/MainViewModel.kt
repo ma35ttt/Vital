@@ -92,9 +92,6 @@ class MainViewModel @Inject constructor() : ViewModel() {
             proteinCurrent.value = 120f
             carbsCurrent.value = 180f
             fatCurrent.value = 55f
-            proteinTarget.value = 180
-            carbsTarget.value = 250
-            fatTarget.value = 85
             weeklyKcalData.value = com.vital.ui.screens.TodayScreenPreviewData.weeklyKcal
             weeklyLabels.value = com.vital.ui.screens.TodayScreenPreviewData.weeklyLabels
             workoutsToday.value = com.vital.ui.screens.TodayScreenPreviewData.sampleWorkouts

@@ -66,8 +66,9 @@ import com.vital.ui.theme.VitalColors
 import com.vital.ui.theme.VitalTypography
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import java.time.LocalDate
-import androidx.lifecycle.viewmodel.compose.viewModel
-import com.vital.ui.MainViewModel
+import androidx.hilt.navigation.compose.hiltViewModel
+import com.vital.ui.SettingsViewModel
+import com.vital.data.entity.AiProvider
 import com.vital.ui.components.ScreenScaffold
 import com.vital.ui.components.ScreenVariant
 import com.vital.ui.components.SectionLabel
@@ -91,16 +92,20 @@ fun SettingsScreen(
     onNavigateToCardio: () -> Unit,
     onNavigateToWeeks: () -> Unit,
     onOpenDebugShowcase: (() -> Unit)? = null,
-    viewModel: MainViewModel = viewModel()
+    viewModel: SettingsViewModel = hiltViewModel()
 ) {
-    val trueBlack by viewModel.trueBlack.collectAsStateWithLifecycle(false)
-    val aiProvider by viewModel.aiProvider.collectAsStateWithLifecycle("gemini")
-    val kcalTarget by viewModel.kcalTarget.collectAsStateWithLifecycle(2500)
-    val proteinTarget by viewModel.proteinTarget.collectAsStateWithLifecycle(180)
-    val carbsTarget by viewModel.carbsTarget.collectAsStateWithLifecycle(250)
-    val fatTarget by viewModel.fatTarget.collectAsStateWithLifecycle(85)
-    val bodyWeightKg by viewModel.bodyWeightKg.collectAsStateWithLifecycle(80f)
-    val restPresetSec by viewModel.restPresetSec.collectAsStateWithLifecycle(180)
+    val settings by viewModel.settings.collectAsStateWithLifecycle()
+    val trueBlack = settings.trueBlack
+    val aiProvider = when (settings.aiProvider) {
+        AiProvider.GEMINI -> "gemini"
+        AiProvider.OPENROUTER -> "openrouter"
+    }
+    val kcalTarget = settings.kcalTarget
+    val proteinTarget = settings.proteinTarget
+    val carbsTarget = settings.carbsTarget
+    val fatTarget = settings.fatTarget
+    val bodyWeightKg = settings.bodyWeightKg
+    val restPresetSec = settings.restPresetSec
 
     var showBiometric by remember { mutableStateOf(false) }
     var showPin by remember { mutableStateOf(false) }
