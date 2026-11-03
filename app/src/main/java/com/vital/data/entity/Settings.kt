@@ -19,7 +19,7 @@ data class Settings(
     val aiProvider: AiProvider = AiProvider.GEMINI,
     val aiApiKeyEncrypted: String? = null,
     // Appearance
-    val trueBlack: Boolean = false,
+    val trueBlack: Boolean = true,
     val themeColor: String = "fudPink",
     // Rest timer
     val restPresetSec: Int = 180,

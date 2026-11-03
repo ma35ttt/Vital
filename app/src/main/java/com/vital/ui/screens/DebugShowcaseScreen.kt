@@ -1,5 +1,6 @@
 package com.vital.ui.screens
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -9,6 +10,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -25,11 +27,12 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.foundation.layout.size
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.vital.ui.components.FabGlyph
 import com.vital.ui.components.HeroLineGraph
 import com.vital.ui.components.KnurledKnob
+import com.vital.ui.components.OrangeDial
 import com.vital.ui.components.Period
 import com.vital.ui.components.ScreenScaffold
 import com.vital.ui.components.ScreenVariant
@@ -39,35 +42,37 @@ import com.vital.ui.components.Tag
 import com.vital.ui.components.capsuleRow
 import com.vital.ui.components.insetShadow
 import com.vital.ui.theme.VitalColors
+import com.vital.ui.theme.duToDp
 
-// Debug-only screen (SPEC.md §9 Step 2): renders each canvas component in
-// isolation, in the same context the reference frames show it, so device
-// screenshots can be compared against Notes/docs/reference.png.
+// Debug-only screen (SPEC.md §9 Step 2, ROADMAP M2-F4): renders each canvas component
+// in isolation so device screenshots can be compared against the measured numbers.
+// Reachable only from Settings > ABOUT > DEBUG SHOWCASE in a debuggable build.
 @Composable
-fun DebugShowcaseScreen() {
+fun DebugShowcaseScreen(modifier: Modifier = Modifier) {
     var knobProgress by remember { mutableStateOf(0.5f) }
     var period by remember { mutableStateOf(Period.M) }
 
-    Surface(modifier = Modifier.fillMaxSize(), color = VitalColors.black) {
+    Surface(modifier = modifier.fillMaxSize(), color = VitalColors.black) {
         LazyColumn(
             modifier = Modifier.fillMaxSize(),
-            contentPadding = PaddingValues(16.dp),
+            contentPadding = PaddingValues(top = 16.dp, bottom = 100.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
             item {
                 Text(
-                    text = "STEP2 CANVAS SHOWCASE",
+                    text = "M2 DESIGN SYSTEM SHOWCASE",
                     color = VitalColors.textPrimary,
                     fontSize = 16.sp,
                     fontWeight = FontWeight.Bold,
-                    letterSpacing = 1.5.sp
+                    letterSpacing = 1.5.sp,
+                    modifier = Modifier.padding(horizontal = 16.dp)
                 )
             }
 
             item {
                 SectionLabel("1 SUMMARY DIAL (ref frame-01 right)")
                 Surface(
-                    modifier = Modifier.fillMaxWidth().height(560.dp),
+                    modifier = Modifier.padding(horizontal = 16.dp).fillMaxWidth().height(560.dp),
                     color = VitalColors.orange,
                     shape = RoundedCornerShape(16.dp)
                 ) {
@@ -90,7 +95,7 @@ fun DebugShowcaseScreen() {
             item {
                 SectionLabel("2 KNURLED KNOB 200dp (drag test)")
                 Column(
-                    modifier = Modifier.fillMaxWidth(),
+                    modifier = Modifier.padding(horizontal = 16.dp).fillMaxWidth(),
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
                     KnurledKnob(
@@ -112,7 +117,7 @@ fun DebugShowcaseScreen() {
             item {
                 SectionLabel("3 HERO CARD + GRAPH (ref frame-01 left)")
                 Surface(
-                    modifier = Modifier.fillMaxWidth().height(380.dp),
+                    modifier = Modifier.padding(horizontal = 16.dp).fillMaxWidth().height(380.dp),
                     color = VitalColors.orange,
                     shape = RoundedCornerShape(16.dp)
                 ) {
@@ -150,7 +155,7 @@ fun DebugShowcaseScreen() {
             item {
                 SectionLabel("4 CAPSULE + SPARKLINE (ref frame-01 capsules)")
                 capsuleRow(
-                    modifier = Modifier.fillMaxWidth(),
+                    modifier = Modifier.padding(horizontal = 16.dp).fillMaxWidth(),
                     icon = { Icon(Icons.Default.DirectionsRun, "", tint = VitalColors.orange) },
                     label = "HIKING",
                     value = ".980KM",
@@ -162,7 +167,7 @@ fun DebugShowcaseScreen() {
             item {
                 SectionLabel("5 SPARKLINE IN GREY PANEL")
                 Surface(
-                    modifier = Modifier.fillMaxWidth().height(90.dp),
+                    modifier = Modifier.padding(horizontal = 16.dp).fillMaxWidth().height(90.dp),
                     color = VitalColors.panelGrey,
                     shape = RoundedCornerShape(8.dp)
                 ) {
@@ -189,6 +194,7 @@ fun DebugShowcaseScreen() {
                 SectionLabel("6 INSET SHADOW")
                 Surface(
                     modifier = Modifier
+                        .padding(horizontal = 16.dp)
                         .fillMaxWidth()
                         .height(110.dp)
                         .insetShadow(elevation = 10.dp, cornerRadius = 16.dp),
@@ -209,41 +215,117 @@ fun DebugShowcaseScreen() {
 
             item {
                 SectionLabel("7 SCREEN SCAFFOLD - ORANGE HERO (MEALS)")
-                ScreenScaffold(
-                    variant = ScreenVariant.OrangeHero,
-                    title = "MEALS",
-                    heroLabel = "KCAL LEFT",
-                    heroValue = "1,240",
-                    onShowMore = { /* TODO */ }
-                ) {
-                    Column(
-                        modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
-                        horizontalAlignment = Alignment.CenterHorizontally
+                Box(modifier = Modifier.fillMaxWidth().height(640.dp)) {
+                    ScreenScaffold(
+                        variant = ScreenVariant.OrangeHero,
+                        title = "MEALS",
+                        heroLabel = "KCAL LEFT",
+                        heroValue = "1,240",
+                        onShowMore = {},
+                        dialLetters = listOf("P", "C", "F"),
+                        dialHighlightedIndex = 0,
+                        dialInnerLabel = "EATEN",
+                        dialInnerValue = "1,260",
+                        dialInnerUnit = "",
+                        dialPillText = "OF 2,500",
+                        dialTopPill = "LUNCH",
+                        dialFabGlyph = FabGlyph.Plus
                     ) {
-                        Text(text = "Sheet content area", color = VitalColors.textPrimary)
-                        androidx.compose.foundation.layout.Spacer(modifier = Modifier.padding(vertical = 32.dp))
-                        Text(text = "Bottom of sheet", color = VitalColors.textMuted)
+                        Column(
+                            modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
+                            horizontalAlignment = Alignment.CenterHorizontally
+                        ) {
+                            Text(text = "Sheet content area", color = VitalColors.textPrimary)
+                            androidx.compose.foundation.layout.Spacer(modifier = Modifier.padding(vertical = 32.dp))
+                            Text(text = "Bottom of sheet", color = VitalColors.textMuted)
+                        }
                     }
                 }
             }
 
             item {
                 SectionLabel("8 SCREEN SCAFFOLD - BLACK PAGE (WEEKS)")
-                ScreenScaffold(
-                    variant = ScreenVariant.BlackPage,
-                    title = "WEEKS"
-                ) {
-                    Column(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalAlignment = Alignment.CenterHorizontally
+                Box(modifier = Modifier.fillMaxWidth().height(640.dp)) {
+                    ScreenScaffold(
+                        variant = ScreenVariant.BlackPage,
+                        title = "WEEKS"
                     ) {
-                        Text(text = "Black page content", color = VitalColors.textPrimary)
-                        androidx.compose.foundation.layout.Spacer(modifier = Modifier.padding(vertical = 32.dp))
-                        Text(text = "Scrolls with black backing", color = VitalColors.textMuted)
+                        Column(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalAlignment = Alignment.CenterHorizontally
+                        ) {
+                            Text(text = "Black page content", color = VitalColors.textPrimary)
+                            androidx.compose.foundation.layout.Spacer(modifier = Modifier.padding(vertical = 32.dp))
+                            Text(text = "Scrolls with black backing", color = VitalColors.textMuted)
+                        }
                     }
                 }
             }
+
+            item {
+                SectionLabel("9 ORANGE DIAL - MEALS (P / C / F)")
+                DialStage {
+                    OrangeDial(
+                        modifier = Modifier.fillMaxSize(),
+                        letters = listOf("P", "C", "F"),
+                        highlightedIndex = 0,
+                        innerLabel = "EATEN",
+                        innerValue = "1,260",
+                        innerUnit = "",
+                        pillText = "OF 2,500",
+                        topPill = "LUNCH",
+                        fabGlyph = FabGlyph.Plus
+                    )
+                }
+            }
+
+            item {
+                SectionLabel("10 ORANGE DIAL - LIFT (2 / 3 / 4)")
+                DialStage {
+                    OrangeDial(
+                        modifier = Modifier.fillMaxSize(),
+                        letters = listOf("2", "3", "4"),
+                        highlightedIndex = 1,
+                        innerLabel = "BENCH PRESS",
+                        innerValue = "80",
+                        innerUnit = "kg",
+                        pillText = "SET 3 · ×8",
+                        topPill = "OF 3:00",
+                        fabGlyph = FabGlyph.Plus
+                    )
+                }
+            }
+
+            item {
+                SectionLabel("11 ORANGE DIAL - CARDIO (R / B / W)")
+                DialStage {
+                    OrangeDial(
+                        modifier = Modifier.fillMaxSize(),
+                        letters = listOf("R", "B", "W"),
+                        highlightedIndex = 0,
+                        innerLabel = "SPEED",
+                        innerValue = "6.0",
+                        innerUnit = "km/h",
+                        pillText = "INCL 2.0%",
+                        topPill = "32:10",
+                        fabGlyph = FabGlyph.Camera
+                    )
+                }
+            }
         }
+    }
+}
+
+// Orange hero stage: 430 du tall so the full FAB (bottom 414) is visible.
+@Composable
+private fun DialStage(content: @Composable () -> Unit) {
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(430.duToDp())
+            .background(VitalColors.orange)
+    ) {
+        content()
     }
 }
 
@@ -255,7 +337,7 @@ private fun SectionLabel(text: String) {
         fontSize = 11.sp,
         fontWeight = FontWeight.Medium,
         letterSpacing = 1.sp,
-        modifier = Modifier.padding(bottom = 4.dp)
+        modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp)
     )
 }
 

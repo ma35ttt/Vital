@@ -111,7 +111,7 @@ fun MealsScreen(
         dialHighlightedIndex = 0, // P highlighted
         dialInnerLabel = "EATEN",
         dialInnerValue = "${consumedKcal.toInt()}",
-        dialInnerUnit = "KCAL",
+        dialInnerUnit = "", // mock shows no unit inside the Meals disc
         dialPillText = "OF ${kcalTarget}",
         dialTopPill = "LUNCH",
         dialFabGlyph = FabGlyph.Plus
