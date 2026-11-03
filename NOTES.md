@@ -173,3 +173,52 @@ Built from FIXES_AND_GESTURES_BRIEF section 2 and chrome.md "Glass nav".
 - Device measurements (OnePlus 11R, 3.155 px/du): nav top 804.6 du, bottom 864.6, height 60; slot centres 43.3 / 94.1 / 144.7 / 196.7 / 248.6 / 299.0 / 349.9 (target 43 / 93 / 144 / 196.5 / 249 / 299 / 349); TDY pill 48.2 du; `+` circle 48.2 du. Sheet top highlight 503 du, row pitch 60 du, panel bottom 803 du, nav top 804.8 du.
 - Deferred: "each row focuses the tab's primary input" (REMAINING_TABS_BRIEF section 2). Lift WEIGHT and Settings BODY WEIGHT are display-only wells today and Meals' field has no focus plumbing; wire focus when those tabs get real inputs in M4.
 - NOT TESTED: visual comparison (no QUICK ADD mockup exists; the nav has no separate mockup either).
+
+### M4 Settings 2a — data layer (2026-11-04, commit 92743cf, tag m4-settings-2a)
+
+Split by the user so a DI crash shows up before any DI work sits on top of it.
+
+- `SettingsViewModel.kt` (Hilt): `settings` and `user` StateFlows from `SettingsRepository` / `UserRepository`, plus `setTrueBlack`, `setAiProvider`, `setKcalTarget`, `setMacroTargets`, `setBodyWeightKg`, `setRestPresetSec`, `setNotificationsEnabled`, `setMealRemindersEnabled`, `setWorkoutRemindersEnabled`, `setWaterRemindersEnabled`, `setDisplayName`. No export/import, no API-key setter, no reminder-time setter, no biometric setter yet.
+- `SettingsScreen` takes `viewModel: SettingsViewModel = hiltViewModel()`. The look did not change in 2a.
+- Seeding: `Settings` and `User` rows seeded. The Settings parts of `MainViewModel.loadSampleData()` were removed; the rest of that block (Weeks/Today/Meals/Progress sample data) is still there and still flagged `// TEMP sample data`.
+- `DatabaseModule` gained five unscoped `@Provides` DAO functions (`userDao`, `foodDao`, `recipeDao`, `exerciseDao`, `settingsDao`). Only the DAOs some repository reaches are bound: any other repository fails to resolve the moment something asks for it, and gets a matching `@Provides` then.
+
+### M4 Settings 2b — screen rebuilt to settings.md (2026-11-04)
+
+`SettingsScreen.kt` rebuilt to `design/tabs/settings.md` and the section 1 defects. Measurements below: mocks are 393x855 at 1 du = 1 px, the device is 1 du = 3.1552 px.
+
+- **Section 1 item 1 corrected.** The hero is already at 98 du in the mock (measured 98.0 in `settings-top.png`), so it was never misplaced. The real defect was a **doubled horizontal inset**: the scaffold already pads 12 du and the screen padded 12 again. `ScreenScaffold` now owns the inset and Settings does not reapply `modifier`/`innerPadding` (KDoc says so on the signature).
+- **KCAL size corrected**: settings.md said "mono 700 ~17 (EST)". Measured from the mock: 20.5 du. Built at 20.5.
+- Hero number: measured cap height 55 du in the mock, consistent with the md's 76 du Inter Tight 700 tracking −0.055. Kept at 76.
+- Rows per FIX 0A.6: one-line 47 du, profile 57, two-line 54 with an 8 du gap (pitch 62), label top padding 11, sub-label bottom padding 11. Gaps: hero→label 20.7, label→row 11.3, row→row 7, profile→label 17.7.
+- DATA note text decoded from the mock: `AI KEYS AND PIN ARE NEVER EXPORTED OR OVERWRITTEN BY AN\nIMPORT.` at 10.5 du, line height 15 (the md's FIX warned it must not fall below 10–11 du).
+- **PIN LOCK / BIOMETRIC UNLOCK draw real state but are not tappable** (user's decision). BIOMETRIC reads `User.biometricEnabled == true`, PIN LOCK reads `User.pinHash != null`; both are `VitalToggle(..., enabled = false)` until the M6 auth gate. No schema change. Drawn to the mock's toggle spec.
+- ABOUT dropped, DEBUG SHOWCASE kept as the last row (user's decision). WIDGETS is not built (settings.md line 53; widgets removed 2026-10-31), so the mock's last section has no counterpart.
+- **Not implemented yet** (visible as missing behaviour, not missing pixels): EXPORT JSON / IMPORT JSON (buttons drawn, no handlers), the API-key SHOW row (drawn, non-interactive), hero tap-to-edit (brief section 4.5 item 1), and the ALLOW NOTIFICATIONS tap-through to the system page (brief section 4.5 item 6).
+- **Two-line rows are 54 du / pitch 62 by design, the mock has 46 / pitch 53.** Everything from ALLOW NOTIFICATIONS down therefore sits ~27–38 du lower than the mock. This is the brief's FIX 0A.6, not drift.
+- The mock's final well band (689..744) is the WIDGETS tile row, which is not built; the device's equivalent band (709..752) is the DEBUG SHOWCASE row, so those two are not comparable.
+- The two orange blocks in the nav band (172.7..220.6 and 325.8..373.7 du, y 810.7..858.6) are `GlassBottomNav`'s centre `+` button and the selected SET tab's orange indicator. By design; not a Settings artefact. (An earlier note suspected an OS overlay — that was wrong.)
+
+Differences measured against the mocks, device vs mock, same classifier on both sides:
+
+| Element | Mock | Device | Delta |
+|---|---|---|---|
+| Hero box | 98.0..326.0 | 97.9..326.1 | exact |
+| Macro bar | 278..314 | 278..314 | exact |
+| Hero number ink | 148.0..203.0 | 155.0..210.1 | **+7.0 du low** |
+| KCAL ink | 190.0..203.0 | 192.1..207.0 | +2.1 low, ~1.9 taller |
+| P/C/F fat value ink | 244.0..258.0 | 246.3..260.5 | +2.3 low |
+| NAME row | 371.0..427.0 | 376.8..430.4 | +5.8 top |
+| TRUE BLACK row | 435..491 | 440.9..491.2 | +5.9 top, +0.2 bottom |
+| BODY WEIGHT / REST row | 499..555 | 501.7..555.3 | +2.7 top, +0.3 bottom |
+| AI COACH segmented | 600..641 | 606..646.5 | +6.0 |
+| Key row | 652..697 | 658..702.6 | +6.0 |
+| Security row pitch (scrolled) | 53.0 | 52.9 | matches |
+| Two-line row pitch (scrolled) | 53.0 | 61.8 | FIX 0A.6, deliberate |
+| Nav top | 781 (855 du canvas) | 804.7 (878.5 du screen) | bottom-anchored, expected |
+
+- The one unexplained number is the **hero number sitting 7.0 du low**: the mock's digits start at y 148, ours at 155, with the same cap height. The `Text` offset is y 39.1 inside the hero, i.e. 17.6 du from box top to cap top, where the mock implies ~10.7. Everything else inside the hero is only +2.1..+2.3 du low, so this is the number's own placement, not the hero's. Candidate fix: move that offset up ~7 du (39.1 → ~32). Not applied — waiting for the user's go.
+- The profile and AI COACH sections sit ~3–6 du lower than the mock (rows 1–3 measured by well-band tops, which carry the same `insetShadow` bias on both sides; row bottoms, which are reliable, are within 0.3 du for TRUE BLACK and BODY WEIGHT). Cause not yet isolated.
+- Data-driven text differences, all expected from the seed: BODY WEIGHT `75` vs the mock's `68`; meal reminders `08:00 · 13:00 · 19:00 · 22:00` (seeded JSON) vs the mock's `08:30 · 13:00 · 19:30`; WORKOUT `EVERY DAY · 18:00` vs `MON WED FRI · 18:00`; key row `NO KEY SET` vs the mock's masked key; PIN LOCK and BIOMETRIC OFF vs the mock's ON; WATER ON vs the mock's OFF. Name `Mrityunjay` and provider GEMINI match.
+- Shared components outstanding (not changed in this step): `VitalToggle` sizes in raw dp, so 46 dp renders 43.4 du against the mock's 46 du; `SectionLabel` carries 16 dp horizontal padding; the fonts pass across the other tabs is still pending.
+- NOT TESTED: visual comparison.
