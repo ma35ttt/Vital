@@ -96,7 +96,8 @@ private const val ROW_BUTTON = 47f
 
 private const val GAP_AFTER_HERO = 20.7f
 private const val GAP_LABEL_TO_ROW = 11.3f
-private const val GAP_BETWEEN_ROWS = 7f
+private const val GAP_BETWEEN_ROWS = 8f // settings.md FIX 0A.6
+private const val GAP_BETWEEN_CELLS = 7f // BODY WEIGHT 12..193, REST PRESET 200..381
 private const val GAP_PROFILE_TO_LABEL = 17.7f
 private const val GAP_BEFORE_ROW = 10.3f
 private const val GAP_AFTER_LABEL = 12.3f
@@ -183,7 +184,7 @@ fun SettingsScreen(
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(ROW_PROFILE.duToDp()),
-                horizontalArrangement = Arrangement.spacedBy(GAP_BETWEEN_ROWS.duToDp())
+                horizontalArrangement = Arrangement.spacedBy(GAP_BETWEEN_CELLS.duToDp())
             ) {
                 SettingsValueRow(
                     modifier = Modifier.weight(1f),
@@ -367,7 +368,7 @@ fun SettingsScreen(
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(ROW_BUTTON.duToDp()),
-                horizontalArrangement = Arrangement.spacedBy(GAP_BETWEEN_ROWS.duToDp())
+                horizontalArrangement = Arrangement.spacedBy(GAP_BETWEEN_CELLS.duToDp())
             ) {
                 // EXPORT JSON / IMPORT JSON are drawn to the mock; the file pickers and the
                 // export/import code arrive in the DATA step (NOTES.md), so neither is wired.
@@ -462,15 +463,15 @@ private fun DailyTargetsHero(settings: Settings) {
             color = VitalColors.black,
             weight = FontWeight.Bold,
             tracking = -0.055f,
-            modifier = Modifier.offset(x = 10.2f.duToDp(), y = 39.1f.duToDp())
+            modifier = Modifier.offset(x = 10.2f.duToDp(), y = 32.1f.duToDp())
         )
 
         MonoText(
             text = "KCAL",
-            size = 20.5f,
+            size = 18f,
             color = VitalColors.black,
             tracking = 0.1f,
-            modifier = Modifier.offset(x = 218f.duToDp(), y = 88.3f.duToDp())
+            modifier = Modifier.offset(x = 218f.duToDp(), y = 87f.duToDp())
         )
 
         val columns = listOf(15f, 129f, 242f)
@@ -497,7 +498,7 @@ private fun DailyTargetsHero(settings: Settings) {
                 weight = FontWeight.Bold,
                 modifier = Modifier.offset(
                     x = columns[index].duToDp(),
-                    y = 143.4f.duToDp()
+                    y = 141.1f.duToDp()
                 )
             )
         }
@@ -568,14 +569,25 @@ private fun SettingsTwoLineRow(
     trailing: @Composable (() -> Unit)? = null
 ) {
     SettingsRow(height = ROW_TWO_LINE) {
+        // TopStart, not CenterStart: centring a padded column makes the top padding only
+        // half-effective, which pushed the label ~7 du down (measured).
         Column(
             modifier = Modifier
-                .align(Alignment.CenterStart)
+                .align(Alignment.TopStart)
                 .padding(start = INSET_ROW_TEXT.duToDp(), top = 11.duToDp())
         ) {
-            MonoText(label, 12f, VitalColors.textPrimary, LABEL_TRACKING)
+            // Boxes pinned to their nominal sizes: a 12 du Text lays out ~15.8 du because the
+            // font's ascent + descent exceeds lineHeight, which pushed the sub-label down and
+            // broke the md's "11 du top, 11 du bottom" geometry (FIX 0A.6).
+            MonoText(
+                label, 12f, VitalColors.textPrimary, LABEL_TRACKING,
+                modifier = Modifier.height(12.duToDp())
+            )
             Spacer(Modifier.height(9.5f.duToDp()))
-            MonoText(sub, 10.5f, VitalColors.textMuted, SUB_TRACKING)
+            MonoText(
+                sub, 10.5f, VitalColors.textMuted, SUB_TRACKING,
+                modifier = Modifier.height(10.5f.duToDp())
+            )
         }
         trailing?.let {
             Box(
@@ -603,7 +615,10 @@ private fun SettingsValueRow(
                 .fillMaxSize()
                 .padding(start = 13.5f.duToDp(), top = 9.7f.duToDp())
         ) {
-            MonoText(label, 10f, VitalColors.textMuted, SUB_TRACKING)
+            MonoText(
+                label, 10f, VitalColors.textMuted, SUB_TRACKING,
+                modifier = Modifier.height(10.duToDp())
+            )
             Spacer(Modifier.height(7.7f.duToDp()))
             Row(verticalAlignment = Alignment.Bottom) {
                 InterText(value, 20f, VitalColors.textPrimary, FontWeight.Bold)
@@ -649,9 +664,11 @@ private fun NameRow(
     val displayName = currentName.ifBlank { "—" }
 
     SettingsRow(height = ROW_PROFILE) {
+        // TopStart for the same reason as SettingsTwoLineRow: the 9.7 du top padding must be
+        // measured from the row's top edge, not halved by centre alignment.
         Column(
             modifier = Modifier
-                .align(Alignment.CenterStart)
+                .align(Alignment.TopStart)
                 .padding(start = INSET_ROW_TEXT.duToDp(), top = 9.7f.duToDp())
         ) {
             MonoText("NAME", 10f, VitalColors.textMuted, SUB_TRACKING)
@@ -781,6 +798,13 @@ private const val KCAL_PER_G_PROTEIN = 4
 private const val KCAL_PER_G_CARBS = 4
 private const val KCAL_PER_G_FAT = 9
 
+/**
+ * Section label pinned to its nominal 13 du box. A `Text` with `lineHeight = 13` still lays
+ * out ~16.7 du, because JetBrains Mono's ascent + descent is ~1.32 em and the font's own line
+ * box wins over a smaller lineHeight. That extra 3.7 du pushed every row below a label down,
+ * and is what made PROFILE / AI COACH read 3-6 du low against settings.md. The 2.5 du lift is
+ * the measured ink offset of the small mono glyphs inside their box.
+ */
 @Composable
 private fun SettingsSectionLabel(title: String) {
     MonoText(
@@ -790,6 +814,8 @@ private fun SettingsSectionLabel(title: String) {
         tracking = 0.24f,
         modifier = Modifier
             .fillMaxWidth()
+            .height(SECTION_LABEL_HEIGHT.duToDp())
+            .offset(y = (-2.5f).duToDp())
             .padding(start = INSET_SECTION_LABEL.duToDp())
     )
 }

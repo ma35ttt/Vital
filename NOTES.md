@@ -222,3 +222,22 @@ Differences measured against the mocks, device vs mock, same classifier on both 
 - Data-driven text differences, all expected from the seed: BODY WEIGHT `75` vs the mock's `68`; meal reminders `08:00 · 13:00 · 19:00 · 22:00` (seeded JSON) vs the mock's `08:30 · 13:00 · 19:30`; WORKOUT `EVERY DAY · 18:00` vs `MON WED FRI · 18:00`; key row `NO KEY SET` vs the mock's masked key; PIN LOCK and BIOMETRIC OFF vs the mock's ON; WATER ON vs the mock's OFF. Name `Mrityunjay` and provider GEMINI match.
 - Shared components outstanding (not changed in this step): `VitalToggle` sizes in raw dp, so 46 dp renders 43.4 du against the mock's 46 du; `SectionLabel` carries 16 dp horizontal padding; the fonts pass across the other tabs is still pending.
 - NOT TESTED: visual comparison.
+
+### M4 Settings 2b follow-up — hero offsets and the profile/AI COACH drift (2026-11-04)
+
+Fixes the round left open at the end of the 2b entry: the hero number, the KCAL ink, the hero P/C/F values, and the cause of PROFILE / AI COACH sitting 3–6 du low.
+
+- **Hero number** `y` 39.1 → 32.1 du. Ink moved from 155.0..210.1 to 147.7..203.8 against the mock's 148.0..203.0: **+7.0 du → −0.3 / +0.8**.
+- **KCAL ink** size 20.5 → 18 du, `y` 88.3 → 87 du. Band is now 190.2..203.2, **h = 13.0, identical to the mock** (was 192.1..207.0, h 14.9: 2.1 low and 1.9 taller). This reverses the 2b call that set it to the measured 20.5; 20.5 was measuring the laid-out box, not the cap, so the glyphs overshot.
+- **Hero P/C/F values** `y` 143.4 → 141.1 du: **+2.3 → −0.3**.
+- **The profile/AI COACH drift was not a gap above the section.** Three causes, found by probing the row borders at x = 190 du (`26 <= max(c) <= 70`, which reads the 1.5 dp `WellRow` stroke and is immune to the `insetShadow` bias that corrupts well-band tops):
+  1. **A `Text` with `lineHeight = 13` lays out ~16.7 du.** JetBrains Mono's ascent + descent is ~1.32 em, so the font's own line box wins over the smaller `lineHeight`. Every section label therefore added ~3.7 du and pushed all rows below it down. Fixed by pinning `SettingsSectionLabel` to a 13 du box (`.height(...)`) with a measured 2.5 du glyph lift. Inter Tight is ~1.211 em, so the same effect applies to Inter text.
+  2. **`Alignment.CenterStart` on a top-padded Column halves its own padding** — offset = (rowHeight − contentHeight)/2 + padding/2, so the specified top padding is only half-effective and a small target offset is unreachable. `NameRow` and `SettingsTwoLineRow` now use `.align(Alignment.TopStart)`.
+  3. **Row pitch was 7 du where settings.md FIX 0A.6 says 8.** Fixing (1) then overshot AI COACH to −2.9 and unmasked this. `GAP_BETWEEN_ROWS` 7 → 8, and a new `GAP_BETWEEN_CELLS = 7f` keeps the two horizontal pairs (BODY WEIGHT / REST PRESET, EXPORT / IMPORT) at the md's 7 du so they are not silently widened.
+  - Nested text boxes in `SettingsTwoLineRow` (12 / 10.5 du) and `SettingsValueRow` (10 du) are pinned to their nominal heights for the same reason as (1).
+- Row boxes after, device vs mock (du): NAME 371.1..427.9 (372..426), TRUE BLACK 436.1..489.7 (436..490), segmented 598.1..641.8 (599..642), key row 650.0..697.9 (651..698) — all within ~1 du. Scrolled pitches: security 53.0 (md 53), two-line 61.8 (FIX 0A.6 62).
+- Remaining residuals are the app-wide small-text ink bias, all ≤ 3 du and all downward: NAME label +2.8, TRUE BLACK label +3.0, its sub +2.6, BODY/REST label +1.6, BODY value +0.9, AI COACH −1.0, PROFILE 0.0. Not chased further in this step.
+- Two bands are **not comparable** and were left alone: "NAME value" (mock glyph height 5 vs device 12.7 — the mock's is masked) and the key row top (−4.6, `NO KEY SET` vs the mock's masked dots).
+- Scrolled state read visually only: hero lower half, PROFILE, AI COACH, SECURITY, NOTIFICATIONS, DATA, the AI-keys note, DEBUG and DEBUG SHOWCASE all present; no missing, clipped or overlapping element.
+- NOT TESTED: visual comparison.
+- NOT TESTED: numeric comparison of the scrolled state against `settings-scrolled.png`.
