@@ -44,7 +44,6 @@ class MainViewModel @Inject constructor() : ViewModel() {
     val trueBlack = MutableStateFlow(true)
     val aiProvider = MutableStateFlow("gemini")
     val bodyWeightKg = MutableStateFlow(80f)
-    val restPresetSec = MutableStateFlow(180)
 
     // Progress screen data
     val currentWeight = MutableStateFlow(80f)
@@ -56,11 +55,6 @@ class MainViewModel @Inject constructor() : ViewModel() {
     // Meals screen data
     val consumedKcal = MutableStateFlow(0f)
     val mealsToday = MutableStateFlow<List<MealCapsule>>(emptyList())
-
-    // Lift screen data
-    val volumeToday = MutableStateFlow(0f)
-    val restTimerActive = MutableStateFlow(false)
-    val restTimerRemaining = MutableStateFlow(0)
 
     // Cardio screen data
     val cardioKcalToday = MutableStateFlow(0f)
