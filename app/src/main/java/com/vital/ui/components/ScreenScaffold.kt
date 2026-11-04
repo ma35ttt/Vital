@@ -451,7 +451,7 @@ fun SectionLabel(
         lineHeight = 13.duToSp(),
         modifier = modifier
             .fillMaxWidth()
-            .padding(horizontal = 16.dp)
+            .padding(horizontal = 16.duToDp())
     )
 }
 
@@ -582,19 +582,19 @@ fun VitalToggle(
     modifier: Modifier = Modifier,
     enabled: Boolean = true
 ) {
-    val trackWidth = 46.dp
-    val trackHeight = 26.dp
-    val knobSize = 20.dp
+    val trackWidth = 46.duToDp()
+    val trackHeight = 26.duToDp()
+    val knobSize = 20.duToDp()
 
     androidx.compose.material3.Surface(
         modifier = modifier
             .size(trackWidth, trackHeight)
             .clickable(enabled = enabled, onClick = { onCheckedChange(!checked) })
-            .insetShadow(elevation = 1.dp, cornerRadius = trackHeight / 2, shadowColor = VitalColors.black.copy(alpha = 0.3f)),
+            .insetShadow(elevation = 1.duToDp(), cornerRadius = trackHeight / 2, shadowColor = VitalColors.black.copy(alpha = 0.3f)),
         color = if (checked) VitalColors.toggleOnFill else VitalColors.toggleOffFill,
         shape = androidx.compose.foundation.shape.RoundedCornerShape(trackHeight / 2),
         border = if (checked) androidx.compose.foundation.BorderStroke(0.dp, Color.Transparent)
-        else androidx.compose.foundation.BorderStroke(1.5.dp, VitalColors.toggleOffStroke)
+        else androidx.compose.foundation.BorderStroke(1.5f.duToDp(), VitalColors.toggleOffStroke)
     ) {
         Box(
             modifier = Modifier.fillMaxSize(),
@@ -603,8 +603,8 @@ fun VitalToggle(
             androidx.compose.material3.Surface(
                 modifier = Modifier
                     .size(knobSize)
-                    .padding(horizontal = 3.dp)
-                    .padding(vertical = 3.dp),
+                    .padding(horizontal = 3.duToDp())
+                    .padding(vertical = 3.duToDp()),
                 color = if (checked) VitalColors.toggleOnKnob else VitalColors.toggleOffKnob,
                 shape = androidx.compose.foundation.shape.CircleShape
             ) {}

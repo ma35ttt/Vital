@@ -45,6 +45,16 @@ class SettingsViewModel @Inject constructor(
 
     fun setKcalTarget(kcal: Int) = updateSettings { it.copy(kcalTarget = kcal) }
 
+    /** One write for the hero editor: kcal and all three macro targets move together. */
+    fun setDailyTargets(kcal: Int, proteinG: Int, carbsG: Int, fatG: Int) = updateSettings {
+        it.copy(
+            kcalTarget = kcal,
+            proteinTarget = proteinG,
+            carbsTarget = carbsG,
+            fatTarget = fatG
+        )
+    }
+
     fun setMacroTargets(proteinG: Int, carbsG: Int, fatG: Int) = updateSettings {
         it.copy(proteinTarget = proteinG, carbsTarget = carbsG, fatTarget = fatG)
     }
