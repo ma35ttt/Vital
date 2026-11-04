@@ -7,6 +7,7 @@ import com.vital.data.dao.MealLogDao
 import com.vital.data.dao.RecipeDao
 import com.vital.data.dao.SettingsDao
 import com.vital.data.dao.UserDao
+import com.vital.data.dao.WorkoutDao
 import com.vital.data.database.VitalDatabase
 import dagger.Module
 import dagger.Provides
@@ -33,5 +34,6 @@ object DatabaseModule {
     @Provides fun provideMealLogDao(db: VitalDatabase): MealLogDao = db.mealLogDao()
     @Provides fun provideRecipeDao(db: VitalDatabase): RecipeDao = db.recipeDao()
     @Provides fun provideExerciseDao(db: VitalDatabase): ExerciseDao = db.exerciseDao()
+    @Provides fun provideWorkoutDao(db: VitalDatabase): WorkoutDao = db.workoutDao()
     @Provides fun provideSettingsDao(db: VitalDatabase): SettingsDao = db.settingsDao()
 }
