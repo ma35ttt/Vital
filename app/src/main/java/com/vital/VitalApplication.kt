@@ -19,6 +19,9 @@ class VitalApplication : Application() {
 
     override fun onCreate() {
         super.onCreate()
-        scope.launch { seedLoader.seedUserAndSettings() }
+        scope.launch {
+            seedLoader.seedUserAndSettings()
+            seedLoader.loadIfNeeded()
+        }
     }
 }
