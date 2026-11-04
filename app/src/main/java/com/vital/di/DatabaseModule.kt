@@ -3,6 +3,7 @@ package com.vital.di
 import android.content.Context
 import com.vital.data.dao.ExerciseDao
 import com.vital.data.dao.FoodDao
+import com.vital.data.dao.MealLogDao
 import com.vital.data.dao.RecipeDao
 import com.vital.data.dao.SettingsDao
 import com.vital.data.dao.UserDao
@@ -24,11 +25,12 @@ object DatabaseModule {
     }
 
     // Room's generated database caches each DAO instance internally, so these need no scope
-    // of their own. RepositoryModule consumes them. Only the five that SeedLoader reaches are
-    // bound so far; any other repository starts failing to resolve the moment something asks
-    // for it, and its DAO gets a matching @Provides then.
+    // of their own. RepositoryModule consumes them. Only the DAOs that SeedLoader or a screen
+    // reaches are bound so far; any other repository starts failing to resolve the moment
+    // something asks for it, and its DAO gets a matching @Provides then.
     @Provides fun provideUserDao(db: VitalDatabase): UserDao = db.userDao()
     @Provides fun provideFoodDao(db: VitalDatabase): FoodDao = db.foodDao()
+    @Provides fun provideMealLogDao(db: VitalDatabase): MealLogDao = db.mealLogDao()
     @Provides fun provideRecipeDao(db: VitalDatabase): RecipeDao = db.recipeDao()
     @Provides fun provideExerciseDao(db: VitalDatabase): ExerciseDao = db.exerciseDao()
     @Provides fun provideSettingsDao(db: VitalDatabase): SettingsDao = db.settingsDao()

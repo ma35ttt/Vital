@@ -241,3 +241,22 @@ Fixes the round left open at the end of the 2b entry: the hero number, the KCAL 
 - Scrolled state read visually only: hero lower half, PROFILE, AI COACH, SECURITY, NOTIFICATIONS, DATA, the AI-keys note, DEBUG and DEBUG SHOWCASE all present; no missing, clipped or overlapping element.
 - NOT TESTED: visual comparison.
 - NOT TESTED: numeric comparison of the scrolled state against `settings-scrolled.png`.
+
+### M4 Settings 2c + shared components (2026-11-04)
+
+- **Key row SHOW/HIDE.** The row now reads `NO KEY SET` until a key exists, otherwise masked dots. SHOW swaps to the stored value and HIDE swaps back; the toggle resets whenever `aiApiKeyEncrypted` changes.
+- **Hero tap-to-edit.** Tapping the DAILY TARGETS hero opens a kcal + protein/carbs/fat dialog. SAVE writes all four through one `SettingsViewModel.setDailyTargets(...)` Room upsert, so the hero and the day's remaining numbers move together.
+- **ALLOW NOTIFICATIONS tap-through.** The row opens `Settings.ACTION_APP_NOTIFICATION_SETTINGS` with `EXTRA_APP_PACKAGE`; the toggle still writes `notificationsEnabled`.
+- **Shared components converted to du.** `VitalToggle` is 46 x 26 du with a 20 du knob and 1.5 du stroke; `SectionLabel` uses 16 du horizontal padding. Today and Summary do not reference either component. Lift is the only other caller of `SectionLabel`, so its labels now scale with the design unit like the rest of the tab.
+- Build, unit tests and `assembleDebug` green after the step.
+
+### M4 Meals — Room-backed rebuild (2026-11-04)
+
+`MealsScreen.kt` rebuilt to `docs/measurements/meals.md` and wired to Room through a new `MealsViewModel`; `MainViewModel` sample meals are no longer used.
+
+- **Layout.** Sheet content starts at 416 du (scaffold 8 du + 3 du list padding). Method tiles 54 du, smart-text field 44 du, ambiguity pill 24 du, slot rows 42 du, all 8 du apart. Dashed empty-slot rows use a real `PathEffect` round-rect (the first pass drew the corner arcs 90 degrees out). Empty rows stack the muted slot label over the orange `+ LOG <SLOT>` line like the mock.
+- **Live data.** Hero `KCAL LEFT` = target − sum of today's `MealLogEntry.kcal`; dial `EATEN` uses the same sum, so the hero, dial and slot rows agree even if a seed's kcal is not exactly 4/4/9. `OF 2,500` and the top slot pill read `Settings.kcalTarget` and the current time slot.
+- **Logging.** Smart text parses the seeded Food rows (RAW/COOKED grouped, aliases normalised from names), opens the RAW OR COOKED modal on ambiguity, and snapshots the chosen variant's macros. Search rows open a grams + slot dialog. Tapping a filled slot opens its detail list with soft delete; tapping an empty slot selects TEXT and targets that slot for ADD.
+- **Seed fix.** `SeedLoader.loadIfNeeded()` was never called, so the Food/Recipe/Exercise tables stayed empty. `VitalApplication` now calls it after `seedUserAndSettings()`. `DatabaseModule` gained the `MealLogDao` provider the new ViewModel needs.
+- **Device check (e281c7, 1240 x 2772, density 476).** Logged `rice 150g` → RAW/COOKED dialog → COOKED: LUNCH row `White Rice 150g`, hero `2,312`, dial `EATEN 188`; restarted the app and the row/hero persisted; soft delete returned the hero to `2,500` / `EATEN 0`; no `AndroidRuntime:E`.
+- **Not built yet.** WEB and RECIPE tiles select but have no flow; there is no date picker (today only); QUICK ADD and the keyboard-open state are still design-only. Search results render inline when a query matches, which the mock does not draw.
