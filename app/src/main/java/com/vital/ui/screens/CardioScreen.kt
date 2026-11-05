@@ -1,5 +1,6 @@
 package com.vital.ui.screens
 
+import androidx.compose.animation.animateContentSize
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -426,7 +427,7 @@ private fun RecentSection(
     onSelect: (CardioSession) -> Unit,
     modifier: Modifier = Modifier
 ) {
-    Column(modifier = modifier.fillMaxWidth()) {
+    Column(modifier = modifier.fillMaxWidth().animateContentSize()) {
         EditorialSectionHeader(
             title = "Recent",
             trailing = if (sessions.isEmpty()) "none" else "${sessions.size} shown"

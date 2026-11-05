@@ -124,10 +124,12 @@ fun ExerciseLibraryScreen(
                 }
             } else {
                 items(state.visible, key = { it.id }) { exercise ->
-                    ExerciseLibraryRow(
-                        exercise = exercise,
-                        onClick = { viewModel.open(exercise) }
-                    )
+                    Box(Modifier.animateItem()) {
+                        ExerciseLibraryRow(
+                            exercise = exercise,
+                            onClick = { viewModel.open(exercise) }
+                        )
+                    }
                 }
             }
         }

@@ -334,7 +334,9 @@ private fun Thread(state: CoachUiState, listState: LazyListState) {
         verticalArrangement = Arrangement.spacedBy(20.dp)
     ) {
         items(state.messages, key = { it.id }) { message ->
-            if (message.isUser) UserTurn(message) else CoachTurn(message)
+            Box(Modifier.animateItem()) {
+                if (message.isUser) UserTurn(message) else CoachTurn(message)
+            }
         }
         if (state.sending) {
             item(key = "thinking") {

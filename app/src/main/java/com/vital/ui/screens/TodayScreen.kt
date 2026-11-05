@@ -1,5 +1,9 @@
 package com.vital.ui.screens
 
+import androidx.compose.animation.animateContentSize
+import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -15,6 +19,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
@@ -25,6 +30,7 @@ import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.StrokeJoin
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.graphics.drawscope.clipRect
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
@@ -179,6 +185,15 @@ private fun TodayHero(
 
 @Composable
 private fun TodayRing(progress: Float, modifier: Modifier = Modifier) {
+    // Sweep from 0 to the current value so the ring fills instead of popping when data arrives.
+    val animated = remember { Animatable(0f) }
+    LaunchedEffect(progress) {
+        animated.animateTo(
+            targetValue = progress.coerceIn(0f, 1f),
+            animationSpec = tween(durationMillis = 700, easing = FastOutSlowInEasing)
+        )
+    }
+    val value = animated.value
     Canvas(modifier = modifier) {
         val stroke = 5.dp.toPx()
         val radius = size.minDimension / 2f - stroke / 2f
@@ -193,11 +208,11 @@ private fun TodayRing(progress: Float, modifier: Modifier = Modifier) {
             radius = radius,
             style = Stroke(width = stroke)
         )
-        if (progress > 0f) {
+        if (value > 0f) {
             drawArc(
                 color = VitalColors.orange,
                 startAngle = -90f,
-                sweepAngle = 360f * progress,
+                sweepAngle = 360f * value,
                 useCenter = false,
                 topLeft = topLeft,
                 size = arcSize,
@@ -253,6 +268,15 @@ private fun WeekChart(
     val max = remember(points) {
         points.maxOrNull()?.takeIf { it > 0.0 } ?: 1.0
     }
+    // Reveal the line left to right when the week data lands.
+    val reveal = remember { Animatable(0f) }
+    LaunchedEffect(points) {
+        reveal.snapTo(0f)
+        reveal.animateTo(
+            targetValue = 1f,
+            animationSpec = tween(durationMillis = 650, easing = FastOutSlowInEasing)
+        )
+    }
     Canvas(modifier = modifier) {
         if (points.size < 2) return@Canvas
 
@@ -270,15 +294,6 @@ private fun WeekChart(
             if (index == 0) line.moveTo(x(index), y(value))
             else line.lineTo(x(index), y(value))
         }
-        drawPath(
-            path = line,
-            color = VitalColors.ruleStrong,
-            style = Stroke(
-                width = 1.5.dp.toPx(),
-                cap = StrokeCap.Round,
-                join = StrokeJoin.Round
-            )
-        )
 
         // The segment into today is the only orange part, so the accent stays a highlight.
         val last = points.lastIndex
@@ -286,16 +301,28 @@ private fun WeekChart(
             moveTo(x(last - 1), y(points[last - 1]))
             lineTo(x(last), y(points[last]))
         }
-        drawPath(
-            path = todaySegment,
-            color = VitalColors.orange,
-            style = Stroke(width = 1.5.dp.toPx(), cap = StrokeCap.Round)
-        )
-        drawCircle(
-            color = VitalColors.orange,
-            radius = 3.dp.toPx(),
-            center = Offset(x(last), y(points[last]))
-        )
+
+        clipRect(right = size.width * reveal.value) {
+            drawPath(
+                path = line,
+                color = VitalColors.ruleStrong,
+                style = Stroke(
+                    width = 1.5.dp.toPx(),
+                    cap = StrokeCap.Round,
+                    join = StrokeJoin.Round
+                )
+            )
+            drawPath(
+                path = todaySegment,
+                color = VitalColors.orange,
+                style = Stroke(width = 1.5.dp.toPx(), cap = StrokeCap.Round)
+            )
+            drawCircle(
+                color = VitalColors.orange,
+                radius = 3.dp.toPx(),
+                center = Offset(x(last), y(points[last]))
+            )
+        }
     }
 }
 
@@ -308,7 +335,7 @@ private fun WorkoutsSection(
     onNavigateToCardio: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    Column(modifier = modifier.fillMaxWidth()) {
+    Column(modifier = modifier.fillMaxWidth().animateContentSize()) {
         EditorialSectionHeader(
             title = "Workouts",
             trailing = if (state.workoutCount == 1) "1 today" else "${state.workoutCount} today"
