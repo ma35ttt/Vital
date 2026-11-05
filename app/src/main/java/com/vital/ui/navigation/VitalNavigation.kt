@@ -45,6 +45,7 @@ import com.vital.ui.screens.CardioScreen
 import com.vital.ui.screens.CoachChatScreen
 import com.vital.ui.screens.DebugShowcaseScreen
 import com.vital.ui.screens.ExerciseLibraryScreen
+import com.vital.ui.screens.GoalScreen
 import com.vital.ui.screens.LiftScreen
 import com.vital.ui.screens.MealsScreen
 import com.vital.ui.screens.ProgressScreen
@@ -276,6 +277,12 @@ fun VitalNavigation() {
                 }
                 composable("summary") {
                     SummaryScreen(
+                        modifier = Modifier.fillMaxSize(),
+                        onBack = { navController.popBackStack() }
+                    )
+                }
+                composable("goal") {
+                    GoalScreen(
                         modifier = Modifier.fillMaxSize(),
                         onBack = { navController.popBackStack() }
                     )

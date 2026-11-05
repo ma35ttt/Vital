@@ -2,6 +2,7 @@ package com.vital.domain
 
 import com.vital.data.entity.ActivityLevel
 import com.vital.data.entity.GoalType
+import com.vital.data.entity.Settings
 import com.vital.data.entity.Sex
 import kotlin.math.roundToInt
 
@@ -35,6 +36,23 @@ data class BodyProfile(
 data class HealthyRange(
     val minKg: Double,
     val maxKg: Double
+)
+
+/** Reads the body-goal inputs out of the stored settings. */
+fun bodyProfileOf(settings: Settings): BodyProfile = BodyProfile(
+    weightKg = settings.bodyWeightKg,
+    heightCm = settings.heightCm,
+    age = settings.age,
+    sex = settings.sex,
+    activityLevel = settings.activityLevel
+)
+
+/** The plan implied by the stored settings. */
+fun bodyGoalPlan(settings: Settings): BodyGoalPlan = bodyGoalPlan(
+    profile = bodyProfileOf(settings),
+    goalType = settings.goalType,
+    goalWeightKg = settings.goalWeightKg,
+    rateKgPerWeek = settings.goalRateKgPerWeek
 )
 
 /** Everything the goal screen shows, derived once from the stored settings. */
