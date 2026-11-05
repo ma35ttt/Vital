@@ -301,17 +301,21 @@ private fun MacroDivider() {
 fun EditorialButton(
     text: String,
     onClick: () -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    enabled: Boolean = true
 ) {
     Button(
         onClick = onClick,
+        enabled = enabled,
         modifier = modifier
             .fillMaxWidth()
             .height(50.dp),
         shape = RoundedCornerShape(4.dp),
         colors = ButtonDefaults.buttonColors(
-            containerColor = VitalColors.orange,
-            contentColor = VitalColors.black
+            containerColor = if (enabled) VitalColors.orange else VitalColors.orange.copy(alpha = 0.35f),
+            contentColor = VitalColors.black.copy(alpha = if (enabled) 1f else 0.5f),
+            disabledContainerColor = VitalColors.orange.copy(alpha = 0.35f),
+            disabledContentColor = VitalColors.black.copy(alpha = 0.5f)
         ),
         contentPadding = androidx.compose.foundation.layout.PaddingValues(0.dp)
     ) {
