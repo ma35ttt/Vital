@@ -28,7 +28,11 @@ android {
             matchingFallbacks.add("debug")
         }
         release {
-            isMinifyEnabled = false
+            // R8 shrinks and optimizes the app: smaller APK, faster startup, less work on
+            // the main thread. The keep rules in proguard-rules.pro cover the reflective
+            // edges (Gson models, WorkManager workers, kotlinx.serialization).
+            isMinifyEnabled = true
+            isShrinkResources = true
             proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
         }
     }
