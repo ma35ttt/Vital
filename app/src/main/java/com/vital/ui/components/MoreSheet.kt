@@ -217,6 +217,7 @@ private fun MoreSheetContent(
             color = VitalColors.inkMuted,
             modifier = Modifier.padding(top = 26.dp, bottom = 2.dp)
         )
+        MoreRow(label = "Goal", onClick = { onNavigate("goal") }, trailing = "›")
         MoreRow(label = "Summary", onClick = { onNavigate("summary") }, trailing = "›")
         MoreRow(label = "Weeks", onClick = { onNavigate("weeks") }, trailing = "›")
         MoreRow(label = "Exercises", onClick = { onNavigate("exercises") }, trailing = "›")
