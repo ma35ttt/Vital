@@ -26,6 +26,7 @@ import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import com.vital.ui.LiveIslandViewModel
 import com.vital.ui.ReminderStatusViewModel
+import com.vital.ui.TutorialViewModel
 import com.vital.ui.components.MoreSheet
 import com.vital.ui.components.QuickAddAction
 import com.vital.ui.components.RestIsland
@@ -41,11 +42,20 @@ import com.vital.ui.screens.ProgressScreen
 import com.vital.ui.screens.SettingsScreen
 import com.vital.ui.screens.SummaryScreen
 import com.vital.ui.screens.TodayScreen
+import com.vital.ui.screens.TutorialScreen
 import com.vital.ui.screens.WeeksScreen
 import com.vital.ui.theme.VitalColors
 
 @Composable
 fun VitalNavigation() {
+    // First run: the walk-through replaces the shell until it is finished or skipped.
+    val tutorialViewModel: TutorialViewModel = hiltViewModel()
+    val showTutorial by tutorialViewModel.showTutorial.collectAsStateWithLifecycle()
+    if (showTutorial) {
+        TutorialScreen(onFinish = tutorialViewModel::finish)
+        return
+    }
+
     val navController = rememberNavController()
     var moreOpen by remember { mutableStateOf(false) }
 

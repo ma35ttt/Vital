@@ -477,3 +477,24 @@ movements to 923, and there is now a browse screen for all of them.
 - **Not built yet.** No way to add a custom exercise or edit one from the library; the Lift
   picker still has no muscle filter (decision: the new screen replaces that need).
 
+### M5 — First-run tutorial (2026-11-05)
+
+A visual "how Vital works" walk-through shown once per install, mocked before coding
+(`tmp/concepts/tutorial.html` / `.png`).
+
+- **Trigger.** `OnboardingPreferences` (SharedPreferences `vital_onboarding`, key
+  `tutorial_seen`) avoids a Room migration. `TutorialViewModel` seeds `showTutorial` from the
+  flag; `finish()` writes it and hides. `VitalNavigation` renders the tutorial in place of the
+  shell until it has been seen.
+- **Screen.** `TutorialScreen` is a `HorizontalPager` of five pages in the editorial style:
+  Welcome (real launcher icon + wordmark + a tab montage built from `VitalNavGlyph`), Log it
+  (`QuickAddGlyph` rows), Today (kcal bar + macro rows), Train (rest ring + presets + a
+  `COMPOUND` row) and Progress (adherence, bars, PRs). Page counter + `Skip` up top, dots and
+  `Next` / `Get started` below. It follows the Dark / Light theme.
+- **Device check (e281c7, 1240 x 2772, density 476, Porcelain light).** A clean state opens on
+  page 1 (icon + montage); `Next` walks all five; `Get started` returns to Today and writes the
+  flag; relaunching skips straight to the app.
+- **Not built yet.** The tutorial cannot be replayed (no Settings row yet); the Today / Train /
+  Progress pages are static illustrations, not live data.
+
+
