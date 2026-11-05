@@ -11,6 +11,8 @@ import com.vital.data.repository.SettingsRepository
 import com.vital.data.repository.WorkoutRepository
 import com.vital.data.seed.LOCAL_USER_ID
 import dagger.hilt.android.lifecycle.HiltViewModel
+import java.time.Instant
+import java.time.ZoneId
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -113,6 +115,21 @@ class LiftViewModel @Inject constructor(
 
     val weightText: StateFlow<String> = draft.weightText.asStateFlow()
     val repsText: StateFlow<String> = draft.repsText.asStateFlow()
+    val rpeText: StateFlow<String> = draft.rpeText.asStateFlow()
+
+    /** Non-null while a workout started from "New workout" is being walked. */
+    val planProgress: StateFlow<PlanProgress?> =
+        combine(draft.plan, draft.planIndex) { plan, index ->
+            if (plan.isEmpty()) null else PlanProgress(index + 1, plan.size)
+        }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), null)
+
+    /** Set by the More sheet; Lift opens the New workout sheet when it turns true. */
+    val newWorkoutRequested: StateFlow<Boolean> = draft.newWorkoutRequested.asStateFlow()
+
+    private val _newWorkout = MutableStateFlow<NewWorkoutPlan?>(null)
+
+    /** The New workout sheet's contents: null while loading or closed. */
+    val newWorkout: StateFlow<NewWorkoutPlan?> = _newWorkout.asStateFlow()
 
     init {
         viewModelScope.launch {
@@ -136,6 +153,10 @@ class LiftViewModel @Inject constructor(
         draft.selectedExerciseId.value = exercise.id
         draft.weightText.value = ""
         draft.repsText.value = ""
+        draft.rpeText.value = ""
+        // Picking an exercise by hand leaves the planned workout behind.
+        draft.plan.value = emptyList()
+        draft.planIndex.value = 0
         viewModelScope.launch { prefillFromLastSet(exercise.id) }
     }
 
@@ -149,6 +170,15 @@ class LiftViewModel @Inject constructor(
 
     fun setReps(text: String) {
         draft.repsText.value = text.filter { it.isDigit() }.take(3)
+    }
+
+    /** RPE is optional; allow one decimal so half-steps still work. */
+    fun setRpe(text: String) {
+        draft.rpeText.value = text
+            .filterIndexed { index, char ->
+                char.isDigit() || (char == '.' && text.take(index).none { it == '.' })
+            }
+            .take(4)
     }
 
     fun setRestPreset(seconds: Int) {
@@ -170,6 +200,7 @@ class LiftViewModel @Inject constructor(
         val reps = repsText.value.toIntOrNull() ?: return
         if (weight <= 0.0 || reps <= 0) return
 
+        val rpe = rpeText.value.toDoubleOrNull()?.takeIf { it in 1.0..10.0 }
         val restSeconds = restPresets.value.getOrNull(1) ?: 180
         viewModelScope.launch {
             logMutex.withLock {
@@ -193,7 +224,8 @@ class LiftViewModel @Inject constructor(
                         exerciseId = exercise.id,
                         setIndex = setIndex,
                         weightKg = weight,
-                        reps = reps
+                        reps = reps,
+                        rpe = rpe
                     )
                 )
                 restTimer.start(restSeconds)
@@ -211,7 +243,172 @@ class LiftViewModel @Inject constructor(
         val last = workoutRepository.getLatestSetForExercise(exerciseId).first() ?: return
         draft.weightText.value = formatLiftWeight(last.weightKg)
         draft.repsText.value = last.reps.toString()
+        draft.rpeText.value = last.rpe?.let { formatRpe(it) } ?: ""
     }
+
+    // ---- New workout ------------------------------------------------------------------------
+
+    /** Called by the More sheet to ask Lift to open its creator. */
+    fun requestNewWorkout() {
+        draft.newWorkoutRequested.value = true
+    }
+
+    fun consumeNewWorkoutRequest() {
+        draft.newWorkoutRequested.value = false
+    }
+
+    /**
+     * Builds the New workout plan from the most recent session that actually has sets,
+     * skipping today's in-progress session. Each exercise keeps the intensity, reps and RPE
+     * from its last set so the workout can be repeated in one tap.
+     */
+    fun loadNewWorkout() {
+        _newWorkout.value = null
+        viewModelScope.launch {
+            val names = exerciseRepository.getAllExercises().first()
+                .associate { it.id to it.name }
+            // Skip today's in-progress session so "last workout" means the previous one.
+            val activeId = workoutRepository.getActiveSession(LOCAL_USER_ID).first()?.id
+                ?: pendingSessionId
+            val sessions = workoutRepository.getAllSessions(LOCAL_USER_ID).first()
+
+            var source: WorkoutSession? = null
+            var sets: List<WorkoutSet> = emptyList()
+            for (session in sessions) {
+                if (session.id == activeId) continue
+                val candidate = workoutRepository.getSetsForSession(session.id).first()
+                if (candidate.isNotEmpty()) {
+                    source = session
+                    sets = candidate
+                    break
+                }
+            }
+
+            _newWorkout.value = NewWorkoutPlan(
+                items = if (source == null) emptyList() else buildPlanItems(sets, names),
+                ageLabel = source?.let { relativeAgeLabel(it.startedAt) }
+            )
+        }
+    }
+
+    fun dismissNewWorkout() {
+        _newWorkout.value = null
+    }
+
+    fun updatePlanWeight(index: Int, text: String) =
+        updatePlanItem(index, weightText = sanitizeDecimal(text))
+
+    fun updatePlanReps(index: Int, text: String) =
+        updatePlanItem(index, repsText = text.filter { it.isDigit() }.take(3))
+
+    fun updatePlanRpe(index: Int, text: String) =
+        updatePlanItem(index, rpeText = sanitizeDecimal(text))
+
+    private fun updatePlanItem(
+        index: Int,
+        weightText: String? = null,
+        repsText: String? = null,
+        rpeText: String? = null
+    ) {
+        val plan = _newWorkout.value ?: return
+        val item = plan.items.getOrNull(index) ?: return
+        val updated = plan.items.toMutableList().also { list ->
+            list[index] = item.copy(
+                weightText = weightText ?: item.weightText,
+                repsText = repsText ?: item.repsText,
+                rpeText = rpeText ?: item.rpeText
+            )
+        }
+        _newWorkout.value = plan.copy(items = updated)
+    }
+
+    /** Adds an exercise to the plan, prefilled from the last time it was logged. */
+    fun addPlanExercise(exercise: Exercise) {
+        viewModelScope.launch {
+            val last = workoutRepository.getLatestSetForExercise(exercise.id).first()
+            val item = WorkoutPlanItem(
+                exerciseId = exercise.id,
+                name = exercise.name,
+                weightText = last?.let { formatLiftWeight(it.weightKg) } ?: "",
+                repsText = last?.reps?.toString() ?: "",
+                rpeText = last?.rpe?.let { formatRpe(it) } ?: "",
+                setCount = 3
+            )
+            val plan = _newWorkout.value ?: NewWorkoutPlan(emptyList(), null)
+            _newWorkout.value = plan.copy(items = plan.items + item)
+        }
+    }
+
+    /** Prefills the draft from the plan. Nothing is written to Room until a set is logged. */
+    fun startWorkout() {
+        val items = _newWorkout.value?.items.orEmpty()
+        if (items.isEmpty()) {
+            _newWorkout.value = null
+            return
+        }
+        draft.plan.value = items.map {
+            LiftPlanEntry(it.exerciseId, it.weightText, it.repsText, it.rpeText)
+        }
+        draft.planIndex.value = 0
+        applyPlanEntry(0)
+        _newWorkout.value = null
+    }
+
+    /** Closes the creator and clears the draft so the workout starts fresh. */
+    fun startEmpty() {
+        draft.plan.value = emptyList()
+        draft.planIndex.value = 0
+        draft.weightText.value = ""
+        draft.repsText.value = ""
+        draft.rpeText.value = ""
+        _newWorkout.value = null
+    }
+
+    /** Steps to the next planned exercise, prefilling its saved values. */
+    fun nextExercise() {
+        val plan = draft.plan.value
+        if (plan.isEmpty()) return
+        val next = draft.planIndex.value + 1
+        if (next >= plan.size) {
+            draft.plan.value = emptyList()
+            draft.planIndex.value = 0
+            return
+        }
+        draft.planIndex.value = next
+        applyPlanEntry(next)
+    }
+
+    private fun applyPlanEntry(index: Int) {
+        val entry = draft.plan.value.getOrNull(index) ?: return
+        draft.selectedExerciseId.value = entry.exerciseId
+        draft.weightText.value = entry.weightText
+        draft.repsText.value = entry.repsText
+        draft.rpeText.value = entry.rpeText
+    }
+
+    private fun buildPlanItems(
+        sets: List<WorkoutSet>,
+        names: Map<String, String>
+    ): List<WorkoutPlanItem> = sets
+        .groupBy { it.exerciseId }
+        .map { (exerciseId, group) ->
+            val ordered = group.sortedBy { it.setIndex }
+            val last = ordered.last()
+            WorkoutPlanItem(
+                exerciseId = exerciseId,
+                name = names[exerciseId] ?: "Exercise",
+                weightText = formatLiftWeight(last.weightKg),
+                repsText = last.reps.toString(),
+                rpeText = last.rpe?.let { formatRpe(it) } ?: "",
+                setCount = ordered.size
+            )
+        }
+
+    private fun sanitizeDecimal(text: String): String = text
+        .filterIndexed { index, char ->
+            char.isDigit() || (char == '.' && text.take(index).none { it == '.' })
+        }
+        .take(6)
 }
 
 internal fun formatLiftWeight(value: Double): String {
@@ -220,6 +417,22 @@ internal fun formatLiftWeight(value: Double): String {
         rounded.toInt().toString()
     } else {
         String.format(Locale.US, "%.2f", rounded).trimEnd('0').trimEnd('.')
+    }
+}
+
+/** RPE reads as a whole number when it is one (7), else one decimal (7.5). */
+internal fun formatRpe(value: Double): String = formatLiftWeight(value)
+
+/** "Today" / "Yesterday" / "N days ago", from a stored session timestamp. */
+internal fun relativeAgeLabel(startedAt: Long): String {
+    val started = Instant.ofEpochMilli(startedAt)
+        .atZone(ZoneId.systemDefault())
+        .toLocalDate()
+    val days = java.time.temporal.ChronoUnit.DAYS.between(started, LocalDate.now())
+    return when {
+        days <= 0L -> "Today"
+        days == 1L -> "Yesterday"
+        else -> "$days days ago"
     }
 }
 

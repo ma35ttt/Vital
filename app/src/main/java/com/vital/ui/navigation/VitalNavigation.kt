@@ -30,6 +30,7 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
+import com.vital.ui.LiftViewModel
 import com.vital.ui.LiveIslandViewModel
 import com.vital.ui.ReminderStatusViewModel
 import com.vital.ui.TutorialViewModel
@@ -137,6 +138,9 @@ fun VitalNavigation() {
     val islandViewModel: LiveIslandViewModel = hiltViewModel()
     val islandState by islandViewModel.state.collectAsStateWithLifecycle()
 
+    // Hoisted so the More sheet's "New workout" can ask Lift to open its creator.
+    val liftViewModel: LiftViewModel = hiltViewModel()
+
     // The rest notification is the point of the foreground service, so ask for
     // POST_NOTIFICATIONS the first time a rest actually starts (Android 13+).
     val notificationPermission = rememberLauncherForActivityResult(
@@ -217,7 +221,8 @@ fun VitalNavigation() {
                         onNavigateToMeals = { navigateToTab(0) },
                         onNavigateToCardio = { navigateToTab(3) },
                         onNavigateToWeeks = { openRoute("weeks") },
-                        onNavigateToSettings = { openRoute("settings") }
+                        onNavigateToSettings = { openRoute("settings") },
+                        viewModel = liftViewModel
                     )
                 }
                 composable("cardio") {
@@ -291,6 +296,10 @@ fun VitalNavigation() {
                 onQuickAdd = { action ->
                     moreOpen = false
                     when (action) {
+                        QuickAddAction.NewWorkout -> {
+                            navigateToTab(1)
+                            liftViewModel.requestNewWorkout()
+                        }
                         QuickAddAction.LogMeal -> navigateToTab(0)
                         QuickAddAction.LogSet -> navigateToTab(1)
                         QuickAddAction.LogCardio -> navigateToTab(3)

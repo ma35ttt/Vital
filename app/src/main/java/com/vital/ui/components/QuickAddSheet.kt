@@ -51,8 +51,9 @@ private fun duPx(du: Float): Float {
     return with(LocalDensity.current) { dp.toPx() }
 }
 
-/** The four QUICK ADD targets, in menu order. */
+/** The QUICK ADD targets, in menu order. */
 enum class QuickAddAction(val label: String) {
+    NewWorkout("NEW WORKOUT"),
     LogMeal("LOG MEAL"),
     LogSet("LOG SET"),
     LogCardio("LOG CARDIO"),
@@ -209,6 +210,21 @@ internal fun QuickAddGlyph(
         fun p(x: Float, y: Float) = Offset(x * w, y * h)
 
         when (action) {
+            QuickAddAction.NewWorkout -> {
+                // Plan card with a plus: start a workout from the last one.
+                drawRoundRect(
+                    color = color,
+                    topLeft = p(0.12f, 0.16f),
+                    size = androidx.compose.ui.geometry.Size(0.76f * w, 0.68f * h),
+                    cornerRadius = CornerRadius(0.10f * w, 0.10f * w),
+                    style = stroke
+                )
+                drawLine(color, p(0.66f, 0.30f), p(0.66f, 0.50f), strokeWidth = strokePx, cap = StrokeCap.Round)
+                drawLine(color, p(0.56f, 0.40f), p(0.76f, 0.40f), strokeWidth = strokePx, cap = StrokeCap.Round)
+                drawLine(color, p(0.26f, 0.38f), p(0.46f, 0.38f), strokeWidth = strokePx, cap = StrokeCap.Round)
+                drawLine(color, p(0.26f, 0.60f), p(0.46f, 0.60f), strokeWidth = strokePx, cap = StrokeCap.Round)
+            }
+
             QuickAddAction.LogMeal -> {
                 // Fork on the left, knife on the right.
                 drawLine(color, p(0.28f, 0.12f), p(0.28f, 0.88f), strokeWidth = strokePx, cap = StrokeCap.Round)
