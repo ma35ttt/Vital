@@ -379,3 +379,35 @@ Adds a toggleable light theme (Porcelain) from the accent-theme comparison, chos
 - **Navigation fix.** Tapping Today while a More detail route was open used to restore that detail route, because `restoreState` restored Today's saved stack. Today now pops back to the tab instead of re-navigating.
 - **Device check (e281c7).** Light and dark both applied instantly from Settings and survived relaunch; Today, Meals, Lift, Cardio, Summary, the More sheet, the targets dialog and Export all rendered on Porcelain with cream on-accent text; the switch matched the mock in both modes; Today tapped back correctly from Settings; no `AndroidRuntime:E`.
 - **Not built yet.** Progress, Coach and Debug stay dark; there is no auto/system mode and no independent accent picker (themeColor) yet.
+
+### Live island for the rest timer (2026-11-05)
+
+Implements the chosen notification treatment: option A (notifications dot on More) and the
+compact -> expanded live island (option A -> B from `tmp/concepts/dynamic-island.html`).
+
+- **Island states.** `RestIsland` draws a 38 dp black pill beside the cutout while a rest is
+  running: a 20 dp draining ring, `Rest`, the mono countdown and a pulsing orange dot. Tapping
+  it expands to a 330 dp card with a 34 dp ring, `Rest running`, `M:SS left · target M:SS`, a
+  2 dp progress hairline, `+15 sec` / `Done`, and a `LIFT · BENCH PRESS` footer whose `OPEN`
+  jumps to the Lift tab. The card auto-collapses after 8 s and pops open once when the rest
+  reaches 30 s. A finished or skipped rest removes it entirely.
+- **Placement.** The island is rendered by `VitalNavigation` above the `NavHost`, aligned top
+  centre with `statusBarsPadding()`. It floats like a real cutout, so the page is untouched
+  while compact; while expanded the shell adds the island's measured height as top padding
+  (animated) so the card never covers the header. It is hidden on the Lift tab, where the same
+  countdown already fills the hero.
+- **Timer.** `RestTimerController` gained `totalSeconds`, `extend(seconds)` (moves the deadline
+  and the total forward, so the ring stays proportional) and `stop()`. `+15 sec` was chosen over
+  the mock's `+1:00` as a short top-up.
+- **New pieces.** `LiveIslandViewModel` combines the rest timer, `LiftDraftStore` and the
+  exercise list (same Bench Press fallback as Lift). Fixed island tokens (`islandFill`,
+  `islandInk`, `islandInkMuted`, `islandRule`, `islandAction`) stay black in both themes.
+- **Notifications dot.** Scheduled separately; this step covers the island only.
+- **Device check (e281c7).** Logging a set on Lift and switching to Today showed the pill
+  counting down outside the Lift tab; tapping it expanded the card with content shifted clear
+  of the header; `+15 sec` moved `5:00` to `5:15` with the remaining time jumping 15 s; `Done`
+  cleared the timer and removed the island; `OPEN` switched to Lift with the pill gone; the pill
+  rendered correctly on both the dark and Porcelain pages. No `AndroidRuntime:E`.
+- **Not built yet.** The island does not survive the app being backgrounded or killed (no
+  foreground service or real notification); it only tracks the rest timer, not cardio or water.
+- **Not tested.** The 30 s auto-expand (code path only; a full 5 minute rest was not waited out).

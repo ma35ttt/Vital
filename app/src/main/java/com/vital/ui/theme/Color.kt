@@ -71,6 +71,14 @@ object VitalColors {
     val orange get() = currentPalette.value.orange        // the single accent
     val onAccent get() = currentPalette.value.onAccent    // text/knobs on an accent fill
 
+    // ===== LIVE ISLAND =====
+    // The island stays a black cutout in both modes, like a real camera housing.
+    val islandFill = Color(0xFF050505)
+    val islandInk = Color(0xFFF3F1ED)
+    val islandInkMuted = Color(0xFF8F8A83)
+    val islandRule = Color(0xFF242220)
+    val islandAction = Color(0xFF141414)
+
     // ===== LEGACY DESIGN TOKENS (dark only) =====
     val black = Color(0xFF000000)            // text on orange, legacy page background
     val chipOnOrange = Color(0xFFE83A00)     // header chips on orange screen fill

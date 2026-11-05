@@ -37,6 +37,10 @@ class RestTimerController @Inject constructor() {
     private val _remainingSeconds = MutableStateFlow(0)
     val remainingSeconds: StateFlow<Int> = _remainingSeconds.asStateFlow()
 
+    /** The running rest's current length; grows with [extend] so the ring stays proportional. */
+    private val _totalSeconds = MutableStateFlow(0)
+    val totalSeconds: StateFlow<Int> = _totalSeconds.asStateFlow()
+
     private var deadlineMillis = 0L
     private var tickJob: Job? = null
 
@@ -44,8 +48,10 @@ class RestTimerController @Inject constructor() {
         tickJob?.cancel()
         if (totalSeconds <= 0) {
             _remainingSeconds.value = 0
+            _totalSeconds.value = 0
             return
         }
+        _totalSeconds.value = totalSeconds
         deadlineMillis = System.currentTimeMillis() + totalSeconds * 1_000L
         _remainingSeconds.value = totalSeconds
         tickJob = scope.launch {
@@ -58,5 +64,24 @@ class RestTimerController @Inject constructor() {
                 delay(250L)
             }
         }
+    }
+
+    /** Adds time to a running rest; a finished timer stays finished. */
+    fun extend(seconds: Int) {
+        if (seconds <= 0 || _remainingSeconds.value <= 0) return
+        deadlineMillis += seconds * 1_000L
+        _totalSeconds.value += seconds
+        _remainingSeconds.value =
+            ((deadlineMillis - System.currentTimeMillis() + 999L) / 1_000L).toInt()
+                .coerceAtLeast(0)
+    }
+
+    /** Skips the rest early. */
+    fun stop() {
+        tickJob?.cancel()
+        tickJob = null
+        deadlineMillis = 0L
+        _remainingSeconds.value = 0
+        _totalSeconds.value = 0
     }
 }
