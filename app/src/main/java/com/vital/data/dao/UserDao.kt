@@ -27,4 +27,8 @@ interface UserDao {
 
     @Query("SELECT * FROM users WHERE id = :userId")
     suspend fun getUserSync(userId: String): User?
+
+    // Sync reads include tombstones so an account removal propagates.
+    @Query("SELECT * FROM users WHERE updatedAt > :since")
+    suspend fun getUsersForSync(since: Long): List<User>
 }

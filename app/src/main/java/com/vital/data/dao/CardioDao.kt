@@ -31,7 +31,8 @@ interface CardioDao {
     @Query("UPDATE cardio_sessions SET deleted = 1, updatedAt = :updatedAt WHERE id = :id")
     suspend fun softDeleteCardioSession(id: String, updatedAt: Long)
 
-    @Query("SELECT * FROM cardio_sessions WHERE updatedAt > :since AND deleted = 0")
+    // Sync reads include tombstones (deleted rows) so removals propagate to other devices.
+    @Query("SELECT * FROM cardio_sessions WHERE updatedAt > :since")
     suspend fun getCardioSessionsForSync(since: Long): List<CardioSession>
 
     @Query("SELECT SUM(kcal) FROM cardio_sessions WHERE userId = :userId AND date = :date AND deleted = 0")

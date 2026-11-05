@@ -73,6 +73,7 @@ import com.vital.data.entity.AiProvider
 import com.vital.data.entity.Settings
 import com.vital.ui.AccountViewModel
 import com.vital.ui.SettingsViewModel
+import com.vital.ui.SyncViewModel
 import com.vital.ui.components.EditorialEyebrow
 import com.vital.ui.components.EditorialHeader
 import com.vital.ui.components.EditorialSectionHeader
@@ -101,13 +102,17 @@ fun SettingsScreen(
     onOpenDebugShowcase: (() -> Unit)? = null,
     onBack: () -> Unit = {},
     viewModel: SettingsViewModel = hiltViewModel(),
-    accountViewModel: AccountViewModel = hiltViewModel()
+    accountViewModel: AccountViewModel = hiltViewModel(),
+    syncViewModel: SyncViewModel = hiltViewModel()
 ) {
     val settings by viewModel.settings.collectAsStateWithLifecycle()
     val user by viewModel.user.collectAsStateWithLifecycle()
     val account by accountViewModel.account.collectAsStateWithLifecycle()
     val signingIn by accountViewModel.signingIn.collectAsStateWithLifecycle()
     val signInError by accountViewModel.signInError.collectAsStateWithLifecycle()
+    val syncing by syncViewModel.syncing.collectAsStateWithLifecycle()
+    val syncError by syncViewModel.error.collectAsStateWithLifecycle()
+    val lastSyncedAt by syncViewModel.lastSyncedAt.collectAsStateWithLifecycle()
     val context = LocalContext.current
     var editingTargets by remember { mutableStateOf(false) }
     var editingKey by remember { mutableStateOf(false) }
@@ -194,8 +199,12 @@ fun SettingsScreen(
                     isConfigured = accountViewModel.isConfigured,
                     signingIn = signingIn,
                     error = signInError,
+                    syncing = syncing,
+                    syncError = syncError,
+                    lastSyncedAt = lastSyncedAt,
                     onSignIn = { accountViewModel.signIn(context) },
-                    onSignOut = accountViewModel::signOut
+                    onSignOut = accountViewModel::signOut,
+                    onSyncNow = syncViewModel::syncNow
                 )
             }
 
@@ -613,8 +622,12 @@ private fun AccountSection(
     isConfigured: Boolean,
     signingIn: Boolean,
     error: String?,
+    syncing: Boolean,
+    syncError: String?,
+    lastSyncedAt: Long,
     onSignIn: () -> Unit,
-    onSignOut: () -> Unit
+    onSignOut: () -> Unit,
+    onSyncNow: () -> Unit
 ) {
     Column(
         modifier = Modifier
@@ -639,13 +652,29 @@ private fun AccountSection(
                         modifier = Modifier.padding(top = 2.dp)
                     )
                 }
+                Text(
+                    text = syncStatusText(syncing, syncError, lastSyncedAt),
+                    color = if (syncError != null) VitalColors.orange else VitalColors.inkMuted,
+                    fontFamily = VitalFonts.InterTight,
+                    fontSize = 13.sp,
+                    modifier = Modifier.padding(top = 6.dp)
+                )
+                DialogButton(
+                    text = if (syncing) "SYNCING\u2026" else "SYNC NOW",
+                    onClick = onSyncNow,
+                    enabled = !syncing,
+                    filled = true,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(top = 16.dp)
+                )
                 DialogButton(
                     text = "SIGN OUT",
                     onClick = onSignOut,
                     filled = false,
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(top = 16.dp)
+                        .padding(top = 10.dp)
                 )
             }
 
@@ -681,6 +710,24 @@ private fun AccountSection(
                 }
             }
         }
+    }
+}
+
+/** Sync status line for Settings: syncing, failure, or when it last succeeded. */
+private fun syncStatusText(syncing: Boolean, error: String?, lastSyncedAt: Long): String = when {
+    syncing -> "Syncing\u2026"
+    error != null -> error
+    lastSyncedAt <= 0L -> "Not synced yet"
+    else -> "Last synced ${relativeTime(lastSyncedAt)}"
+}
+
+private fun relativeTime(millis: Long): String {
+    val diff = System.currentTimeMillis() - millis
+    return when {
+        diff < 60_000L -> "just now"
+        diff < 3_600_000L -> "${diff / 60_000L} min ago"
+        diff < 86_400_000L -> "${diff / 3_600_000L} h ago"
+        else -> "${diff / 86_400_000L} d ago"
     }
 }
 

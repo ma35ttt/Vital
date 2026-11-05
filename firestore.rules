@@ -1,0 +1,11 @@
+rules_version = '2';
+
+// Vital cloud sync: every account may read and write only its own data.
+// Docs live at users/{uid}/{table}/{rowId}; this blocks everything else.
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /users/{uid}/{document=**} {
+      allow read, write: if request.auth != null && request.auth.uid == uid;
+    }
+  }
+}

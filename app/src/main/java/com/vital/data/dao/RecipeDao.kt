@@ -28,6 +28,7 @@ interface RecipeDao {
     @Query("UPDATE recipes SET deleted = 1, updatedAt = :updatedAt WHERE id = :id")
     suspend fun softDeleteRecipe(id: String, updatedAt: Long)
 
-    @Query("SELECT * FROM recipes WHERE updatedAt > :since AND deleted = 0")
+    // Sync reads include tombstones (deleted rows) so removals propagate to other devices.
+    @Query("SELECT * FROM recipes WHERE updatedAt > :since")
     suspend fun getRecipesForSync(since: Long): List<Recipe>
 }

@@ -46,7 +46,9 @@ interface FoodDao {
     @Query("UPDATE foods SET deleted = 1, updatedAt = :updatedAt WHERE id = :id")
     suspend fun softDeleteFood(id: String, updatedAt: Long)
 
-    @Query("SELECT * FROM foods WHERE updatedAt > :since AND deleted = 0")
+    // Sync reads include tombstones and skip seeded/OpenFoodFacts rows (re-derivable caches);
+    // user- and AI-created foods carry the data worth syncing.
+    @Query("SELECT * FROM foods WHERE updatedAt > :since AND source NOT IN ('SEED', 'OFF')")
     suspend fun getFoodsForSync(since: Long): List<Food>
 
     @Query("SELECT COUNT(*) FROM foods WHERE deleted = 0")
