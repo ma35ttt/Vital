@@ -160,7 +160,8 @@ fun VitalNavigation() {
                         onNavigateToLift = { navigateToTab(1) },
                         onNavigateToCardio = { navigateToTab(3) },
                         onNavigateToWeeks = { openRoute("weeks") },
-                        onOpenDebugShowcase = openDebugShowcase
+                        onOpenDebugShowcase = openDebugShowcase,
+                        onBack = { navController.popBackStack() }
                     )
                 }
                 composable("summary") {

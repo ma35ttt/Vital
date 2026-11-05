@@ -352,3 +352,16 @@ The approved Summary option B (24-hour day ring) replaces the old dial Summary, 
 - **Still sample-only.** Weeks does not read Room; the numbers do not change with real logs.
 - **Not built yet.** No tooltip on the bars, no tap-through from a trend to its detail.
 - **Not tested.** Visual comparison against `tmp/concepts/all-tabs.html` (user measures).
+
+### Settings — editorial restyle (2026-11-05)
+
+`SettingsScreen.kt` rewritten to the approved all-tabs mock; `SettingsViewModel`, every toggle, the target editor, the name editor, the key reveal and the notification-settings jump are unchanged.
+
+- **Layout.** Header (`Settings` + `THU 05.11`, `‹ Back`), a daily-targets hero (`DAILY TARGETS`, 58 sp kcal, `kcal`, `tap to edit`), a three-cell protein / carbs / fat gram grid, then ruled sections: Profile (Name + `edit`, True black + switch, Body weight / Rest preset cells), AI coach (Gemini / OpenRouter tabs, API key + Show/Hide), Security (PIN lock, Biometric, Change PIN), Notifications (Allow notifications, Meal reminders, Workout, Water), Data (Export / Import JSON, the key-and-PIN note) and Debug showcase in debug builds.
+- **Switches.** The old pill toggle is replaced by a 42 x 24 dp editorial switch: 1 dp `ruleStrong` border when off, orange fill and a black knob when on, muted knob and `rule` border when disabled. PIN lock, biometric and the debug row keep their earlier behaviour.
+- **Rows.** Values are sentence-cased and muted; toggles sit at the trailing edge; `Change PIN` and the debug row carry a chevron.
+- **Deviation.** The hero is no longer an orange card; it is type over space like the other tabs. The mock's macro share bar is dropped (the grid already carries the targets), and `tap to edit` replaces the mock's bare number as the edit affordance.
+- **Navigation.** `SettingsScreen` gained an optional `onBack` (wired to `popBackStack`), defaulting to a no-op.
+- **Device check (e281c7, 1240 x 2772, density 476).** The targets dialog opened from the hero, saving `2,400` updated the hero immediately; Meal reminders toggled off; the disabled PIN/biometric switches drew muted; Export/Import and the note rendered; Back returned to Today; no `AndroidRuntime:E`.
+- **Not built yet.** Export/Import are still unwired (DATA step), PIN/biometric still read-only until the M6 gate, body weight and rest preset are not editable here.
+- **Not tested.** Visual comparison against `tmp/concepts/all-tabs.html` (user measures).
