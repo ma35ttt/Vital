@@ -1,7 +1,6 @@
 package com.vital.ui.theme
 
 import android.app.Activity
-import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.lightColorScheme
@@ -18,11 +17,11 @@ import com.vital.ui.theme.VitalTypography.Typography
 @Composable
 private fun darkScheme(): androidx.compose.material3.ColorScheme = darkColorScheme(
     primary = VitalColors.orange,
-    onPrimary = VitalColors.black,
+    onPrimary = VitalColors.onAccent,
     secondary = VitalColors.orange,
-    onSecondary = VitalColors.black,
+    onSecondary = VitalColors.onAccent,
     tertiary = VitalColors.orange,
-    onTertiary = VitalColors.black,
+    onTertiary = VitalColors.onAccent,
     background = VitalColors.paper,
     onBackground = VitalColors.ink,
     surface = VitalColors.paper,
@@ -49,11 +48,11 @@ private fun darkScheme(): androidx.compose.material3.ColorScheme = darkColorSche
 @Composable
 private fun lightScheme(): androidx.compose.material3.ColorScheme = lightColorScheme(
     primary = VitalColors.orange,
-    onPrimary = Color.White,
+    onPrimary = VitalColors.onAccent,
     secondary = VitalColors.orange,
-    onSecondary = Color.White,
+    onSecondary = VitalColors.onAccent,
     tertiary = VitalColors.orange,
-    onTertiary = Color.White,
+    onTertiary = VitalColors.onAccent,
     background = VitalColors.paper,
     onBackground = VitalColors.ink,
     surface = VitalColors.paper,
@@ -82,30 +81,27 @@ val LocalTrueBlack = staticCompositionLocalOf { true }
 
 @Composable
 fun VitalTheme(
-    darkTheme: Boolean = isSystemInDarkTheme(),
-    // True black only affects the dark palette.
-    trueBlack: Boolean = true,
+    themeId: String = "dark",
+    // True black only lifts a dark theme's paper to #000; light themes ignore it.
+    trueBlack: Boolean = false,
     content: @Composable () -> Unit
 ) {
+    val theme = VitalThemes.byId(themeId)
     // Publish the palette before anything reads a token this frame.
-    applyPalette(darkTheme)
-    val colorScheme = if (darkTheme) darkScheme() else lightScheme()
+    applyTheme(theme, trueBlack)
+    val colorScheme = if (theme.isLight) lightScheme() else darkScheme()
 
     val context = LocalContext.current
     SideEffect {
         val window = (context as? Activity)?.window
         if (window != null) {
             WindowCompat.setDecorFitsSystemWindows(window, false)
-            val page = if (darkTheme && trueBlack) {
-                VitalColors.trueBlackBackground
-            } else {
-                VitalColors.paper
-            }
+            val page = VitalColors.paper
             window.statusBarColor = page.toArgb()
             window.navigationBarColor = page.toArgb()
             val controller = WindowInsetsControllerCompat(window, window.decorView)
-            controller.isAppearanceLightStatusBars = !darkTheme
-            controller.isAppearanceLightNavigationBars = !darkTheme
+            controller.isAppearanceLightStatusBars = theme.isLight
+            controller.isAppearanceLightNavigationBars = theme.isLight
         }
     }
 

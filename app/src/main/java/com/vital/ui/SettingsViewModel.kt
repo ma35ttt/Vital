@@ -8,6 +8,7 @@ import com.vital.data.entity.User
 import com.vital.data.repository.SettingsRepository
 import com.vital.data.repository.UserRepository
 import com.vital.data.seed.LOCAL_USER_ID
+import com.vital.ui.theme.VitalThemes
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -41,7 +42,10 @@ class SettingsViewModel @Inject constructor(
 
     fun setTrueBlack(enabled: Boolean) = updateSettings { it.copy(trueBlack = enabled) }
 
-    fun setLightMode(enabled: Boolean) = updateSettings { it.copy(lightMode = enabled) }
+    /** Switches the app theme; legacy light-mode flag is kept in sync for older readers. */
+    fun setTheme(themeId: String) = updateSettings {
+        it.copy(themeId = themeId, lightMode = VitalThemes.byId(themeId).isLight)
+    }
 
     fun setAiProvider(provider: AiProvider) = updateSettings { it.copy(aiProvider = provider) }
 

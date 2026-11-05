@@ -27,7 +27,7 @@ import com.vital.data.seed.Converters
         Settings::class,
         SyncMeta::class
     ],
-    version = 3,
+    version = 4,
     exportSchema = true
 )
 @TypeConverters(Converters::class)
@@ -68,13 +68,27 @@ abstract class VitalDatabase : RoomDatabase() {
             }
         }
 
+        /**
+         * v4 adds Settings.themeId. Existing rows are mapped from the old light-mode flag so
+         * nobody's appearance changes: light stayed light, dark stayed dark. The true-black
+         * flag is kept alongside the theme.
+         */
+        private val MIGRATION_3_4 = object : Migration(3, 4) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL("ALTER TABLE settings ADD COLUMN themeId TEXT NOT NULL DEFAULT 'dark'")
+                db.execSQL(
+                    "UPDATE settings SET themeId = CASE WHEN lightMode = 1 THEN 'white' ELSE 'dark' END"
+                )
+            }
+        }
+
         fun getDatabase(context: Context): VitalDatabase {
             return INSTANCE ?: synchronized(this) {
                 val instance = Room.databaseBuilder(
                     context.applicationContext,
                     VitalDatabase::class.java,
                     "vital.db"
-                ).addMigrations(MIGRATION_1_2, MIGRATION_2_3)
+                ).addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4)
                     .fallbackToDestructiveMigration()
                     .build()
                 INSTANCE = instance
