@@ -1,68 +1,61 @@
 package com.vital.ui.screens
 
-import com.vital.R
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.verticalScroll
+import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.material.icons.filled.LocalFireDepartment
-import androidx.compose.material.icons.filled.DirectionsRun
-import androidx.compose.material.icons.filled.DirectionsBike
-import androidx.compose.material3.Icon
-import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.graphics.Path
+import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.graphics.StrokeJoin
+import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.em
 import androidx.compose.ui.unit.sp
-import com.vital.ui.components.BigKcalDisplay
-import com.vital.ui.components.MacroRow
-import com.vital.ui.components.SectionHeader
-import com.vital.ui.components.capsuleRow
-import com.vital.ui.components.ShowMoreButton
-import com.vital.ui.components.HeroLineGraph
-import com.vital.ui.components.SummaryDial
-import com.vital.ui.components.Tag
-import com.vital.ui.components.Sparkline
-import com.vital.ui.WorkoutCapsule
-import com.vital.ui.theme.VitalColors
-import com.vital.ui.theme.VitalTypography
-import com.vital.ui.theme.DesignUnitsProvider
-import com.vital.ui.theme.duToDp
-import com.vital.ui.theme.duToSp
+import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.vital.data.entity.CardioType
+import com.vital.ui.TodayCardio
+import com.vital.ui.TodayLift
+import com.vital.ui.TodayState
+import com.vital.ui.TodayViewModel
+import com.vital.ui.components.EditorialEyebrow
+import com.vital.ui.components.EditorialHeader
+import com.vital.ui.components.EditorialMacroGrid
+import com.vital.ui.components.EditorialRuledRow
+import com.vital.ui.components.EditorialSectionHeader
+import com.vital.ui.components.Hairline
+import com.vital.ui.components.formatEditorialNumber
+import com.vital.ui.theme.VitalColors
+import com.vital.ui.theme.VitalFonts
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
-import androidx.lifecycle.viewmodel.compose.viewModel
-import com.vital.ui.MainViewModel
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.layout.Box
-import androidx.compose.material.icons.Icons
-import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.layout.aspectRatio
-import androidx.compose.ui.text.TextStyle
-import androidx.compose.ui.text.font.FontFamily
-import androidx.compose.ui.text.font.Font
-import androidx.compose.ui.res.fontResource
+import java.util.Locale
 
+/**
+ * Today, restyled to the editorial-dark hybrid mock and backed by Room through
+ * [TodayViewModel]: day totals, the trailing-week kcal line and today's sessions.
+ */
 @Composable
 fun TodayScreen(
     modifier: Modifier = Modifier,
@@ -72,229 +65,311 @@ fun TodayScreen(
     onNavigateToCardio: () -> Unit,
     onNavigateToWeeks: () -> Unit,
     onNavigateToSettings: () -> Unit,
-    viewModel: MainViewModel = viewModel()
+    viewModel: TodayViewModel = hiltViewModel()
 ) {
-    val today = LocalDate.now()
-    val dayTag = today.dayOfWeek.name.take(3).uppercase()
-    val dateTag = today.month.name.take(3).uppercase() + ".${today.dayOfMonth}"
-    val dateLabel = today.format(DateTimeFormatter.ofPattern("MMM d"))
+    val state by viewModel.state.collectAsStateWithLifecycle()
+    val dateLabel = remember {
+        LocalDate.now()
+            .format(DateTimeFormatter.ofPattern("EEE dd.MM", Locale.US))
+            .uppercase()
+    }
 
-    val remainingKcal by viewModel.remainingKcal.collectAsStateWithLifecycle(0f)
-    val proteinCurrent by viewModel.proteinCurrent.collectAsStateWithLifecycle(0f)
-    val carbsCurrent by viewModel.carbsCurrent.collectAsStateWithLifecycle(0f)
-    val fatCurrent by viewModel.fatCurrent.collectAsStateWithLifecycle(0f)
-    val proteinTarget by viewModel.proteinTarget.collectAsStateWithLifecycle(180)
-    val carbsTarget by viewModel.carbsTarget.collectAsStateWithLifecycle(250)
-    val fatTarget by viewModel.fatTarget.collectAsStateWithLifecycle(85)
-    val weeklyKcalData by viewModel.weeklyKcalData.collectAsStateWithLifecycle(emptyList())
-    val weeklyLabels by viewModel.weeklyLabels.collectAsStateWithLifecycle(emptyList())
-    val workoutsToday by viewModel.workoutsToday.collectAsStateWithLifecycle(emptyList())
-    val cardioToday by viewModel.cardioToday.collectAsStateWithLifecycle(emptyList())
-
-    DesignUnitsProvider {
-        // JetBrains Mono from res/font
-        val jetbrainsMono = FontFamily(
-            Font(R.font.jetbrains_mono_400, FontWeight.Normal),
-            Font(R.font.jetbrains_mono_700, FontWeight.Bold)
-        )
-        Surface(
-            modifier = modifier.fillMaxSize(),
-            color = VitalColors.black
+    Column(
+        modifier = modifier
+            .fillMaxSize()
+            .background(VitalColors.paper)
+    ) {
+        LazyColumn(
+            modifier = Modifier.fillMaxSize(),
+            contentPadding = PaddingValues(
+                start = 24.dp,
+                end = 24.dp,
+                top = 18.dp,
+                bottom = 24.dp
+            )
         ) {
-            // Scrollable Column: header → 13 du spacer → hero card → workouts header → capsule rows → 84 du bottom padding
-            val scrollState = rememberScrollState()
-            Column(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .verticalScroll(scrollState)
-                    .padding(bottom = 84f.duToDp())
-            ) {
-                // Top Bar — 13.1 du from top
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 13.8f.duToDp())
-                        .padding(top = 13.1f.duToDp()),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Tag(text = dayTag, backgroundColor = VitalColors.orange)
-                    Text(
-                        text = "TODAY",
-                        color = VitalColors.textPrimary,
-                        fontSize = 16.sp,
-                        fontWeight = FontWeight.Bold,
-                        fontFamily = jetbrainsMono,
-                        letterSpacing = 1.5.sp
-                    )
-                    Tag(text = dateTag, backgroundColor = VitalColors.orange)
-                }
-
-                // 13 du spacer between header and hero
-                Spacer(modifier = Modifier.padding(top = 13f.duToDp()))
-
-                // Hero Card — fixed 365.4 × 326.6 du, 13.8 du horizontal inset
-                Surface(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 13.8f.duToDp())
-                        .height(326.6f.duToDp()),
-                    color = VitalColors.orange,
-                    shape = RoundedCornerShape(11f.duToDp())
-                ) {
-                    // Hero card content as Box with absolute positioning from card top-left (0,0)
-                    Box(modifier = Modifier.fillMaxSize()) {
-                        // Label row: cap height 18.5, top 19.1, left 14.3, NOW right edge at 354.6
-                        androidx.compose.foundation.layout.Box(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(top = 19.1f.duToDp())
-                        ) {
-                            Row(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding(start = 14.3f.duToDp(), end = 10.8f.duToDp()), // 365.4 - 354.6 = 10.8
-                                horizontalArrangement = Arrangement.SpaceBetween,
-                                verticalAlignment = Alignment.Top
-                            ) {
-                                Text(
-                                    text = "KCAL REMAINING",
-                                    color = VitalColors.black,
-                                    fontSize = 18.5f.duToSp(),
-                                    fontWeight = FontWeight.Normal,
-                                    fontFamily = jetbrainsMono,
-                                    letterSpacing = 1.sp
-                                )
-                                Text(
-                                    text = "NOW",
-                                    color = Color(0xFFD33100),
-                                    fontSize = 18.5f.duToSp(),
-                                    fontWeight = FontWeight.Medium,
-                                    fontFamily = jetbrainsMono
-                                )
-                            }
-                        }
-
-                        // Big number: left-aligned at x 12, digit height 62.7, baseline ~114
-                        // KCAL as small ink superscript to right of digits
-                        BigKcalDisplay(
-                            remaining = remainingKcal,
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(start = 12f.duToDp())
-                                .padding(top = (114f - 62.7f).duToDp()) // baseline 114 - digit height 62.7 = top 51.3
-                        )
-
-                        // Macro row: 3 columns starting at x 15.5, pitch ~126
-                        // Labels cap height 10 at top 141.5
-                        // Values 17.3 tall at top 160.6
-                        // Units 60% size on same baseline
-                        MacroRow(
-                            protein = proteinCurrent,
-                            carbs = carbsCurrent,
-                            fat = fatCurrent,
-                            proteinTarget = proteinTarget,
-                            carbsTarget = carbsTarget,
-                            fatTarget = fatTarget,
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(start = 15.5f.duToDp())
-                                .padding(top = 141.5f.duToDp())
-                        )
-
-                        // Grey Panel — top 199.4 du from card top, height 121.2 du, 6 du side inset (spec)
-                        Surface(
-                            modifier = Modifier
-                                .width(353.4f.duToDp()) // 365.4 - 2*6
-                                .height(121.2f.duToDp())
-                                .offset(x = 6f.duToDp(), y = 199.4f.duToDp()),
-                            color = Color.Transparent,
-                            shape = RoundedCornerShape(6.duToDp())
-                        ) {
-                            HeroLineGraph(
-                                modifier = Modifier.fillMaxSize(),
-                                dataPoints = weeklyKcalData,
-                                labels = listOf("6m", "7m", "8m", "9m", "10m", "11m", "12m", "13m"),
-                                accentColor = VitalColors.black,
-                                showTooltip = weeklyKcalData.isNotEmpty(),
-                                tooltipIndex = if (weeklyKcalData.isNotEmpty()) weeklyKcalData.lastIndex else -1,
-                                tooltipValue = weeklyKcalData.lastOrNull() ?: 0f,
-                                tooltipLabel = "BMP"
-                            )
-                        }
-                    }
-                }
-
-                // WORKOUTS Section
-                SectionHeader(
-                    title = "WORKOUTS",
-                    accentColor = VitalColors.orange,
-                    showMoreAction = onShowSummary,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 16.dp)
-                        .padding(top = 24.dp)
+            item {
+                EditorialHeader(
+                    title = "Today",
+                    dateLabel = dateLabel
                 )
-
-                // Workout capsules in a Column for proper flow
-                Column(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 16.dp)
-                        .padding(top = 12.dp),
-                    verticalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    workoutsToday.forEach { workout ->
-                        capsuleRow(
-                            modifier = Modifier.fillMaxWidth(),
-                            icon = { Icon(workout.icon, "", tint = workout.accentColor) },
-                            label = workout.name,
-                            value = workout.value,
-                            sparklineData = workout.sparklineData,
-                            accentColor = workout.accentColor,
-                            dateLabel = dateLabel
-                        )
-                    }
-                    cardioToday.forEach { cardio ->
-                        capsuleRow(
-                            modifier = Modifier.fillMaxWidth(),
-                            icon = { Icon(cardio.icon, "", tint = cardio.accentColor) },
-                            label = cardio.name,
-                            value = cardio.value,
-                            sparklineData = cardio.sparklineData,
-                            accentColor = cardio.accentColor,
-                            dateLabel = dateLabel
-                        )
-                    }
-                    if (workoutsToday.isEmpty() && cardioToday.isEmpty()) {
-                        Box(
-                            modifier = Modifier.fillMaxWidth().padding(vertical = 32.dp),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Text(
-                                text = "NO WORKOUTS LOGGED TODAY",
-                                color = VitalColors.textMuted,
-                                fontSize = 12.sp,
-                                fontWeight = FontWeight.Medium,
-                                letterSpacing = 1.sp
-                            )
-                        }
-                    }
-                }
+            }
+            item {
+                TodayHero(
+                    state = state,
+                    modifier = Modifier.padding(top = 26.dp)
+                )
+            }
+            item {
+                EditorialMacroGrid(
+                    protein = state.protein,
+                    carbs = state.carbs,
+                    fat = state.fat,
+                    proteinTarget = state.proteinTarget,
+                    carbsTarget = state.carbsTarget,
+                    fatTarget = state.fatTarget,
+                    modifier = Modifier.padding(top = 26.dp)
+                )
+            }
+            item {
+                WeekSection(
+                    state = state,
+                    modifier = Modifier.padding(top = 26.dp)
+                )
+            }
+            item {
+                WorkoutsSection(
+                    state = state,
+                    onNavigateToLift = onNavigateToLift,
+                    onNavigateToCardio = onNavigateToCardio,
+                    modifier = Modifier.padding(top = 26.dp)
+                )
             }
         }
     }
 }
 
-// Preview data for testing
-object TodayScreenPreviewData {
-    val sampleWorkouts = listOf(
-        WorkoutCapsule("Strength", "45 min", Icons.Default.LocalFireDepartment, VitalColors.orange, listOf(0.3f, 0.5f, 0.4f, 0.6f, 0.55f)),
-        WorkoutCapsule("Upper Body", "38 min", Icons.Default.DirectionsRun, VitalColors.orange, listOf(0.4f, 0.6f, 0.5f, 0.7f, 0.65f))
+// ---- hero ----------------------------------------------------------------------------------
+
+@Composable
+private fun TodayHero(
+    state: TodayState,
+    modifier: Modifier = Modifier
+) {
+    Row(
+        modifier = modifier.fillMaxWidth(),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.SpaceBetween
+    ) {
+        Column(modifier = Modifier.weight(1f)) {
+            EditorialEyebrow(text = "Kcal left")
+            Text(
+                text = formatEditorialNumber(state.leftKcal),
+                color = VitalColors.ink,
+                fontFamily = VitalFonts.InterTight,
+                fontSize = 72.sp,
+                fontWeight = FontWeight.Medium,
+                letterSpacing = (-0.055).em,
+                modifier = Modifier.padding(top = 14.dp)
+            )
+            Text(
+                text = buildAnnotatedString {
+                    append("of ")
+                    withStyle(SpanStyle(color = VitalColors.ink, fontWeight = FontWeight.Medium)) {
+                        append(formatEditorialNumber(state.targetKcal.toDouble()))
+                    }
+                    append(" · ")
+                    withStyle(SpanStyle(color = VitalColors.ink, fontWeight = FontWeight.Medium)) {
+                        append("${state.eatenPct}%")
+                    }
+                    append(" eaten")
+                },
+                color = VitalColors.inkMuted,
+                fontFamily = VitalFonts.JetBrainsMonoRegular,
+                fontSize = 11.sp,
+                modifier = Modifier.padding(top = 15.dp)
+            )
+        }
+        TodayRing(
+            progress = (state.eatenPct / 100f).coerceIn(0f, 1f),
+            modifier = Modifier.size(104.dp)
+        )
+    }
+}
+
+@Composable
+private fun TodayRing(progress: Float, modifier: Modifier = Modifier) {
+    Canvas(modifier = modifier) {
+        val stroke = 5.dp.toPx()
+        val radius = size.minDimension / 2f - stroke / 2f
+        val topLeft = Offset(
+            size.width / 2f - radius,
+            size.height / 2f - radius
+        )
+        val arcSize = Size(radius * 2f, radius * 2f)
+
+        drawCircle(
+            color = VitalColors.ruleStrong,
+            radius = radius,
+            style = Stroke(width = stroke)
+        )
+        if (progress > 0f) {
+            drawArc(
+                color = VitalColors.orange,
+                startAngle = -90f,
+                sweepAngle = 360f * progress,
+                useCenter = false,
+                topLeft = topLeft,
+                size = arcSize,
+                style = Stroke(width = stroke, cap = StrokeCap.Round)
+            )
+        }
+    }
+}
+
+// ---- week ----------------------------------------------------------------------------------
+
+@Composable
+private fun WeekSection(
+    state: TodayState,
+    modifier: Modifier = Modifier
+) {
+    Column(modifier = modifier.fillMaxWidth()) {
+        EditorialSectionHeader(
+            title = "This week",
+            trailing = "${formatEditorialNumber(state.weekTotal)} kcal"
+        )
+        WeekChart(
+            points = state.week.map { it.kcal },
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(56.dp)
+                .padding(top = 10.dp)
+        )
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(top = 8.dp),
+            horizontalArrangement = Arrangement.SpaceBetween
+        ) {
+            state.week.forEach { point ->
+                Text(
+                    text = point.date.dayOfWeek.name.take(3),
+                    color = VitalColors.navInactive,
+                    fontFamily = VitalFonts.JetBrainsMonoRegular,
+                    fontSize = 8.sp,
+                    letterSpacing = 0.06.em
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun WeekChart(
+    points: List<Double>,
+    modifier: Modifier = Modifier
+) {
+    val max = remember(points) {
+        points.maxOrNull()?.takeIf { it > 0.0 } ?: 1.0
+    }
+    Canvas(modifier = modifier) {
+        if (points.size < 2) return@Canvas
+
+        val stepX = size.width / (points.size - 1)
+        val topPad = 4.dp.toPx()
+        val bottomPad = 2.dp.toPx()
+        val usable = size.height - topPad - bottomPad
+
+        fun x(index: Int) = stepX * index
+        fun y(value: Double) =
+            size.height - bottomPad - (value / max).toFloat() * usable
+
+        val line = Path()
+        points.forEachIndexed { index, value ->
+            if (index == 0) line.moveTo(x(index), y(value))
+            else line.lineTo(x(index), y(value))
+        }
+        drawPath(
+            path = line,
+            color = VitalColors.ruleStrong,
+            style = Stroke(
+                width = 1.5.dp.toPx(),
+                cap = StrokeCap.Round,
+                join = StrokeJoin.Round
+            )
+        )
+
+        // The segment into today is the only orange part, so the accent stays a highlight.
+        val last = points.lastIndex
+        val todaySegment = Path().apply {
+            moveTo(x(last - 1), y(points[last - 1]))
+            lineTo(x(last), y(points[last]))
+        }
+        drawPath(
+            path = todaySegment,
+            color = VitalColors.orange,
+            style = Stroke(width = 1.5.dp.toPx(), cap = StrokeCap.Round)
+        )
+        drawCircle(
+            color = VitalColors.orange,
+            radius = 3.dp.toPx(),
+            center = Offset(x(last), y(points[last]))
+        )
+    }
+}
+
+// ---- workouts ------------------------------------------------------------------------------
+
+@Composable
+private fun WorkoutsSection(
+    state: TodayState,
+    onNavigateToLift: () -> Unit,
+    onNavigateToCardio: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    Column(modifier = modifier.fillMaxWidth()) {
+        EditorialSectionHeader(
+            title = "Workouts",
+            trailing = if (state.workoutCount == 1) "1 today" else "${state.workoutCount} today"
+        )
+        if (state.workoutCount == 0) {
+            Text(
+                text = "Nothing logged yet",
+                color = VitalColors.inkMuted,
+                fontFamily = VitalFonts.InterTight,
+                fontSize = 13.sp,
+                modifier = Modifier.padding(top = 12.dp, bottom = 13.dp)
+            )
+            Hairline()
+        } else {
+            state.lifts.forEach { lift ->
+                LiftRow(lift = lift, onClick = onNavigateToLift)
+            }
+            state.cardios.forEach { cardio ->
+                CardioRow(cardio = cardio, onClick = onNavigateToCardio)
+            }
+        }
+    }
+}
+
+@Composable
+private fun LiftRow(lift: TodayLift, onClick: () -> Unit) {
+    EditorialRuledRow(
+        leading = "Lift",
+        title = lift.title,
+        trailing = if (lift.durationMin >= 1) "${lift.durationMin} min" else "—",
+        onClick = onClick
     )
-    val sampleCardio = listOf(
-        WorkoutCapsule("Running", "5.2 km", Icons.Default.DirectionsBike, VitalColors.orange, listOf(0.2f, 0.4f, 0.35f, 0.5f, 0.45f))
+}
+
+@Composable
+private fun CardioRow(cardio: TodayCardio, onClick: () -> Unit) {
+    EditorialRuledRow(
+        leading = "Cardio",
+        title = cardioLabel(cardio.type),
+        trailing = cardio.distanceKm?.let { formatDistance(it) } ?: "${cardio.durationMin} min",
+        onClick = onClick
     )
-    val weeklyKcal = listOf(0.2f, 0.35f, 0.45f, 0.38f, 0.52f, 0.61f, 0.55f)
-    val weeklyLabels = listOf("MON", "TUE", "WED", "THU", "FRI", "SAT", "SUN")
+}
+
+private fun cardioLabel(type: CardioType): String = when (type) {
+    CardioType.RUNNING -> "Run"
+    CardioType.WALKING -> "Walk"
+    CardioType.CYCLING -> "Ride"
+    CardioType.ROWING -> "Row"
+    CardioType.SWIMMING -> "Swim"
+    CardioType.ELLIPTICAL -> "Elliptical"
+    CardioType.STAIR_CLIMBER -> "Stairs"
+    CardioType.OTHER -> "Cardio"
+}
+
+private fun formatDistance(km: Double): String {
+    val rounded = Math.round(km * 100.0) / 100.0
+    val text = if (rounded % 1.0 == 0.0) {
+        rounded.toInt().toString()
+    } else {
+        String.format(Locale.US, "%.2f", rounded).trimEnd('0').trimEnd('.')
+    }
+    return "$text km"
 }
