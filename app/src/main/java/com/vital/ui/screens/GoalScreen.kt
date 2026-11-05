@@ -458,38 +458,19 @@ private fun HealthyRangeBar(
         BoxWithConstraints(
             modifier = Modifier
                 .fillMaxWidth()
-                .height(78.dp)
-                .padding(top = 6.dp)
+                .height(30.dp)
+                .padding(top = 4.dp)
         ) {
             val trackWidth = maxWidth
-            val barY = 34.dp
-            val labelWidth = 88.dp
-
-            MarkerLabel(
-                label = "NOW",
-                value = formatWeight(nowKg, imperial),
-                x = (trackWidth * fNow - labelWidth / 2f)
-                    .coerceIn(0.dp, (trackWidth - labelWidth).coerceAtLeast(0.dp)),
-                y = 0.dp,
-                width = labelWidth,
-                color = VitalColors.inkMuted
-            )
-            if (fGoal != null) {
-                MarkerLabel(
-                    label = "GOAL",
-                    value = formatWeight(goalKg!!, imperial),
-                    x = (trackWidth * fGoal - labelWidth / 2f)
-                        .coerceIn(0.dp, (trackWidth - labelWidth).coerceAtLeast(0.dp)),
-                    y = barY + 12.dp,
-                    width = labelWidth,
-                    color = VitalColors.orange
-                )
-            }
+            val barY = 10.dp
+            val barHeight = 10.dp
+            // The mock centres each marker on the bar (top:50%), not on its top edge.
+            val barCentre = barY + barHeight / 2
 
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(10.dp)
+                    .height(barHeight)
                     .offset(y = barY)
                     .clip(RoundedCornerShape(5.dp))
             ) {
@@ -517,20 +498,20 @@ private fun HealthyRangeBar(
                 fraction = fNow,
                 color = VitalColors.inkMuted,
                 width = trackWidth,
-                y = barY
+                centreY = barCentre
             )
             if (fGoal != null) {
                 MarkerDot(
                     fraction = fGoal,
                     color = VitalColors.orange,
                     width = trackWidth,
-                    y = barY
+                    centreY = barCentre
                 )
             }
         }
 
         Row(
-            modifier = Modifier.padding(top = 2.dp),
+            modifier = Modifier.padding(top = 10.dp),
             horizontalArrangement = Arrangement.spacedBy(14.dp)
         ) {
             LegendDot(label = "HEALTHY", color = HealthyGreen.copy(alpha = 0.55f))
@@ -541,41 +522,7 @@ private fun HealthyRangeBar(
 }
 
 @Composable
-private fun MarkerLabel(
-    label: String,
-    value: String,
-    x: Dp,
-    y: Dp,
-    width: Dp,
-    color: Color
-) {
-    Row(
-        modifier = Modifier
-            .offset(x = x, y = y)
-            .width(width),
-        horizontalArrangement = Arrangement.Center,
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        Text(
-            text = label,
-            color = color,
-            fontFamily = VitalFonts.JetBrainsMonoMedium,
-            fontSize = 8.sp,
-            letterSpacing = 0.1.em
-        )
-        Spacer(modifier = Modifier.width(4.dp))
-        Text(
-            text = value,
-            color = VitalColors.ink,
-            fontFamily = VitalFonts.InterTight,
-            fontSize = 11.sp,
-            fontWeight = FontWeight.Medium
-        )
-    }
-}
-
-@Composable
-private fun MarkerDot(fraction: Float, color: Color, width: Dp, y: Dp) {
+private fun MarkerDot(fraction: Float, color: Color, width: Dp, centreY: Dp) {
     val dotSize = 12.dp
     val ring = 3.dp
     Box(
@@ -583,7 +530,8 @@ private fun MarkerDot(fraction: Float, color: Color, width: Dp, y: Dp) {
             .offset(
                 x = (width * fraction - dotSize / 2f)
                     .coerceIn(0.dp, (width - dotSize).coerceAtLeast(0.dp)),
-                y = y - dotSize / 2f
+                // Centre the disc on the bar's midline so it straddles the line, like the mock.
+                y = centreY - dotSize / 2f
             )
             .size(dotSize)
     ) {
