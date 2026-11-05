@@ -1,5 +1,6 @@
 package com.vital.ui.screens
 
+import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -575,16 +576,24 @@ private fun MarkerLabel(
 
 @Composable
 private fun MarkerDot(fraction: Float, color: Color, width: Dp, y: Dp) {
+    val dotSize = 12.dp
+    val ring = 3.dp
     Box(
         modifier = Modifier
             .offset(
-                x = (width * fraction - 5.dp).coerceIn(0.dp, (width - 10.dp).coerceAtLeast(0.dp)),
-                y = y - 5.dp
+                x = (width * fraction - dotSize / 2f)
+                    .coerceIn(0.dp, (width - dotSize).coerceAtLeast(0.dp)),
+                y = y - dotSize / 2f
             )
-            .size(10.dp)
-            .border(2.dp, VitalColors.paper, CircleShape)
-            .background(color, CircleShape)
-    )
+            .size(dotSize)
+    ) {
+        Canvas(modifier = Modifier.fillMaxSize()) {
+            val radius = size.minDimension / 2f
+            // Paper ring first, then the fill: a crisp disc like the mock, with no halo.
+            drawCircle(color = VitalColors.paper, radius = radius)
+            drawCircle(color = color, radius = radius - ring.toPx())
+        }
+    }
 }
 
 @Composable
