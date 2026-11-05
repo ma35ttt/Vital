@@ -1,5 +1,6 @@
 package com.vital.ui
 
+import com.vital.service.RestTimerRelay
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -31,7 +32,9 @@ class LiftDraftStore @Inject constructor() {
  * number when it comes back. It resets when the app process is recreated.
  */
 @Singleton
-class RestTimerController @Inject constructor() {
+class RestTimerController @Inject constructor(
+    private val relay: RestTimerRelay
+) {
 
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
     private val _remainingSeconds = MutableStateFlow(0)
@@ -49,11 +52,13 @@ class RestTimerController @Inject constructor() {
         if (totalSeconds <= 0) {
             _remainingSeconds.value = 0
             _totalSeconds.value = 0
+            relay.cancel()
             return
         }
         _totalSeconds.value = totalSeconds
         deadlineMillis = System.currentTimeMillis() + totalSeconds * 1_000L
         _remainingSeconds.value = totalSeconds
+        relay.start(totalSeconds)
         tickJob = scope.launch {
             while (isActive) {
                 val left = ((deadlineMillis - System.currentTimeMillis() + 999L) / 1_000L)
@@ -74,6 +79,7 @@ class RestTimerController @Inject constructor() {
         _remainingSeconds.value =
             ((deadlineMillis - System.currentTimeMillis() + 999L) / 1_000L).toInt()
                 .coerceAtLeast(0)
+        relay.start(_remainingSeconds.value, _totalSeconds.value)
     }
 
     /** Skips the rest early. */
@@ -83,5 +89,6 @@ class RestTimerController @Inject constructor() {
         deadlineMillis = 0L
         _remainingSeconds.value = 0
         _totalSeconds.value = 0
+        relay.cancel()
     }
 }
