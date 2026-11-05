@@ -4,6 +4,7 @@ plugins {
     id("org.jetbrains.kotlin.plugin.compose")
     id("com.google.devtools.ksp")
     id("com.google.dagger.hilt.android")
+    id("androidx.baselineprofile")
 }
 
 android {
@@ -34,6 +35,10 @@ android {
             isMinifyEnabled = true
             isShrinkResources = true
             proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
+            // No release keystore is checked in, so sign with the debug key. This keeps
+            // local release builds installable (including Baseline Profile generation,
+            // which has to install the app). Swap in a real keystore before publishing.
+            signingConfig = signingConfigs.getByName("debug")
         }
     }
     compileOptions {
@@ -57,6 +62,12 @@ android {
             excludes += "/META-INF/{AL2.0,LGPL2.1,LICENSE,LICENSE.txt,NOTICE,NOTICE.txt}"
         }
     }
+}
+
+// Keep the generated Baseline Profile in source so it is reviewed and committed
+// alongside the code that produced it.
+baselineProfile {
+    saveInSrc = true
 }
 
 dependencies {
@@ -138,4 +149,7 @@ dependencies {
     testImplementation("androidx.test.ext:junit:1.2.1")
     testImplementation("androidx.compose.ui:ui-test-junit4")
     testImplementation("androidx.compose.ui:ui-test-manifest")
+
+    // Baseline Profile generator/benchmark tests.
+    baselineProfile(project(":baselineprofile"))
 }

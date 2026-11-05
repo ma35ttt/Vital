@@ -23,3 +23,5 @@ dependencyResolutionManagement {
 
 rootProject.name = "Vital"
 include(":app")
+// Generates and benchmarks a Baseline Profile for :app. Not part of the shipped APK.
+include(":baselineprofile")
