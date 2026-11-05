@@ -1,9 +1,12 @@
 package com.vital.ui.screens
 
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.detectHorizontalDragGestures
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -44,6 +47,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.buildAnnotatedString
@@ -151,7 +155,7 @@ fun LiftScreen(
         LocalDate.now().format(DateTimeFormatter.ofPattern("EEE dd.MM", Locale.US)).uppercase()
     }
 
-    Column(
+    Box(
         modifier = modifier
             .fillMaxSize()
             .background(VitalColors.paper)
@@ -260,6 +264,29 @@ fun LiftScreen(
                 )
             }
         }
+
+        if (showNewWorkout) {
+            NewWorkoutSheet(
+                plan = newWorkout,
+                exercises = exercises,
+                onUpdateWeight = viewModel::updatePlanWeight,
+                onUpdateReps = viewModel::updatePlanReps,
+                onUpdateRpe = viewModel::updatePlanRpe,
+                onAddExercise = viewModel::addPlanExercise,
+                onStart = {
+                    viewModel.startWorkout()
+                    showNewWorkout = false
+                },
+                onStartEmpty = {
+                    viewModel.startEmpty()
+                    showNewWorkout = false
+                },
+                onDismiss = {
+                    viewModel.dismissNewWorkout()
+                    showNewWorkout = false
+                }
+            )
+        }
     }
 
     if (showExercisePicker) {
@@ -281,29 +308,6 @@ fun LiftScreen(
             volume = volume,
             onDelete = viewModel::deleteSet,
             onDismiss = { showSessionDetail = false }
-        )
-    }
-
-    if (showNewWorkout) {
-        NewWorkoutSheet(
-            plan = newWorkout,
-            exercises = exercises,
-            onUpdateWeight = viewModel::updatePlanWeight,
-            onUpdateReps = viewModel::updatePlanReps,
-            onUpdateRpe = viewModel::updatePlanRpe,
-            onAddExercise = viewModel::addPlanExercise,
-            onStart = {
-                viewModel.startWorkout()
-                showNewWorkout = false
-            },
-            onStartEmpty = {
-                viewModel.startEmpty()
-                showNewWorkout = false
-            },
-            onDismiss = {
-                viewModel.dismissNewWorkout()
-                showNewWorkout = false
-            }
         )
     }
 }
@@ -1030,14 +1034,29 @@ private fun NewWorkoutSheet(
     var showPicker by rememberSaveable { mutableStateOf(false) }
     val items = plan?.items.orEmpty()
 
-    Dialog(
-        onDismissRequest = onDismiss,
-        properties = DialogProperties(usePlatformDefaultWidth = false)
+    // Rendered as an in-window overlay rather than a full-screen Dialog. A full-screen Dialog
+    // measures its content against the whole display while the dialog window itself sits below
+    // the status bar, which clipped the last rows. As an overlay the content is measured against
+    // the real page area, so every row stays on screen.
+    BackHandler { onDismiss() }
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(VitalColors.paper)
+            // Consume taps so they cannot reach the Lift page behind the overlay.
+            .clickable(
+                interactionSource = remember { MutableInteractionSource() },
+                indication = null,
+                onClick = {}
+            )
+            // Absorb horizontal drags so a swipe on the sheet cannot page to another tab.
+            .pointerInput(Unit) {
+                detectHorizontalDragGestures { change, _ -> change.consume() }
+            }
     ) {
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .background(VitalColors.paper)
                 .padding(top = 22.dp)
         ) {
             Row(

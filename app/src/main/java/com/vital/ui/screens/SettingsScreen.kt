@@ -6,9 +6,11 @@ import android.content.pm.PackageManager
 import android.net.Uri
 import android.os.Build
 import android.provider.Settings as AndroidSettings
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -59,7 +61,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.em
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
-import androidx.compose.ui.window.DialogProperties
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LifecycleEventEffect
@@ -142,7 +143,7 @@ fun SettingsScreen(
             .uppercase()
     }
 
-    Column(
+    Box(
         modifier = modifier
             .fillMaxSize()
             .background(VitalColors.paper)
@@ -422,6 +423,15 @@ fun SettingsScreen(
 
             item { Spacer(Modifier.height(24.dp)) }
         }
+
+        if (showThemePicker) {
+            ThemePickerDialog(
+                currentId = settings.themeId,
+                trueBlack = settings.trueBlack,
+                onSelect = viewModel::setTheme,
+                onDismiss = { showThemePicker = false }
+            )
+        }
     }
 
     if (editingTargets) {
@@ -444,15 +454,6 @@ fun SettingsScreen(
                 viewModel.setAiApiKey(key)
                 editingKey = false
             }
-        )
-    }
-
-    if (showThemePicker) {
-        ThemePickerDialog(
-            currentId = settings.themeId,
-            trueBlack = settings.trueBlack,
-            onSelect = viewModel::setTheme,
-            onDismiss = { showThemePicker = false }
         )
     }
 }
@@ -918,14 +919,25 @@ private fun ThemePickerDialog(
     onSelect: (String) -> Unit,
     onDismiss: () -> Unit
 ) {
-    Dialog(
-        onDismissRequest = onDismiss,
-        properties = DialogProperties(usePlatformDefaultWidth = false)
+    // Rendered as an in-window overlay rather than a full-screen Dialog. A full-screen Dialog
+    // measures its content against the whole display while the dialog window itself sits below the
+    // status bar, which clipped the last rows. As an overlay the content is measured against the
+    // real page area, so every theme card stays reachable.
+    BackHandler { onDismiss() }
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(VitalColors.paper)
+            // Consume taps so they cannot reach the Settings page behind the overlay.
+            .clickable(
+                interactionSource = remember { MutableInteractionSource() },
+                indication = null,
+                onClick = {}
+            )
     ) {
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .background(VitalColors.paper)
                 .padding(top = 22.dp)
         ) {
             Row(
