@@ -1,5 +1,8 @@
 package com.vital.ui.components
 
+import androidx.compose.animation.core.LinearEasing
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -18,6 +21,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
@@ -51,7 +55,8 @@ fun VitalBottomNav(
     selectedIndex: Int,
     onTabSelected: (Int) -> Unit,
     modifier: Modifier = Modifier,
-    showMoreDot: Boolean = false
+    showMoreDot: Boolean = false,
+    restProgress: Float? = null
 ) {
     Column(
         modifier = modifier
@@ -59,7 +64,7 @@ fun VitalBottomNav(
             .background(VitalColors.paper)
             .navigationBarsPadding()
     ) {
-        Hairline()
+        RestIndicator(progress = restProgress)
         Row(
             modifier = Modifier
                 .fillMaxWidth()
@@ -115,6 +120,37 @@ fun VitalBottomNav(
                     )
                 }
             }
+        }
+    }
+}
+
+/**
+ * The divider above the tabs doubles as the rest-timer track: while a rest runs, an orange
+ * fill drains from the left as time runs out. It carries no controls — skip and +15 s live in
+ * the notification and on the Lift screen — so it stays a quiet, glanceable line.
+ *
+ * [progress] is remaining/total, or null when no rest is running.
+ */
+@Composable
+private fun RestIndicator(progress: Float?) {
+    val fill by animateFloatAsState(
+        targetValue = (progress ?: 0f).coerceIn(0f, 1f),
+        animationSpec = tween(durationMillis = 260, easing = LinearEasing),
+        label = "restFill"
+    )
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(2.dp)
+            .background(VitalColors.rule)
+    ) {
+        if (fill > 0f) {
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth(fill)
+                    .fillMaxHeight()
+                    .background(VitalColors.orange)
+            )
         }
     }
 }

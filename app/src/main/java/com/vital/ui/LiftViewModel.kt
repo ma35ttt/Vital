@@ -158,6 +158,12 @@ class LiftViewModel @Inject constructor(
         }
     }
 
+    /** Adds time to a running rest without logging another set. */
+    fun extendRest(seconds: Int) = restTimer.extend(seconds)
+
+    /** Ends the rest early. */
+    fun skipRest() = restTimer.stop()
+
     fun logSet() {
         val exercise = selectedExercise.value ?: return
         val weight = weightText.value.toDoubleOrNull() ?: return

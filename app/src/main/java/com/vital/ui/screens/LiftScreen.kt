@@ -77,6 +77,9 @@ import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 import java.util.Locale
 
+/** The Lift screen's +15 s matches the notification's top-up. */
+private const val REST_EXTEND_SECONDS = 15
+
 /**
  * Lift, restyled to the editorial-dark hybrid mock.
  *
@@ -153,6 +156,16 @@ fun LiftScreen(
                     progress = restProgress,
                     modifier = Modifier.padding(top = 26.dp)
                 )
+            }
+            // The Lift screen is the in-app place to steer a rest; the nav line is read-only.
+            if (restRemaining > 0) {
+                item {
+                    RestControls(
+                        onExtend = { viewModel.extendRest(REST_EXTEND_SECONDS) },
+                        onSkip = viewModel::skipRest,
+                        modifier = Modifier.padding(top = 16.dp)
+                    )
+                }
             }
             item {
                 ExerciseRow(
@@ -305,6 +318,63 @@ private fun RestRing(progress: Float, modifier: Modifier = Modifier) {
                 style = Stroke(width = stroke, cap = StrokeCap.Round)
             )
         }
+    }
+}
+
+// ---- rest controls -------------------------------------------------------------------------
+
+@Composable
+private fun RestControls(
+    onExtend: () -> Unit,
+    onSkip: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    Row(
+        modifier = modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.spacedBy(10.dp)
+    ) {
+        RestControlButton(
+            text = "+15 sec",
+            filled = false,
+            onClick = onExtend,
+            modifier = Modifier.weight(1f)
+        )
+        RestControlButton(
+            text = "Skip rest",
+            filled = true,
+            onClick = onSkip,
+            modifier = Modifier.weight(1f)
+        )
+    }
+}
+
+@Composable
+private fun RestControlButton(
+    text: String,
+    filled: Boolean,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    Box(
+        modifier = modifier
+            .height(46.dp)
+            .then(
+                if (filled) {
+                    Modifier.background(VitalColors.orange, RoundedCornerShape(4.dp))
+                } else {
+                    Modifier.border(1.dp, VitalColors.orange, RoundedCornerShape(4.dp))
+                }
+            )
+            .clickable(onClick = onClick),
+        contentAlignment = Alignment.Center
+    ) {
+        Text(
+            text = text,
+            color = if (filled) VitalColors.onAccent else VitalColors.orange,
+            fontFamily = VitalFonts.InterTight,
+            fontSize = 14.sp,
+            fontWeight = FontWeight.SemiBold
+        )
     }
 }
 
