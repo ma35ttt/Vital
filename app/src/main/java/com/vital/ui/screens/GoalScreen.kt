@@ -414,12 +414,13 @@ private fun EditPlan(
  * No body illustration: the bar is the figure.
  */
 @Composable
-private fun HealthyRangeBar(
+internal fun HealthyRangeBar(
     heightCm: Double,
     nowKg: Double,
     goalKg: Double?,
     plan: BodyGoalPlan,
     imperial: Boolean,
+    alwaysShowLabels: Boolean = false,
     modifier: Modifier = Modifier
 ) {
     val range = plan.healthyRange
@@ -443,6 +444,8 @@ private fun HealthyRangeBar(
     val fNow = frac(nowKg)
     val fGoal = goalKg?.let { frac(it) }
     var showWeights by rememberSaveable { mutableStateOf(false) }
+    // Onboarding shows the value tags all the time; the Goal hub reveals them on demand.
+    val labelsVisible = alwaysShowLabels || showWeights
 
     Column(modifier = modifier.fillMaxWidth()) {
         Row(
@@ -462,12 +465,12 @@ private fun HealthyRangeBar(
         BoxWithConstraints(
             modifier = Modifier
                 .fillMaxWidth()
-                .height(if (showWeights) 96.dp else 30.dp)
+                .height(if (labelsVisible) 96.dp else 30.dp)
                 .padding(top = 4.dp)
         ) {
             val trackWidth = maxWidth
             // The revealed labels need room above/below the bar; collapsed, the block is just the bar.
-            val barY = if (showWeights) 38.dp else 10.dp
+            val barY = if (labelsVisible) 38.dp else 10.dp
             val barHeight = 10.dp
             // The mock centres each marker on the bar (top:50%), not on its top edge.
             val barCentre = barY + barHeight / 2
@@ -514,7 +517,7 @@ private fun HealthyRangeBar(
                 )
             }
 
-            if (showWeights) {
+            if (labelsVisible) {
                 val labelWidth = 88.dp
                 MarkerLabel(
                     label = "NOW",
@@ -552,7 +555,9 @@ private fun HealthyRangeBar(
                 LegendDot(label = "NOW", color = VitalColors.inkMuted)
                 if (goalKg != null) LegendDot(label = "GOAL", color = VitalColors.orange)
             }
-            InfoButton(expanded = showWeights) { showWeights = !showWeights }
+            if (!alwaysShowLabels) {
+                InfoButton(expanded = showWeights) { showWeights = !showWeights }
+            }
         }
     }
 }
@@ -671,7 +676,7 @@ private fun FieldLabel(text: String, color: Color = VitalColors.inkMuted) {
 }
 
 @Composable
-private fun Segmented(
+internal fun Segmented(
     options: List<String>,
     selected: Int,
     onSelect: (Int) -> Unit,
@@ -704,7 +709,7 @@ private fun Segmented(
 }
 
 @Composable
-private fun ChoiceChips(
+internal fun ChoiceChips(
     options: List<String>,
     selected: Int,
     onSelect: (Int) -> Unit,
