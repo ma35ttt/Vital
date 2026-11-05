@@ -2,8 +2,10 @@ package com.vital.ui.screens
 
 import androidx.activity.compose.BackHandler
 import androidx.compose.animation.animateContentSize
+import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
@@ -49,6 +51,7 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.input.pointer.pointerInput
@@ -1538,9 +1541,24 @@ private fun SearchField(
 
 @Composable
 private fun DialogShell(content: @Composable () -> Unit) {
+    // Settle the card in with a slight scale + fade instead of popping.
+    val entrance = remember { Animatable(0f) }
+    LaunchedEffect(Unit) {
+        entrance.animateTo(
+            targetValue = 1f,
+            animationSpec = spring(dampingRatio = 0.72f, stiffness = 520f)
+        )
+    }
+    val p = entrance.value
     Column(
         modifier = Modifier
             .fillMaxWidth()
+            .graphicsLayer {
+                val scale = 0.94f + 0.06f * p
+                scaleX = scale
+                scaleY = scale
+                alpha = p.coerceIn(0f, 1f)
+            }
             .background(VitalColors.sheet, RoundedCornerShape(12.dp))
             .border(1.dp, VitalColors.ruleStrong, RoundedCornerShape(12.dp))
             .padding(20.dp)

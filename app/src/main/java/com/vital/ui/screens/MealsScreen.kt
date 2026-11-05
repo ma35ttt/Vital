@@ -2,6 +2,7 @@ package com.vital.ui.screens
 
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -43,6 +44,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.buildAnnotatedString
@@ -1215,9 +1217,24 @@ private fun AmbiguityDialog(
 
 @Composable
 private fun DialogShell(content: @Composable () -> Unit) {
+    // Settle the card in with a slight scale + fade instead of popping.
+    val entrance = remember { Animatable(0f) }
+    LaunchedEffect(Unit) {
+        entrance.animateTo(
+            targetValue = 1f,
+            animationSpec = spring(dampingRatio = 0.72f, stiffness = 520f)
+        )
+    }
+    val p = entrance.value
     Column(
         modifier = Modifier
             .fillMaxWidth()
+            .graphicsLayer {
+                val scale = 0.94f + 0.06f * p
+                scaleX = scale
+                scaleY = scale
+                alpha = p.coerceIn(0f, 1f)
+            }
             .background(VitalColors.sheet, RoundedCornerShape(12.dp))
             .border(1.dp, VitalColors.ruleStrong, RoundedCornerShape(12.dp))
             .padding(20.dp)
