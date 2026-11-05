@@ -1549,11 +1549,12 @@ private fun DialogShell(content: @Composable () -> Unit) {
             animationSpec = spring(dampingRatio = 0.72f, stiffness = 520f)
         )
     }
-    val p = entrance.value
     Column(
         modifier = Modifier
             .fillMaxWidth()
             .graphicsLayer {
+                // Read the entrance value in the layer so each frame only redraws.
+                val p = entrance.value
                 val scale = 0.94f + 0.06f * p
                 scaleX = scale
                 scaleY = scale

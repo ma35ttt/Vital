@@ -14,7 +14,6 @@ import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -42,6 +41,8 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.graphicsLayer
@@ -274,14 +275,15 @@ private fun MealsHero(
                 .padding(top = 22.dp)
                 .height(1.dp)
                 .background(VitalColors.rule)
-        ) {
-            Box(
-                modifier = Modifier
-                    .fillMaxHeight()
-                    .fillMaxWidth(animated.value)
-                    .background(VitalColors.orange)
-            )
-        }
+                // Draw the fill instead of laying it out, so growth only redraws this bar.
+                .drawBehind {
+                    val value = animated.value
+                    drawRect(
+                        color = VitalColors.orange,
+                        size = Size(size.width * value, size.height)
+                    )
+                }
+        )
         Row(
             modifier = Modifier
                 .fillMaxWidth()
@@ -1225,11 +1227,12 @@ private fun DialogShell(content: @Composable () -> Unit) {
             animationSpec = spring(dampingRatio = 0.72f, stiffness = 520f)
         )
     }
-    val p = entrance.value
     Column(
         modifier = Modifier
             .fillMaxWidth()
             .graphicsLayer {
+                // Read the entrance value in the layer so each frame only redraws.
+                val p = entrance.value
                 val scale = 0.94f + 0.06f * p
                 scaleX = scale
                 scaleY = scale
