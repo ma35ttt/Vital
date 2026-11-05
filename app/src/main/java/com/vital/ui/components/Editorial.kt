@@ -45,6 +45,7 @@ fun EditorialHeader(
     dateLabel: String,
     onBack: (() -> Unit)? = null,
     backLabel: String = "Back",
+    eyebrow: String? = null,
     modifier: Modifier = Modifier
 ) {
     Column(modifier = modifier.fillMaxWidth()) {
@@ -75,6 +76,12 @@ fun EditorialHeader(
                 fontFamily = VitalFonts.JetBrainsMonoRegular,
                 fontSize = 11.sp,
                 letterSpacing = 0.04.em
+            )
+        }
+        if (eyebrow != null) {
+            EditorialEyebrow(
+                text = eyebrow,
+                modifier = Modifier.padding(top = 18.dp)
             )
         }
         Text(

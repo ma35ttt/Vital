@@ -172,6 +172,7 @@ private fun MoreSheetContent(
         )
         MoreRow(label = "Summary", onClick = { onNavigate("summary") }, trailing = "›")
         MoreRow(label = "Weeks", onClick = { onNavigate("weeks") }, trailing = "›")
+        MoreRow(label = "Exercises", onClick = { onNavigate("exercises") }, trailing = "›")
         MoreRow(label = "Settings", onClick = { onNavigate("settings") }, trailing = "›")
         MoreRow(label = "AI coach", onClick = { onNavigate("coach") }, trailing = "›")
         if (showDebug) {

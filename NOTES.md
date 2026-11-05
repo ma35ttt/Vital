@@ -447,3 +447,33 @@ The last two things still on samples: the More tab's notification dot and the We
 - **Not built yet.** The dot also ignores the daily and water reminders (only meals and workouts
   are actionable); Weeks has no bar tooltip or trend tap-through; Progress and Coach are still
   the old samples.
+
+### M5 — Exercise library (2026-11-05)
+
+Feature 1 of the post-testing priority list. The bundled catalog grew from 58 hand-written
+movements to 923, and there is now a browse screen for all of them.
+
+- **Catalog.** `assets/exercises.json` (747 KB) is the curated list already in `SeedLoader` plus
+  the public-domain [free-exercise-db](https://github.com/yuhonas/free-exercise-db) (Unlicense),
+  mapped onto the app schema (`muscleGroup`, `equipment`, `isBarbell`, `isCompound`,
+  `defaultRestSec`, joined instructions). `ExerciseCatalog` parses it on any JVM and derives
+  stable ids (`seed:<slug>`, numeric suffix on a name clash) so re-seeding does not mint a new
+  UUID each launch. `SeedLoader` now reads the asset and inserts only names the DB is missing,
+  so an upgrade adds rows without duplicating or rekeying. `ExerciseCatalogTest` covers the
+  mapping, clashing ids and the shipped asset (>= 900 unique well-formed rows).
+- **Screen.** New `Exercises` destination reached from the More sheet (`MoreSheet`, route
+  `exercises` in `VitalNavigation`). `ExerciseLibraryViewModel` loads the catalog once and
+  filters in memory: a name search and a muscle-group tab (`MuscleFilter`). `ExerciseLibraryScreen`
+  matches the approved mock — `LIBRARY` eyebrow, live count (`923 movements · 517 compound`, or
+  `LEGS · 306 movements`), search field, scrollable tabs with the orange underline, ruled rows
+  showing `MUSCLE · EQUIPMENT · rest` with a `COMPOUND` tag. Tapping a row opens a detail dialog
+  with the instructions and a **Use in Lift** action that hands the exercise to `LiftDraftStore`
+  and switches to the Lift tab (which prefills weight/reps from the last logged set).
+  `EditorialHeader` gained an optional `eyebrow` (used only here).
+- **Device check (e281c7, 1240 x 2772, density 476).** More shows the Exercises row; the screen
+  renders 923/517; the LEGS tab gives `306 movements`; `squat` inside LEGS narrows to the squat
+  variants; the detail dialog shows the real free-exercise-db instructions; **Use in Lift** lands
+  on Lift with Barbell Squat selected. The device DB holds all 923 rows.
+- **Not built yet.** No way to add a custom exercise or edit one from the library; the Lift
+  picker still has no muscle filter (decision: the new screen replaces that need).
+

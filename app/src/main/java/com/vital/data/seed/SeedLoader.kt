@@ -2,11 +2,9 @@ package com.vital.data.seed
 
 import android.content.Context
 import com.vital.data.entity.BodyMeasurements
-import com.vital.data.entity.Exercise
 import com.vital.data.entity.Food
 import com.vital.data.entity.FoodSource
 import com.vital.data.entity.FoodVariant
-import com.vital.data.entity.MuscleGroup
 import com.vital.data.entity.Recipe
 import com.vital.data.entity.Settings
 import com.vital.data.entity.User
@@ -15,6 +13,7 @@ import com.vital.data.repository.FoodRepository
 import com.vital.data.repository.RecipeRepository
 import com.vital.data.repository.SettingsRepository
 import com.vital.data.repository.UserRepository
+import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.withContext
@@ -26,8 +25,12 @@ import kotlinx.serialization.encodeToString
 /** The only user row until the M6 auth gate creates real ones. */
 const val LOCAL_USER_ID = "local-user"
 
+/** Bundled, comprehensive exercise catalog (curated + public-domain free-exercise-db). */
+private const val EXERCISE_CATALOG_ASSET = "exercises.json"
+
 @Singleton
 class SeedLoader @Inject constructor(
+    @ApplicationContext private val context: Context,
     private val foodRepository: FoodRepository,
     private val recipeRepository: RecipeRepository,
     private val exerciseRepository: ExerciseRepository,
@@ -58,10 +61,8 @@ class SeedLoader @Inject constructor(
             loadFoods()
             loadRecipes()
         }
-        val exerciseCount = exerciseRepository.getExerciseCount()
-        if (exerciseCount == 0) {
-            loadExercises()
-        }
+        // Idempotent by name, so an upgrade adds only the exercises the DB does not have yet.
+        loadExercises()
     }
 
     private suspend fun loadFoods() {
@@ -163,85 +164,18 @@ class SeedLoader @Inject constructor(
     }
 
     private suspend fun loadExercises() {
-        // Combined curated list from fud-ai-android + openGym (~200 exercises)
-        // For now, adding a core set of exercises with defaultRestSec and isCompound
-        val exercises = listOf(
-            // CHEST
-            Exercise.create("Bench Press", MuscleGroup.CHEST, true, com.vital.data.entity.Equipment.BARBELL, "Lie on bench, lower bar to chest, press up", 180, true),
-            Exercise.create("Incline Bench Press", MuscleGroup.CHEST, true, com.vital.data.entity.Equipment.BARBELL, "Incline bench, lower to upper chest", 180, true),
-            Exercise.create("Dumbbell Bench Press", MuscleGroup.CHEST, false, com.vital.data.entity.Equipment.DUMBBELL, "Press dumbbells from chest level", 120, true),
-            Exercise.create("Incline Dumbbell Press", MuscleGroup.CHEST, false, com.vital.data.entity.Equipment.DUMBBELL, "Incline bench with dumbbells", 120, true),
-            Exercise.create("Dumbbell Flyes", MuscleGroup.CHEST, false, com.vital.data.entity.Equipment.DUMBBELL, "Arms wide, squeeze chest at top", 90, false),
-            Exercise.create("Cable Crossovers", MuscleGroup.CHEST, false, com.vital.data.entity.Equipment.CABLE, "Cross cables at midline", 90, false),
-            Exercise.create("Push-ups", MuscleGroup.CHEST, false, com.vital.data.entity.Equipment.BODYWEIGHT, "Body straight, lower chest to floor", 60, true),
-            Exercise.create("Dips (Chest)", MuscleGroup.CHEST, false, com.vital.data.entity.Equipment.BODYWEIGHT, "Lean forward, lower until shoulders below elbows", 90, true),
+        val catalogJson = context.assets
+            .open(EXERCISE_CATALOG_ASSET)
+            .bufferedReader()
+            .use { it.readText() }
+        val catalog = ExerciseCatalog.parse(catalogJson)
 
-            // BACK
-            Exercise.create("Deadlift", MuscleGroup.BACK, true, com.vital.data.entity.Equipment.BARBELL, "Hinge at hips, pull bar from floor", 180, true),
-            Exercise.create("Pull-ups", MuscleGroup.BACK, false, com.vital.data.entity.Equipment.BODYWEIGHT, "Overhand grip, pull chin over bar", 120, true),
-            Exercise.create("Chin-ups", MuscleGroup.BACK, false, com.vital.data.entity.Equipment.BODYWEIGHT, "Underhand grip, pull chin over bar", 120, true),
-            Exercise.create("Barbell Row", MuscleGroup.BACK, true, com.vital.data.entity.Equipment.BARBELL, "Bent over, pull bar to lower chest", 120, true),
-            Exercise.create("Dumbbell Row", MuscleGroup.BACK, false, com.vital.data.entity.Equipment.DUMBBELL, "One arm, pull to hip", 90, true),
-            Exercise.create("Lat Pulldown", MuscleGroup.BACK, false, com.vital.data.entity.Equipment.MACHINE, "Wide grip, pull to upper chest", 90, true),
-            Exercise.create("Seated Cable Row", MuscleGroup.BACK, false, com.vital.data.entity.Equipment.CABLE, "Pull to abdomen, squeeze shoulder blades", 90, true),
-            Exercise.create("T-Bar Row", MuscleGroup.BACK, true, com.vital.data.entity.Equipment.BARBELL, "Chest supported, pull to chest", 120, true),
-            Exercise.create("Face Pulls", MuscleGroup.BACK, false, com.vital.data.entity.Equipment.CABLE, "High pulley, pull to face", 60, false),
-
-            // SHOULDERS
-            Exercise.create("Overhead Press", MuscleGroup.SHOULDERS, true, com.vital.data.entity.Equipment.BARBELL, "Press bar from shoulders overhead", 120, true),
-            Exercise.create("Dumbbell Shoulder Press", MuscleGroup.SHOULDERS, false, com.vital.data.entity.Equipment.DUMBBELL, "Press dumbbells overhead", 90, true),
-            Exercise.create("Lateral Raises", MuscleGroup.SHOULDERS, false, com.vital.data.entity.Equipment.DUMBBELL, "Raise arms to shoulder height", 60, false),
-            Exercise.create("Front Raises", MuscleGroup.SHOULDERS, false, com.vital.data.entity.Equipment.DUMBBELL, "Raise arms forward to shoulder height", 60, false),
-            Exercise.create("Rear Delt Flyes", MuscleGroup.SHOULDERS, false, com.vital.data.entity.Equipment.DUMBBELL, "Bent over, raise arms to side", 60, false),
-            Exercise.create("Arnold Press", MuscleGroup.SHOULDERS, false, com.vital.data.entity.Equipment.DUMBBELL, "Rotate palms during press", 90, true),
-            Exercise.create("Upright Rows", MuscleGroup.SHOULDERS, true, com.vital.data.entity.Equipment.BARBELL, "Pull bar to chin, elbows high", 90, true),
-            Exercise.create("Pike Push-ups", MuscleGroup.SHOULDERS, false, com.vital.data.entity.Equipment.BODYWEIGHT, "Hips high, lower head to floor", 60, true),
-
-            // ARMS - BICEPS
-            Exercise.create("Barbell Curl", MuscleGroup.ARMS, true, com.vital.data.entity.Equipment.BARBELL, "Curl bar to shoulders", 90, false),
-            Exercise.create("Dumbbell Curl", MuscleGroup.ARMS, false, com.vital.data.entity.Equipment.DUMBBELL, "Supinate at top", 60, false),
-            Exercise.create("Hammer Curl", MuscleGroup.ARMS, false, com.vital.data.entity.Equipment.DUMBBELL, "Neutral grip throughout", 60, false),
-            Exercise.create("Preacher Curl", MuscleGroup.ARMS, false, com.vital.data.entity.Equipment.MACHINE, "Isolate biceps", 60, false),
-            Exercise.create("Cable Curl", MuscleGroup.ARMS, false, com.vital.data.entity.Equipment.CABLE, "Constant tension", 60, false),
-
-            // ARMS - TRICEPS
-            Exercise.create("Close Grip Bench Press", MuscleGroup.ARMS, true, com.vital.data.entity.Equipment.BARBELL, "Hands shoulder width", 120, true),
-            Exercise.create("Tricep Dips", MuscleGroup.ARMS, false, com.vital.data.entity.Equipment.BODYWEIGHT, "Upright torso", 90, true),
-            Exercise.create("Overhead Tricep Extension", MuscleGroup.ARMS, false, com.vital.data.entity.Equipment.DUMBBELL, "Lower behind head", 60, false),
-            Exercise.create("Rope Pushdowns", MuscleGroup.ARMS, false, com.vital.data.entity.Equipment.CABLE, "Spread rope at bottom", 60, false),
-            Exercise.create("Skull Crushers", MuscleGroup.ARMS, false, com.vital.data.entity.Equipment.BARBELL, "Lower to forehead", 90, false),
-
-            // LEGS
-            Exercise.create("Squat", MuscleGroup.LEGS, true, com.vital.data.entity.Equipment.BARBELL, "Hip crease below knee", 180, true),
-            Exercise.create("Front Squat", MuscleGroup.LEGS, true, com.vital.data.entity.Equipment.BARBELL, "Bar on front delts", 180, true),
-            Exercise.create("Leg Press", MuscleGroup.LEGS, false, com.vital.data.entity.Equipment.MACHINE, "Full range of motion", 120, true),
-            Exercise.create("Romanian Deadlift", MuscleGroup.LEGS, true, com.vital.data.entity.Equipment.BARBELL, "Hinge at hips, slight knee bend", 120, true),
-            Exercise.create("Lunges", MuscleGroup.LEGS, false, com.vital.data.entity.Equipment.DUMBBELL, "Alternating or walking", 90, true),
-            Exercise.create("Bulgarian Split Squat", MuscleGroup.LEGS, false, com.vital.data.entity.Equipment.DUMBBELL, "Rear foot elevated", 90, true),
-            Exercise.create("Leg Extension", MuscleGroup.LEGS, false, com.vital.data.entity.Equipment.MACHINE, "Full extension", 60, false),
-            Exercise.create("Leg Curl", MuscleGroup.LEGS, false, com.vital.data.entity.Equipment.MACHINE, "Lying or seated", 60, false),
-            Exercise.create("Calf Raises", MuscleGroup.LEGS, false, com.vital.data.entity.Equipment.MACHINE, "Full stretch at bottom", 60, false),
-            Exercise.create("Hip Thrust", MuscleGroup.LEGS, true, com.vital.data.entity.Equipment.BARBELL, "Upper back on bench", 120, true),
-
-            // CORE
-            Exercise.create("Plank", MuscleGroup.CORE, false, com.vital.data.entity.Equipment.BODYWEIGHT, "Hold straight line", 60, false),
-            Exercise.create("Hanging Leg Raises", MuscleGroup.CORE, false, com.vital.data.entity.Equipment.BODYWEIGHT, "Raise legs to parallel", 90, false),
-            Exercise.create("Ab Wheel Rollout", MuscleGroup.CORE, false, com.vital.data.entity.Equipment.OTHER, "Full extension", 90, false),
-            Exercise.create("Russian Twists", MuscleGroup.CORE, false, com.vital.data.entity.Equipment.DUMBBELL, "Rotate torso", 60, false),
-            Exercise.create("Cable Crunch", MuscleGroup.CORE, false, com.vital.data.entity.Equipment.CABLE, "Kneeling, crunch down", 60, false),
-
-            // CARDIO
-            Exercise.create("Running", MuscleGroup.CARDIO, false, com.vital.data.entity.Equipment.NONE, "Outdoor or treadmill", 0, false),
-            Exercise.create("Cycling", MuscleGroup.CARDIO, false, com.vital.data.entity.Equipment.OTHER, "Stationary or outdoor", 0, false),
-            Exercise.create("Rowing", MuscleGroup.CARDIO, false, com.vital.data.entity.Equipment.MACHINE, "Full strokes", 0, false),
-            Exercise.create("Jump Rope", MuscleGroup.CARDIO, false, com.vital.data.entity.Equipment.OTHER, "Single or double unders", 0, false),
-
-            // FULL BODY
-            Exercise.create("Burpees", MuscleGroup.FULL_BODY, false, com.vital.data.entity.Equipment.BODYWEIGHT, "Chest to floor, jump up", 60, true),
-            Exercise.create("Kettlebell Swing", MuscleGroup.FULL_BODY, false, com.vital.data.entity.Equipment.KETTLEBELL, "Hip hinge, swing to chest", 90, true),
-            Exercise.create("Clean and Press", MuscleGroup.FULL_BODY, true, com.vital.data.entity.Equipment.BARBELL, "Explosive pull to press", 180, true),
-            Exercise.create("Thruster", MuscleGroup.FULL_BODY, true, com.vital.data.entity.Equipment.BARBELL, "Front squat to press", 120, true)
-        )
-        exerciseRepository.insertExercises(exercises)
+        val existing = exerciseRepository.getAllExercises().first()
+            .map { it.name.trim().lowercase() }
+            .toSet()
+        val missing = catalog.filter { it.name.trim().lowercase() !in existing }
+        if (missing.isNotEmpty()) {
+            exerciseRepository.insertExercises(missing)
+        }
     }
 }

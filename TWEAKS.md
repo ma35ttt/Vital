@@ -25,9 +25,24 @@ Examples:
 
 Screenshot anything visual and drop it in `tmp/` with a matching name.
 
+## Feature decisions (2026-11-05)
+
+- **Dropped for now, revisit after M5 testing:** Cloud sync / backup, Wear OS companion,
+  home-screen widgets (Glance). Not building.
+- **AI providers stay REST** (OkHttp), not vendor SDKs. Keeps the app small and means adding
+  providers is a code change, not a dependency change.
+- **No Wear OS companion** — use the standard notification (foreground service) instead, which
+  mirrors the rest timer to essentially any watch.
+- **Wanted candidate:** "Snap watch stats → prefill cardio" (photo the watch, OCR the numbers,
+  confirm and save). Works with any watch brand; shares one OCR pipeline with the planned
+  treadmill and food scans. Also the "comprehensive exercise library" and multi-provider AI
+  coach are confirmed-wanted.
+
 ## During daily use
 
-_(append here — one line per observation)_
+- 05.11 Live island: closing the app makes the rest island vanish; it should stay visible at the
+  top of the phone outside the app and keep counting. (annoying) — known gap, no foreground
+  service or notification yet; M6 has "rest timer foreground service".
 
 ## Carried in from M4 (known follow-ups, not new)
 

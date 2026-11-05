@@ -34,6 +34,7 @@ import com.vital.ui.components.VitalBottomNav
 import com.vital.ui.screens.CardioScreen
 import com.vital.ui.screens.CoachChatScreen
 import com.vital.ui.screens.DebugShowcaseScreen
+import com.vital.ui.screens.ExerciseLibraryScreen
 import com.vital.ui.screens.LiftScreen
 import com.vital.ui.screens.MealsScreen
 import com.vital.ui.screens.ProgressScreen
@@ -191,6 +192,13 @@ fun VitalNavigation() {
                         onNavigateToCardio = { navigateToTab(3) },
                         onNavigateToSettings = { openRoute("settings") },
                         onBack = { navController.popBackStack() }
+                    )
+                }
+                composable("exercises") {
+                    ExerciseLibraryScreen(
+                        modifier = Modifier.fillMaxSize(),
+                        onBack = { navController.popBackStack() },
+                        onOpenLift = { navigateToTab(1) }
                     )
                 }
                 composable("settings") {
