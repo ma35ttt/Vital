@@ -38,6 +38,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.focus.onFocusChanged
@@ -158,18 +159,6 @@ fun SettingsScreen(
                 )
             }
             item {
-                ValueRow(
-                    label = "True black",
-                    value = "Pure #000 for AMOLED",
-                    trailing = {
-                        EditorialSwitch(
-                            checked = settings.trueBlack,
-                            onCheckedChange = viewModel::setTrueBlack
-                        )
-                    }
-                )
-            }
-            item {
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -197,6 +186,27 @@ fun SettingsScreen(
                     )
                 }
                 Hairline()
+            }
+
+            item { SectionLabel("Appearance", topPadding = 28.dp) }
+            item {
+                ThemeTabs(
+                    light = settings.lightMode,
+                    onSelect = viewModel::setLightMode
+                )
+            }
+            item {
+                ValueRow(
+                    label = "True black",
+                    value = if (settings.lightMode) "Dark mode only" else "Pure #000 for AMOLED",
+                    trailing = {
+                        EditorialSwitch(
+                            checked = settings.trueBlack,
+                            onCheckedChange = viewModel::setTrueBlack,
+                            enabled = !settings.lightMode
+                        )
+                    }
+                )
             }
 
             item { SectionLabel("AI coach", topPadding = 28.dp) }
@@ -709,6 +719,7 @@ private fun EditorialSwitch(
     Box(
         modifier = Modifier
             .size(width = 42.dp, height = 24.dp)
+            .alpha(if (enabled) 1f else 0.6f)
             .background(
                 color = when {
                     !enabled -> Color.Transparent
@@ -735,7 +746,11 @@ private fun EditorialSwitch(
                 .padding(horizontal = 4.dp)
                 .size(16.dp)
                 .background(
-                    color = if (checked) VitalColors.black else VitalColors.inkMuted,
+                    color = when {
+                        !enabled -> VitalColors.ruleStrong
+                        checked -> VitalColors.onAccent
+                        else -> VitalColors.inkMuted
+                    },
                     shape = CircleShape
                 )
         )
@@ -784,6 +799,44 @@ private fun ProviderTabs(
 }
 
 @Composable
+private fun ThemeTabs(
+    light: Boolean,
+    onSelect: (Boolean) -> Unit
+) {
+    val options = listOf(false to "Dark", true to "Light")
+    Column(modifier = Modifier.fillMaxWidth()) {
+        Row(
+            modifier = Modifier.padding(top = 10.dp),
+            horizontalArrangement = Arrangement.spacedBy(28.dp)
+        ) {
+            options.forEach { (isLight, label) ->
+                val isSelected = isLight == light
+                Column(
+                    modifier = Modifier
+                        .width(IntrinsicSize.Min)
+                        .clickable { onSelect(isLight) }
+                ) {
+                    Text(
+                        text = label,
+                        color = if (isSelected) VitalColors.ink else VitalColors.inkMuted,
+                        fontFamily = VitalFonts.JetBrainsMonoRegular,
+                        fontSize = 13.sp,
+                        modifier = Modifier.padding(bottom = 10.dp)
+                    )
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(2.dp)
+                            .background(if (isSelected) VitalColors.orange else Color.Transparent)
+                    )
+                }
+            }
+        }
+        Hairline()
+    }
+}
+
+@Composable
 private fun DataButton(
     text: String,
     filled: Boolean,
@@ -803,7 +856,7 @@ private fun DataButton(
     ) {
         Text(
             text = text,
-            color = if (filled) VitalColors.black else VitalColors.orange,
+            color = if (filled) VitalColors.onAccent else VitalColors.orange,
             fontFamily = VitalFonts.InterTight,
             fontSize = 14.sp,
             fontWeight = FontWeight.SemiBold
@@ -976,8 +1029,8 @@ private fun DialogButton(
         Text(
             text = text,
             color = when {
-                !enabled -> VitalColors.black.copy(alpha = 0.5f)
-                filled -> VitalColors.black
+                !enabled -> VitalColors.onAccent.copy(alpha = 0.5f)
+                filled -> VitalColors.onAccent
                 else -> VitalColors.orange
             },
             fontFamily = VitalFonts.InterTight,

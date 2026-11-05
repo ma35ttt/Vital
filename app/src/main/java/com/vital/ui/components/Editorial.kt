@@ -313,9 +313,9 @@ fun EditorialButton(
         shape = RoundedCornerShape(4.dp),
         colors = ButtonDefaults.buttonColors(
             containerColor = if (enabled) VitalColors.orange else VitalColors.orange.copy(alpha = 0.35f),
-            contentColor = VitalColors.black.copy(alpha = if (enabled) 1f else 0.5f),
+            contentColor = VitalColors.onAccent.copy(alpha = if (enabled) 1f else 0.5f),
             disabledContainerColor = VitalColors.orange.copy(alpha = 0.35f),
-            disabledContentColor = VitalColors.black.copy(alpha = 0.5f)
+            disabledContentColor = VitalColors.onAccent.copy(alpha = 0.5f)
         ),
         contentPadding = androidx.compose.foundation.layout.PaddingValues(0.dp)
     ) {

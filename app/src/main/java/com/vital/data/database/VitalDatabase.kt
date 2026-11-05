@@ -5,6 +5,8 @@ import androidx.room.Database
 import androidx.room.Room
 import androidx.room.RoomDatabase
 import androidx.room.TypeConverters
+import androidx.room.migration.Migration
+import androidx.sqlite.db.SupportSQLiteDatabase
 import com.vital.data.dao.*
 import com.vital.data.entity.*
 import com.vital.data.seed.Converters
@@ -25,7 +27,7 @@ import com.vital.data.seed.Converters
         Settings::class,
         SyncMeta::class
     ],
-    version = 1,
+    version = 2,
     exportSchema = true
 )
 @TypeConverters(Converters::class)
@@ -47,13 +49,21 @@ abstract class VitalDatabase : RoomDatabase() {
         @Volatile
         private var INSTANCE: VitalDatabase? = null
 
+        /** v2 adds Settings.lightMode; existing rows keep dark mode. */
+        private val MIGRATION_1_2 = object : Migration(1, 2) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL("ALTER TABLE settings ADD COLUMN lightMode INTEGER NOT NULL DEFAULT 0")
+            }
+        }
+
         fun getDatabase(context: Context): VitalDatabase {
             return INSTANCE ?: synchronized(this) {
                 val instance = Room.databaseBuilder(
                     context.applicationContext,
                     VitalDatabase::class.java,
                     "vital.db"
-                ).fallbackToDestructiveMigration()
+                ).addMigrations(MIGRATION_1_2)
+                    .fallbackToDestructiveMigration()
                     .build()
                 INSTANCE = instance
                 instance

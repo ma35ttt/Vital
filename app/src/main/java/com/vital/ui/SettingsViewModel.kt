@@ -41,6 +41,8 @@ class SettingsViewModel @Inject constructor(
 
     fun setTrueBlack(enabled: Boolean) = updateSettings { it.copy(trueBlack = enabled) }
 
+    fun setLightMode(enabled: Boolean) = updateSettings { it.copy(lightMode = enabled) }
+
     fun setAiProvider(provider: AiProvider) = updateSettings { it.copy(aiProvider = provider) }
 
     fun setKcalTarget(kcal: Int) = updateSettings { it.copy(kcalTarget = kcal) }
