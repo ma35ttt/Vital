@@ -12,6 +12,9 @@ import com.vital.data.entity.StrokeType
 import com.vital.data.entity.Intensity
 import com.vital.data.entity.PhotoType
 import com.vital.data.entity.AiProvider
+import com.vital.data.entity.Sex
+import com.vital.data.entity.ActivityLevel
+import com.vital.data.entity.GoalType
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.encodeToString
@@ -127,6 +130,36 @@ class Converters {
     @TypeConverter
     fun toAiProvider(provider: AiProvider?): String? {
         return provider?.name
+    }
+
+    @TypeConverter
+    fun fromSex(value: String?): Sex? {
+        return value?.let { Sex.valueOf(it) }
+    }
+
+    @TypeConverter
+    fun toSex(sex: Sex?): String? {
+        return sex?.name
+    }
+
+    @TypeConverter
+    fun fromActivityLevel(value: String?): ActivityLevel? {
+        return value?.let { ActivityLevel.valueOf(it) }
+    }
+
+    @TypeConverter
+    fun toActivityLevel(level: ActivityLevel?): String? {
+        return level?.name
+    }
+
+    @TypeConverter
+    fun fromGoalType(value: String?): GoalType? {
+        return value?.let { GoalType.valueOf(it) }
+    }
+
+    @TypeConverter
+    fun toGoalType(type: GoalType?): String? {
+        return type?.name
     }
 
     @TypeConverter
