@@ -411,3 +411,39 @@ compact -> expanded live island (option A -> B from `tmp/concepts/dynamic-island
 - **Not built yet.** The island does not survive the app being backgrounded or killed (no
   foreground service or real notification); it only tracks the rest timer, not cardio or water.
 - **Not tested.** The 30 s auto-expand (code path only; a full 5 minute rest was not waited out).
+
+### M4.5 — More dot and Room-backed Weeks (2026-11-05)
+
+The last two things still on samples: the More tab's notification dot and the Weeks numbers.
+
+- **More dot.** `Reminders.kt` (new) holds the pure rules: `times`/`days`/`time` parse the
+  stored JSON and `HH:mm`, and `mealsDue` / `workoutDue` fire only when the reminder is enabled,
+  its time has passed, and the thing it points at is still unlogged. `ReminderStatusViewModel`
+  (new, Hilt) combines `Settings`, today's meals and today's workout sessions with a
+  once-a-minute clock, so the dot can appear as a reminder time passes without any data change.
+  `VitalBottomNav` gained `showMoreDot` and draws the chosen option A: an 8 dp orange dot with a
+  2 dp paper ring at the top-right of the More glyph (no number). `VitalNavigation` drives it.
+- **Weeks real data.** `WeeksStats.kt` (new) aggregates `DayRecord`s into a `WeeksSnapshot`
+  (adherence, tracked days, per-macro hit rate at 90% of target, bars bucketed across the same
+  window). `WeeksViewModel` (new, Hilt) loads the trailing 84 days once from Room (`MealLogDao`,
+  `WorkoutDao` sessions + per-session sets, `CardioDao`, `BodyMetricsDao`, `ExerciseDao`,
+  `SettingsDao`) and re-slices it for 12W / 4W / 7D without re-querying. `WeeksScreen` renders
+  `WeeksState`; the `MainViewModel` Weeks samples and `WeeksScreenPreviewData` usage are gone
+  (Progress keeps its own `weeklyWeightData`). `BodyMetricsDao` gained a `DatabaseModule`
+  `@Provides`, the same rule as the other DAOs.
+- **Rules.** A day is tracked if any food or training is logged on it; macro hit rate is measured
+  over days that had food (a skipped meal is not a failed protein day); bars split the period
+  into `barCount` even buckets so 7D draws seven daily bars; body weight and the sparklines come
+  from the last eight `BodyMetrics` rows and six trailing weeks.
+- **Device check (e281c7, 1240 x 2772, density 476).** With today's workout present and its 18:00
+  reminder still ahead, the dot stayed dark; soft-deleting just today's workout session and
+  moving its reminder to 10:00 lit the dot on More; restoring the session cleared it. Weeks read
+  real Room: `2%`, `2 of 84 days`, the `THIS` bar orange, body weight `80.0 kg`, volume `1.0 t`.
+  Unit tests cover the parse and due rules and the aggregation (`RemindersTest`, `WeeksStatsTest`).
+- **Test-data note.** Verifying the dot meant pulling `vital.db`, editing it (pull left the WAL
+  behind, so the stored `lightMode` was lost) and pushing it back. The database was restored to
+  its original rows, with `lightMode` put back on and `mealRemindersEnabled` turned back on to
+  match the app default; the reminder time is `18:00` again.
+- **Not built yet.** The dot also ignores the daily and water reminders (only meals and workouts
+  are actionable); Weeks has no bar tooltip or trend tap-through; Progress and Coach are still
+  the old samples.

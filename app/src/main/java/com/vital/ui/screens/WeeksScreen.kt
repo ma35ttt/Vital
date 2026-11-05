@@ -9,7 +9,6 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -25,6 +24,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.StrokeCap
@@ -37,9 +37,11 @@ import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.em
 import androidx.compose.ui.unit.sp
+import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import androidx.lifecycle.viewmodel.compose.viewModel
-import com.vital.ui.MainViewModel
+import com.vital.ui.WeeksPeriod
+import com.vital.ui.WeeksState
+import com.vital.ui.WeeksViewModel
 import com.vital.ui.components.EditorialHeader
 import com.vital.ui.components.EditorialSectionHeader
 import com.vital.ui.components.Hairline
@@ -48,12 +50,10 @@ import com.vital.ui.theme.VitalFonts
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 import java.util.Locale
-import kotlin.math.roundToInt
 
 /**
- * Weeks, restyled to the editorial-dark hybrid mock: adherence number over a rule,
- * a bar chart and three sparkline trends. Still driven by the sample data in
- * [MainViewModel].
+ * Weeks, restyled to the editorial-dark hybrid mock and backed by [WeeksViewModel]:
+ * real adherence, macro hit rates, weekly bars and trailing trends from Room.
  */
 @Composable
 fun WeeksScreen(
@@ -65,28 +65,9 @@ fun WeeksScreen(
     onNavigateToCardio: () -> Unit,
     onNavigateToSettings: () -> Unit,
     onBack: () -> Unit = {},
-    viewModel: MainViewModel = viewModel()
+    viewModel: WeeksViewModel = hiltViewModel()
 ) {
-    val period by viewModel.weeksPeriod.collectAsStateWithLifecycle(WeeksPeriod.L)
-    val weeklyMacroData by viewModel.weeklyMacroData.collectAsStateWithLifecycle(emptyList())
-    val weeklyVolumeData by viewModel.weeklyVolumeData.collectAsStateWithLifecycle(emptyList())
-    val weeklyWeightData by viewModel.weeklyWeightData.collectAsStateWithLifecycle(emptyList())
-    val weeklyPrData by viewModel.weeklyPrData.collectAsStateWithLifecycle(emptyList())
-    val weeklyLabels by viewModel.weeklyLabels12.collectAsStateWithLifecycle(emptyList())
-
-    val adherence = ((weeklyMacroData.lastOrNull() ?: 0f).toDouble() * 100)
-        .coerceIn(0.0, 100.0)
-    val days = when (period) {
-        WeeksPeriod.L -> 84
-        WeeksPeriod.M -> 28
-        WeeksPeriod.H -> 7
-    }
-    val adherentDays = (adherence / 100 * days).roundToInt()
-    val barCount = when (period) {
-        WeeksPeriod.L -> 12
-        WeeksPeriod.M -> 4
-        WeeksPeriod.H -> 7
-    }
+    val state by viewModel.state.collectAsStateWithLifecycle()
     val dateLabel = remember {
         LocalDate.now()
             .format(DateTimeFormatter.ofPattern("EEE dd.MM", Locale.US))
@@ -116,40 +97,32 @@ fun WeeksScreen(
             }
             item {
                 AdherenceHero(
-                    adherence = adherence,
-                    periodLabel = periodDescription(period),
-                    adherentDays = adherentDays,
-                    totalDays = days,
+                    state = state,
                     modifier = Modifier.padding(top = 26.dp)
                 )
             }
             item {
                 PeriodTabs(
-                    selected = period,
-                    onSelect = viewModel::setWeeksPeriod,
+                    selected = state.period,
+                    onSelect = viewModel::setPeriod,
                     modifier = Modifier.padding(top = 22.dp)
                 )
             }
             item {
                 AdherenceMacros(
-                    values = weeklyMacroData,
+                    state = state,
                     modifier = Modifier.padding(top = 18.dp)
                 )
             }
             item {
                 WeeklyBars(
-                    values = weeklyMacroData,
-                    labels = weeklyLabels,
-                    barCount = barCount,
-                    periodLabel = period.label,
+                    state = state,
                     modifier = Modifier.padding(top = 0.dp)
                 )
             }
             item {
                 Trends(
-                    weight = weeklyWeightData,
-                    volume = weeklyVolumeData,
-                    prs = weeklyPrData,
+                    state = state,
                     modifier = Modifier.padding(top = 0.dp)
                 )
             }
@@ -167,12 +140,10 @@ private fun periodDescription(period: WeeksPeriod): String = when (period) {
 
 @Composable
 private fun AdherenceHero(
-    adherence: Double,
-    periodLabel: String,
-    adherentDays: Int,
-    totalDays: Int,
+    state: WeeksState,
     modifier: Modifier = Modifier
 ) {
+    val pct = state.adherencePct
     Column(modifier = modifier.fillMaxWidth()) {
         Text(
             text = "ADHERENCE",
@@ -187,7 +158,7 @@ private fun AdherenceHero(
             modifier = Modifier.padding(top = 14.dp)
         ) {
             Text(
-                text = adherence.roundToInt().toString(),
+                text = pct.toString(),
                 color = VitalColors.ink,
                 fontFamily = VitalFonts.InterTight,
                 fontSize = 72.sp,
@@ -213,7 +184,7 @@ private fun AdherenceHero(
             Box(
                 modifier = Modifier
                     .fillMaxHeight()
-                    .fillMaxWidth((adherence / 100f).toFloat().coerceIn(0f, 1f))
+                    .fillMaxWidth((pct / 100f).coerceIn(0f, 1f))
                     .background(VitalColors.orange)
             )
         }
@@ -224,7 +195,7 @@ private fun AdherenceHero(
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
             Text(
-                text = periodLabel,
+                text = periodDescription(state.period),
                 color = VitalColors.inkMuted,
                 fontFamily = VitalFonts.JetBrainsMonoRegular,
                 fontSize = 11.sp
@@ -232,10 +203,10 @@ private fun AdherenceHero(
             Text(
                 text = buildAnnotatedString {
                     withStyle(SpanStyle(color = VitalColors.ink, fontWeight = FontWeight.Medium)) {
-                        append(adherentDays.toString())
+                        append(state.trackedDays.toString())
                     }
                     append(" of ")
-                    append(totalDays.toString())
+                    append(state.period.days.toString())
                     append(" days")
                 },
                 color = VitalColors.inkMuted,
@@ -289,17 +260,21 @@ private fun PeriodTabs(
 
 @Composable
 private fun AdherenceMacros(
-    values: List<Float>,
+    state: WeeksState,
     modifier: Modifier = Modifier
 ) {
-    val cells = listOf("Protein", "Carbs", "Fat")
+    val cells = listOf(
+        "Protein" to state.snapshot.proteinPct,
+        "Carbs" to state.snapshot.carbsPct,
+        "Fat" to state.snapshot.fatPct
+    )
     Column(modifier = modifier.fillMaxWidth()) {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
                 .height(IntrinsicSize.Min)
         ) {
-            cells.forEachIndexed { index, label ->
+            cells.forEachIndexed { index, (label, value) ->
                 if (index > 0) {
                     Box(
                         modifier = Modifier
@@ -325,9 +300,7 @@ private fun AdherenceMacros(
                         fontWeight = FontWeight.Medium
                     )
                     Text(
-                        text = values.getOrNull(index)
-                            ?.let { "${(it * 100).roundToInt()}" }
-                            ?: "—",
+                        text = "$value%",
                         color = VitalColors.ink,
                         fontFamily = VitalFonts.InterTight,
                         fontSize = 26.sp,
@@ -346,28 +319,17 @@ private fun AdherenceMacros(
 
 @Composable
 private fun WeeklyBars(
-    values: List<Float>,
-    labels: List<String>,
-    barCount: Int,
-    periodLabel: String,
+    state: WeeksState,
     modifier: Modifier = Modifier
 ) {
-    val data = remember(values, barCount) { values.take(barCount) }
-    val tickLabels = remember(labels, barCount) {
-        when (barCount) {
-            12 -> labels.take(10).filterIndexed { index, _ -> index % 2 == 0 } + "THIS"
-            7 -> (6 downTo 1).map { "D-$it" } + "TODAY"
-            else -> labels.takeLast(barCount)
-        }
-    }
-
+    val bars = state.snapshot.bars
     Column(modifier = modifier.fillMaxWidth()) {
         EditorialSectionHeader(
-            title = "Adherence by week",
-            trailing = periodLabel
+            title = "Adherence by ${if (state.period == WeeksPeriod.H) "day" else "week"}",
+            trailing = state.period.label
         )
         BarChart(
-            values = data,
+            values = bars,
             modifier = Modifier
                 .fillMaxWidth()
                 .height(96.dp)
@@ -376,25 +338,39 @@ private fun WeeklyBars(
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(top = 10.dp),
-            horizontalArrangement = Arrangement.SpaceBetween
+                .padding(top = 10.dp)
         ) {
-            tickLabels.forEach { label ->
-                Text(
-                    text = label,
-                    color = VitalColors.navInactive,
-                    fontFamily = VitalFonts.JetBrainsMonoRegular,
-                    fontSize = 8.sp,
-                    letterSpacing = 0.06.em
-                )
+            bars.indices.forEach { index ->
+                Box(modifier = Modifier.weight(1f), contentAlignment = Alignment.Center) {
+                    if (tickVisible(state.period, index, bars.size)) {
+                        Text(
+                            text = tickLabel(state.period, index, bars.size),
+                            color = VitalColors.navInactive,
+                            fontFamily = VitalFonts.JetBrainsMonoRegular,
+                            fontSize = 8.sp,
+                            letterSpacing = 0.06.em
+                        )
+                    }
+                }
             }
         }
         Hairline(modifier = Modifier.padding(top = 10.dp))
     }
 }
 
+private fun tickVisible(period: WeeksPeriod, index: Int, count: Int): Boolean = when (period) {
+    WeeksPeriod.L -> index % 2 == 0 || index == count - 1
+    else -> true
+}
+
+private fun tickLabel(period: WeeksPeriod, index: Int, count: Int): String = when (period) {
+    WeeksPeriod.L -> if (index == count - 1) "THIS" else "W-${count - 1 - index}"
+    WeeksPeriod.M -> if (index == count - 1) "THIS" else "W-${count - 1 - index}"
+    WeeksPeriod.H -> if (index == count - 1) "TODAY" else "D-${count - 1 - index}"
+}
+
 @Composable
-private fun BarChart(values: List<Float>, modifier: Modifier = Modifier) {
+private fun BarChart(values: List<Int>, modifier: Modifier = Modifier) {
     Canvas(modifier = modifier) {
         if (values.isEmpty()) return@Canvas
 
@@ -403,21 +379,20 @@ private fun BarChart(values: List<Float>, modifier: Modifier = Modifier) {
         val gap = (slot - barWidth) / 2f
         val min = values.min()
         val max = values.max()
-        val range = (max - min).takeIf { it > 0.0001f } ?: 1f
+        val range = (max - min).takeIf { it > 0 } ?: 1
 
         values.forEachIndexed { index, raw ->
             // Keep a floor so low weeks stay legible, then stretch across the real range.
-            val value = 0.45f + 0.55f * ((raw - min) / range).coerceIn(0f, 1f)
-            val barHeight = (value * size.height).coerceAtLeast(3.dp.toPx())
-            val x = index * slot + gap
+            val norm = 0.45f + 0.55f * ((raw - min).toFloat() / range)
+            val barHeight = (norm * size.height).coerceAtLeast(3.dp.toPx())
             drawRect(
                 color = if (index == values.lastIndex) {
                     VitalColors.orange
                 } else {
                     VitalColors.ruleStrong
                 },
-                topLeft = Offset(x, size.height - barHeight),
-                size = androidx.compose.ui.geometry.Size(barWidth, barHeight)
+                topLeft = Offset(index * slot + gap, size.height - barHeight),
+                size = Size(barWidth, barHeight)
             )
         }
     }
@@ -427,29 +402,33 @@ private fun BarChart(values: List<Float>, modifier: Modifier = Modifier) {
 
 @Composable
 private fun Trends(
-    weight: List<Float>,
-    volume: List<Float>,
-    prs: List<Float>,
+    state: WeeksState,
     modifier: Modifier = Modifier
 ) {
-    val weightValue = weight.lastOrNull()?.let {
-        String.format(Locale.US, "%.1f kg", 80.0 - it * 1.5)
+    val weightValue = state.bodyWeightKg?.let {
+        String.format(Locale.US, "%.1f kg", it)
     } ?: "— kg"
-    val volumeValue = volume.lastOrNull()?.let {
-        String.format(Locale.US, "%.1f t", it * 10.0)
-    } ?: "— t"
-    val prValue = prs.lastOrNull()?.let {
-        String.format(Locale.US, "%.1f kg", 80.0 + it * 20.0)
+    val volumeValue = if (state.volumeKg > 0) {
+        String.format(Locale.US, "%.1f t", state.volumeTonnes)
+    } else {
+        "— t"
+    }
+    val prValue = state.benchPrKg?.let {
+        String.format(Locale.US, "%.1f kg", it)
     } ?: "— kg"
 
     Column(modifier = modifier.fillMaxWidth()) {
         EditorialSectionHeader(
             title = "Trends",
-            trailing = "4 weeks"
+            trailing = when (state.period) {
+                WeeksPeriod.L -> "12 weeks"
+                WeeksPeriod.M -> "4 weeks"
+                WeeksPeriod.H -> "7 days"
+            }
         )
-        TrendRow(label = "Body weight", value = weightValue, spark = weight)
-        TrendRow(label = "Volume", value = volumeValue, spark = volume)
-        TrendRow(label = "Bench PR", value = prValue, spark = prs)
+        TrendRow(label = "Body weight", value = weightValue, spark = state.weightSeries)
+        TrendRow(label = "Volume · 30 d", value = volumeValue, spark = state.volumeSeries)
+        TrendRow(label = "Bench PR", value = prValue, spark = state.prSeries)
     }
 }
 
@@ -478,7 +457,7 @@ private fun TrendRow(label: String, value: String, spark: List<Float>) {
                 modifier = Modifier.padding(end = 14.dp)
             )
             Sparkline(
-                values = spark.takeLast(6),
+                values = spark.takeLast(8),
                 modifier = Modifier.size(width = 66.dp, height = 22.dp)
             )
         }
@@ -489,7 +468,8 @@ private fun TrendRow(label: String, value: String, spark: List<Float>) {
 @Composable
 private fun Sparkline(values: List<Float>, modifier: Modifier = Modifier) {
     Canvas(modifier = modifier) {
-        if (values.size < 2) return@Canvas
+        val meaningful = values.count { it != 0f }
+        if (values.size < 2 || meaningful < 2) return@Canvas
         val min = values.min()
         val max = values.max()
         val range = (max - min).takeIf { it > 0f } ?: 1f
@@ -517,18 +497,4 @@ private fun Sparkline(values: List<Float>, modifier: Modifier = Modifier) {
             center = Offset(size.width, y(values.last()))
         )
     }
-}
-
-enum class WeeksPeriod(val label: String) {
-    L("12W"),
-    M("4W"),
-    H("7D")
-}
-
-object WeeksScreenPreviewData {
-    val weeklyMacro = listOf(0.85f, 0.92f, 0.88f, 0.95f, 0.91f, 0.94f, 0.93f, 0.89f, 0.96f, 0.90f, 0.94f, 0.92f)
-    val weeklyVolume = listOf(0.2f, 0.35f, 0.45f, 0.38f, 0.52f, 0.61f, 0.55f, 0.48f, 0.58f, 0.50f, 0.62f, 0.57f)
-    val weeklyWeight = listOf(0.5f, 0.48f, 0.49f, 0.47f, 0.46f, 0.45f, 0.44f, 0.43f, 0.42f, 0.41f, 0.40f, 0.39f)
-    val weeklyPrs = listOf(0.3f, 0.35f, 0.4f, 0.42f, 0.45f, 0.48f, 0.5f, 0.52f, 0.55f, 0.58f, 0.6f, 0.62f)
-    val weeklyLabels12 = listOf("W-11", "W-10", "W-9", "W-8", "W-7", "W-6", "W-5", "W-4", "W-3", "W-2", "W-1", "THIS")
 }
