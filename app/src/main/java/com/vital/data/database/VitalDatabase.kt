@@ -25,9 +25,10 @@ import com.vital.data.seed.Converters
         ProgressPhoto::class,
         WaterEntry::class,
         Settings::class,
-        SyncMeta::class
+        SyncMeta::class,
+        SyncCursor::class
     ],
-    version = 5,
+    version = 6,
     exportSchema = true
 )
 @TypeConverters(Converters::class)
@@ -44,6 +45,7 @@ abstract class VitalDatabase : RoomDatabase() {
     abstract fun waterEntryDao(): WaterEntryDao
     abstract fun settingsDao(): SettingsDao
     abstract fun syncMetaDao(): SyncMetaDao
+    abstract fun syncCursorDao(): SyncCursorDao
 
     companion object {
         @Volatile
@@ -94,13 +96,31 @@ abstract class VitalDatabase : RoomDatabase() {
             }
         }
 
+        /**
+         * v6 adds the per-table sync cursors used by cloud sync. The table starts empty; the
+         * first sync pushes everything and records the high-water marks.
+         */
+        private val MIGRATION_5_6 = object : Migration(5, 6) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL(
+                    "CREATE TABLE IF NOT EXISTS `sync_cursors` (" +
+                        "`tableName` TEXT NOT NULL, " +
+                        "`lastPullAt` INTEGER NOT NULL, " +
+                        "`lastPushAt` INTEGER NOT NULL, " +
+                        "PRIMARY KEY(`tableName`))"
+                )
+            }
+        }
+
         fun getDatabase(context: Context): VitalDatabase {
             return INSTANCE ?: synchronized(this) {
                 val instance = Room.databaseBuilder(
                     context.applicationContext,
                     VitalDatabase::class.java,
                     "vital.db"
-                ).addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5)
+                ).addMigrations(
+                    MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5, MIGRATION_5_6
+                )
                     .fallbackToDestructiveMigration()
                     .build()
                 INSTANCE = instance

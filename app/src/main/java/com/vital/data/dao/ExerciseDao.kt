@@ -34,7 +34,8 @@ interface ExerciseDao {
     @Query("UPDATE exercises SET deleted = 1, updatedAt = :updatedAt WHERE id = :id")
     suspend fun softDeleteExercise(id: String, updatedAt: Long)
 
-    @Query("SELECT * FROM exercises WHERE updatedAt > :since AND deleted = 0")
+    // Sync reads include tombstones and skip the seeded catalog (ids are `seed:<slug>`).
+    @Query("SELECT * FROM exercises WHERE updatedAt > :since AND id NOT LIKE 'seed:%'")
     suspend fun getExercisesForSync(since: Long): List<Exercise>
 
     @Query("SELECT COUNT(*) FROM exercises WHERE deleted = 0")

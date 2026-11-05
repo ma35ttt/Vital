@@ -34,6 +34,7 @@ interface BodyMetricsDao {
     @Query("UPDATE body_metrics SET deleted = 1, updatedAt = :updatedAt WHERE id = :id")
     suspend fun softDeleteBodyMetrics(id: String, updatedAt: Long)
 
-    @Query("SELECT * FROM body_metrics WHERE updatedAt > :since AND deleted = 0")
+    // Sync reads include tombstones (deleted rows) so removals propagate to other devices.
+    @Query("SELECT * FROM body_metrics WHERE updatedAt > :since")
     suspend fun getBodyMetricsForSync(since: Long): List<BodyMetrics>
 }

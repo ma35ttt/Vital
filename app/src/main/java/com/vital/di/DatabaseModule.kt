@@ -8,7 +8,10 @@ import com.vital.data.dao.FoodDao
 import com.vital.data.dao.MealLogDao
 import com.vital.data.dao.RecipeDao
 import com.vital.data.dao.SettingsDao
+import com.vital.data.dao.SyncCursorDao
+import com.vital.data.dao.SyncMetaDao
 import com.vital.data.dao.UserDao
+import com.vital.data.dao.WaterEntryDao
 import com.vital.data.dao.WorkoutDao
 import com.vital.data.database.VitalDatabase
 import dagger.Module
@@ -40,4 +43,7 @@ object DatabaseModule {
     @Provides fun provideCardioDao(db: VitalDatabase): CardioDao = db.cardioDao()
     @Provides fun provideBodyMetricsDao(db: VitalDatabase): BodyMetricsDao = db.bodyMetricsDao()
     @Provides fun provideSettingsDao(db: VitalDatabase): SettingsDao = db.settingsDao()
+    @Provides fun provideWaterEntryDao(db: VitalDatabase): WaterEntryDao = db.waterEntryDao()
+    @Provides fun provideSyncMetaDao(db: VitalDatabase): SyncMetaDao = db.syncMetaDao()
+    @Provides fun provideSyncCursorDao(db: VitalDatabase): SyncCursorDao = db.syncCursorDao()
 }

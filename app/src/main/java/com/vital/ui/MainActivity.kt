@@ -26,6 +26,7 @@ import kotlinx.coroutines.cancel
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
     private val settingsViewModel: SettingsViewModel by viewModels()
+    private val syncViewModel: SyncViewModel by viewModels()
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main)
 
     /** Last value of the high-refresh preference, so it can be re-asked for on resume. */
@@ -63,6 +64,8 @@ class MainActivity : ComponentActivity() {
     override fun onStart() {
         super.onStart()
         appVisibility.onForeground()
+        // Pull anything changed on other devices when the app comes forward (throttled inside).
+        syncViewModel.onForeground()
     }
 
     override fun onResume() {

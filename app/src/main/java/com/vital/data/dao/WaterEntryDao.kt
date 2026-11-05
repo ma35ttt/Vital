@@ -34,6 +34,7 @@ interface WaterEntryDao {
     @Query("UPDATE water_entries SET deleted = 1, updatedAt = :updatedAt WHERE id = :id")
     suspend fun softDeleteWaterEntry(id: String, updatedAt: Long)
 
-    @Query("SELECT * FROM water_entries WHERE updatedAt > :since AND deleted = 0")
+    // Sync reads include tombstones (deleted rows) so removals propagate to other devices.
+    @Query("SELECT * FROM water_entries WHERE updatedAt > :since")
     suspend fun getWaterEntriesForSync(since: Long): List<WaterEntry>
 }

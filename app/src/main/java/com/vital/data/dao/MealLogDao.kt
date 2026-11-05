@@ -31,7 +31,8 @@ interface MealLogDao {
     @Query("UPDATE meal_log_entries SET deleted = 1, updatedAt = :updatedAt WHERE id = :id")
     suspend fun softDeleteMealLog(id: String, updatedAt: Long)
 
-    @Query("SELECT * FROM meal_log_entries WHERE updatedAt > :since AND deleted = 0")
+    // Sync reads include tombstones (deleted rows) so removals propagate to other devices.
+    @Query("SELECT * FROM meal_log_entries WHERE updatedAt > :since")
     suspend fun getMealLogsForSync(since: Long): List<MealLogEntry>
 
     @Query("SELECT SUM(kcal) FROM meal_log_entries WHERE userId = :userId AND date = :date AND deleted = 0")

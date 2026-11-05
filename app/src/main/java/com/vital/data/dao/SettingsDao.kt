@@ -18,4 +18,9 @@ interface SettingsDao {
 
     @Update
     suspend fun updateSettings(settings: Settings)
+
+    // Sync reads the single settings row for the local user regardless of timestamp; there is
+    // no tombstone because settings are never deleted.
+    @Query("SELECT * FROM settings WHERE userId = :userId")
+    suspend fun getSettingsForSync(userId: String): Settings?
 }
