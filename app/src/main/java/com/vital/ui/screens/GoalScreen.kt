@@ -22,6 +22,9 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.Info
+import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -439,6 +442,7 @@ private fun HealthyRangeBar(
     val fMax = frac(range.maxKg)
     val fNow = frac(nowKg)
     val fGoal = goalKg?.let { frac(it) }
+    var showWeights by rememberSaveable { mutableStateOf(false) }
 
     Column(modifier = modifier.fillMaxWidth()) {
         Row(
@@ -458,11 +462,12 @@ private fun HealthyRangeBar(
         BoxWithConstraints(
             modifier = Modifier
                 .fillMaxWidth()
-                .height(30.dp)
+                .height(if (showWeights) 96.dp else 30.dp)
                 .padding(top = 4.dp)
         ) {
             val trackWidth = maxWidth
-            val barY = 10.dp
+            // The revealed labels need room above/below the bar; collapsed, the block is just the bar.
+            val barY = if (showWeights) 38.dp else 10.dp
             val barHeight = 10.dp
             // The mock centres each marker on the bar (top:50%), not on its top edge.
             val barCentre = barY + barHeight / 2
@@ -508,16 +513,105 @@ private fun HealthyRangeBar(
                     centreY = barCentre
                 )
             }
+
+            if (showWeights) {
+                val labelWidth = 88.dp
+                MarkerLabel(
+                    label = "NOW",
+                    value = formatWeight(nowKg, imperial),
+                    x = (trackWidth * fNow - labelWidth / 2f)
+                        .coerceIn(0.dp, (trackWidth - labelWidth).coerceAtLeast(0.dp)),
+                    y = 0.dp,
+                    width = labelWidth,
+                    color = VitalColors.inkMuted
+                )
+                if (fGoal != null) {
+                    MarkerLabel(
+                        label = "GOAL",
+                        value = formatWeight(goalKg!!, imperial),
+                        x = (trackWidth * fGoal - labelWidth / 2f)
+                            .coerceIn(0.dp, (trackWidth - labelWidth).coerceAtLeast(0.dp)),
+                        y = barCentre + 9.dp,
+                        width = labelWidth,
+                        color = VitalColors.orange
+                    )
+                }
+            }
         }
 
         Row(
-            modifier = Modifier.padding(top = 10.dp),
-            horizontalArrangement = Arrangement.spacedBy(14.dp)
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(top = 10.dp)
+                .height(22.dp),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
         ) {
-            LegendDot(label = "HEALTHY", color = HealthyGreen.copy(alpha = 0.55f))
-            LegendDot(label = "NOW", color = VitalColors.inkMuted)
-            if (goalKg != null) LegendDot(label = "GOAL", color = VitalColors.orange)
+            Row(horizontalArrangement = Arrangement.spacedBy(14.dp)) {
+                LegendDot(label = "HEALTHY", color = HealthyGreen.copy(alpha = 0.55f))
+                LegendDot(label = "NOW", color = VitalColors.inkMuted)
+                if (goalKg != null) LegendDot(label = "GOAL", color = VitalColors.orange)
+            }
+            InfoButton(expanded = showWeights) { showWeights = !showWeights }
         }
+    }
+}
+
+/**
+ * A small "i" affordance beside the bar legend. Tapping it reveals the exact NOW/GOAL weights
+ * on the markers themselves, on demand, instead of crowding the bar all the time.
+ */
+@Composable
+private fun InfoButton(expanded: Boolean, onClick: () -> Unit) {
+    Box(
+        modifier = Modifier
+            .size(44.dp)
+            .clip(CircleShape)
+            .clickable(onClick = onClick),
+        contentAlignment = Alignment.CenterEnd
+    ) {
+        Icon(
+            imageVector = Icons.Outlined.Info,
+            contentDescription = if (expanded) "Hide now and goal weights" else "Show now and goal weights",
+            tint = if (expanded) VitalColors.orange else VitalColors.inkMuted,
+            modifier = Modifier.size(14.dp)
+        )
+    }
+}
+
+/** The mock stacks the name over the value, centred on the marker. */
+@Composable
+private fun MarkerLabel(
+    label: String,
+    value: String,
+    x: Dp,
+    y: Dp,
+    width: Dp,
+    color: Color
+) {
+    Column(
+        modifier = Modifier
+            .offset(x = x, y = y)
+            .width(width),
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        Text(
+            text = label,
+            color = color,
+            fontFamily = VitalFonts.JetBrainsMonoMedium,
+            fontSize = 8.sp,
+            lineHeight = 11.sp,
+            letterSpacing = 0.1.em
+        )
+        Text(
+            text = value,
+            color = VitalColors.ink,
+            fontFamily = VitalFonts.InterTight,
+            fontSize = 12.sp,
+            lineHeight = 15.sp,
+            fontWeight = FontWeight.SemiBold,
+            modifier = Modifier.padding(top = 2.dp)
+        )
     }
 }
 
