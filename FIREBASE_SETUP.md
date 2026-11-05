@@ -48,8 +48,8 @@ want to point at a specific OAuth web client.
 
 ## 5. Create Firestore
 
-Firestore Database → **Create database** → start in **production mode**. Apply rules that
-scope every document to its owner:
+Firestore Database → **Create database** → start in **production mode**. Then open the **Rules**
+tab and publish the contents of [`firestore.rules`](firestore.rules):
 
 ```
 rules_version = '2';
@@ -63,6 +63,33 @@ service cloud.firestore {
 ```
 
 Each user's data lives under `users/{uid}/<table>/<rowId>` as
-`{ json, updatedAt, deleted }`, so these rules keep every account isolated.
+`{ json, updatedAt, deleted }`, so these rules keep every account isolated. Publishing them is a
+one-time step; until then the app shows "Sync permission denied" (the production default is
+deny-all).
 
 Do not enable Cloud Storage / Blaze — only Firestore (text data) is used.
+
+## 6. What syncs
+
+Per account, under `users/{uid}/`:
+
+| Table | Notes |
+| --- | --- |
+| `meal_log_entries`, `workout_sessions`, `workout_sets`, `cardio_sessions`, `body_metrics`, `water_entries` | full history |
+| `recipes` | all |
+| `foods` | user- and AI-created only (seeded/OFF rows are re-created locally) |
+| `exercises` | user-created only (seeded rows are re-created locally) |
+| `users`, `settings` | profile and preferences |
+
+Deliberately **not** synced: progress photos (images), the seeded catalogs, and the per-device
+secrets — `User.pinHash` and `Settings.aiApiKeyEncrypted` are stripped before upload and kept
+local, so a restored device never receives another device's credential.
+
+Deletes propagate as tombstones. Conflicts resolve by last-writer-wins on `updatedAt`; on a
+device's very first sync the cloud copy of the profile/settings wins, so signing in on a new
+phone restores the real data instead of overwriting it with fresh defaults.
+
+Sync runs on sign-in, when the app comes to the foreground (throttled to every 5 minutes), and
+from **Settings → Account → Sync now**. Test it end-to-end with a fresh install: uninstall,
+reinstall, sign in, and the data returns.
+
