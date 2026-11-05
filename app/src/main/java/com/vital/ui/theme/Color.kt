@@ -4,13 +4,13 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.graphics.Color
 
 /**
- * Two palettes share one token set. The editorial tokens resolve through [currentPalette],
- * which is a snapshot state, so every composable that reads a colour recomposes when the
- * mode flips. Legacy tokens from the pre-editorial design stay dark-only; the screens that
- * still use them (progress, coach, debug showcase) are launched from More and are not part
- * of the light-mode surface yet.
+ * Every theme is one [Palette] of the same editorial tokens. The tokens resolve through
+ * [currentPalette], a snapshot state, so every composable that reads a colour recomposes
+ * when the theme changes. Legacy tokens from the pre-editorial design stay dark-only; the
+ * screens that still use them (progress, coach, debug showcase) are launched from More and
+ * are not themed yet.
  */
-private data class Palette(
+internal data class Palette(
     val paper: Color,
     val ink: Color,
     val inkMuted: Color,
@@ -23,38 +23,141 @@ private data class Palette(
     val onAccent: Color
 )
 
-private val DarkPalette = Palette(
-    paper = Color(0xFF0B0B0B),
-    ink = Color(0xFFF3F1ED),
-    inkMuted = Color(0xFF9A948C),
-    rule = Color(0xFF22201D),
-    ruleStrong = Color(0xFF3A3631),
-    chartBar = Color(0xFF2A2724),
-    navInactive = Color(0xFF6B6660),
-    sheet = Color(0xFF111110),
-    orange = Color(0xFFFD3F00),
-    onAccent = Color(0xFF0B0B0B)
+/** One selectable theme: an id, a label, whether it is a light theme, and its palette. */
+internal data class ThemeSpec(
+    val id: String,
+    val name: String,
+    val isLight: Boolean,
+    val palette: Palette
 )
 
-/** Porcelain: warm paper, near-black ink, vermilion accent. */
-private val LightPalette = Palette(
-    paper = Color(0xFFF2EEE5),
-    ink = Color(0xFF141210),
-    inkMuted = Color(0xFF6E675D),
-    rule = Color(0xFFD9D2C5),
-    ruleStrong = Color(0xFFBFB5A4),
-    chartBar = Color(0xFFDCD5C7),
-    navInactive = Color(0xFF8C8377),
-    sheet = Color(0xFFFBF8F2),
-    orange = Color(0xFFE8420C),
-    onAccent = Color(0xFFFFF6EF)
-)
+/**
+ * The theme catalog. The first three are the base themes shown at the top of the picker;
+ * the rest are the ten designed in `tmp/concepts/theme-gallery.html`. Adding a theme here is
+ * all it takes for the picker to show it.
+ */
+internal object VitalThemes {
+    const val DEFAULT_ID = "dark"
 
-private val currentPalette = mutableStateOf(DarkPalette)
+    private fun spec(
+        id: String,
+        name: String,
+        isLight: Boolean,
+        paper: Long,
+        ink: Long,
+        inkMuted: Long,
+        rule: Long,
+        ruleStrong: Long,
+        chartBar: Long,
+        navInactive: Long,
+        sheet: Long,
+        accent: Long,
+        onAccent: Long
+    ) = ThemeSpec(
+        id = id,
+        name = name,
+        isLight = isLight,
+        palette = Palette(
+            paper = Color(paper), ink = Color(ink), inkMuted = Color(inkMuted),
+            rule = Color(rule), ruleStrong = Color(ruleStrong), chartBar = Color(chartBar),
+            navInactive = Color(navInactive), sheet = Color(sheet),
+            orange = Color(accent), onAccent = Color(onAccent)
+        )
+    )
 
-/** Called from [VitalTheme]; `dark = false` selects Porcelain. */
-fun applyPalette(dark: Boolean) {
-    currentPalette.value = if (dark) DarkPalette else LightPalette
+    private val white = spec(
+        "white", "Default White", true,
+        0xFFF2EEE5, 0xFF141210, 0xFF6E675D, 0xFFD9D2C5, 0xFFBFB5A4,
+        0xFFDCD5C7, 0xFF8C8377, 0xFFFBF8F2, 0xFFE8420C, 0xFFFFF6EF
+    )
+    private val dark = spec(
+        "dark", "Default Dark", false,
+        0xFF0B0B0B, 0xFFF3F1ED, 0xFF9A948C, 0xFF22201D, 0xFF3A3631,
+        0xFF2A2724, 0xFF6B6660, 0xFF111110, 0xFFFD3F00, 0xFF0B0B0B
+    )
+    private val amoled = spec(
+        "amoled", "Amoled", false,
+        0xFF000000, 0xFFF3F1ED, 0xFF9A948C, 0xFF1A1A1A, 0xFF2E2E2E,
+        0xFF222222, 0xFF6B6660, 0xFF0A0A0A, 0xFFFD3F00, 0xFF0B0B0B
+    )
+    private val ember = spec(
+        "ember", "Ember", false,
+        0xFF0C0A08, 0xFFF5EFE8, 0xFFA29488, 0xFF241E18, 0xFF38302A,
+        0xFF332A20, 0xFF7A6A5C, 0xFF131009, 0xFFFF8A00, 0xFF160E05
+    )
+    private val cobalt = spec(
+        "cobalt", "Cobalt", false,
+        0xFF07090E, 0xFFEDF1F7, 0xFF8E97A6, 0xFF161C28, 0xFF28313F,
+        0xFF1E2634, 0xFF67728A, 0xFF0C1119, 0xFF3D7BFF, 0xFFF4F7FF
+    )
+    private val acid = spec(
+        "acid", "Acid", false,
+        0xFF080B07, 0xFFEEF3E6, 0xFF939C88, 0xFF171E13, 0xFF2A3322,
+        0xFF212A1B, 0xFF6C7563, 0xFF0E130A, 0xFFB6F03C, 0xFF0C1206
+    )
+    private val oxblood = spec(
+        "oxblood", "Oxblood", false,
+        0xFF170A0C, 0xFFF6ECE5, 0xFFA88C8A, 0xFF291518, 0xFF3D2428,
+        0xFF331C20, 0xFF8A6E6C, 0xFF1E0F11, 0xFFD4A24C, 0xFF1A0E06
+    )
+    private val terminal = spec(
+        "terminal", "Terminal", false,
+        0xFF040706, 0xFFCBEAD3, 0xFF6E9077, 0xFF0E1B13, 0xFF1B2E22,
+        0xFF13291C, 0xFF5C7D66, 0xFF08110C, 0xFF3DFF9E, 0xFF04140A
+    )
+    private val rosewood = spec(
+        "rosewood", "Rosewood", false,
+        0xFF150A12, 0xFFF5E9F0, 0xFFA88BA0, 0xFF291525, 0xFF3D2438,
+        0xFF331C2E, 0xFF8A6C82, 0xFF1D0F1A, 0xFFFF5C97, 0xFF1A0512
+    )
+    private val sepia = spec(
+        "sepia", "Sepia", true,
+        0xFFEDE4D3, 0xFF2A2118, 0xFF7A6A54, 0xFFDACDB9, 0xFFC3B296,
+        0xFFE0D4BF, 0xFF8C7C63, 0xFFF6F0E3, 0xFFB4531C, 0xFFFFF6EA
+    )
+    private val blush = spec(
+        "blush", "Blush", true,
+        0xFFF8EFF2, 0xFF2A1C24, 0xFF8A6E79, 0xFFEAD6DD, 0xFFD9BEC7,
+        0xFFEFDDE3, 0xFF9A8089, 0xFFFCF6F8, 0xFFC2185B, 0xFFFFF3F7
+    )
+    private val glacier = spec(
+        "glacier", "Glacier", true,
+        0xFFEAF1F6, 0xFF16212B, 0xFF5E7280, 0xFFD3DEE5, 0xFFB9CAD4,
+        0xFFDCE6EC, 0xFF7E909C, 0xFFF4F9FC, 0xFF0E7C9B, 0xFFF1FBFF
+    )
+    private val kraft = spec(
+        "kraft", "Kraft", true,
+        0xFFE7DECA, 0xFF26201A, 0xFF6E6250, 0xFFD2C7AE, 0xFFBBAE90,
+        0xFFD9CDB4, 0xFF877A62, 0xFFF2EAD8, 0xFF2E6B5E, 0xFFF0FBF6
+    )
+
+    /** The three base themes, pinned at the top of the picker. */
+    val base: List<ThemeSpec> = listOf(white, dark, amoled)
+
+    /** The ten additional themes. */
+    val featured: List<ThemeSpec> =
+        listOf(ember, cobalt, acid, oxblood, terminal, rosewood, sepia, blush, glacier, kraft)
+
+    val all: List<ThemeSpec> = base + featured
+
+    private val index: Map<String, ThemeSpec> = all.associateBy { it.id }
+
+    fun byId(id: String): ThemeSpec = index[id] ?: index.getValue(DEFAULT_ID)
+}
+
+private val currentPalette = mutableStateOf(VitalThemes.byId(VitalThemes.DEFAULT_ID).palette)
+
+/**
+ * Called from [VitalTheme]. True black lifts the paper of any dark theme to pure #000 for
+ * AMOLED panels; light themes ignore it. The Amoled theme is already black.
+ */
+internal fun applyTheme(theme: ThemeSpec, trueBlack: Boolean) {
+    val palette = if (!theme.isLight && trueBlack) {
+        theme.palette.copy(paper = Color(0xFF000000))
+    } else {
+        theme.palette
+    }
+    currentPalette.value = palette
 }
 
 object VitalColors {

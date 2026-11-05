@@ -682,7 +682,7 @@ fun Sparkline(
 @Preview
 @Composable
 fun ScreenScaffoldPreview() {
-    com.vital.ui.theme.VitalTheme(true) {
+    com.vital.ui.theme.VitalTheme(themeId = "dark") {
         ScreenScaffold(
             variant = ScreenVariant.OrangeHero,
             title = "MEALS",
@@ -698,7 +698,7 @@ fun ScreenScaffoldPreview() {
 @Preview
 @Composable
 fun ScreenScaffoldBlackPagePreview() {
-    com.vital.ui.theme.VitalTheme(true) {
+    com.vital.ui.theme.VitalTheme(themeId = "dark") {
         ScreenScaffold(
             variant = ScreenVariant.BlackPage,
             title = "WEEKS"

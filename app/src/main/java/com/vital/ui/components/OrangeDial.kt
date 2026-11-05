@@ -632,7 +632,7 @@ private fun DrawScope.drawDialText(
 @Preview(showBackground = true, widthDp = 393, heightDp = 430)
 @Composable
 fun OrangeDialPreview_Meals() {
-    com.vital.ui.theme.VitalTheme(true) {
+    com.vital.ui.theme.VitalTheme(themeId = "dark") {
         Box(modifier = Modifier.fillMaxSize().background(VitalColors.orange)) {
             OrangeDial(
                 modifier = Modifier.fillMaxSize(),
@@ -652,7 +652,7 @@ fun OrangeDialPreview_Meals() {
 @Preview(showBackground = true, widthDp = 393, heightDp = 430)
 @Composable
 fun OrangeDialPreview_Lift() {
-    com.vital.ui.theme.VitalTheme(true) {
+    com.vital.ui.theme.VitalTheme(themeId = "dark") {
         Box(modifier = Modifier.fillMaxSize().background(VitalColors.orange)) {
             OrangeDial(
                 modifier = Modifier.fillMaxSize(),
@@ -672,7 +672,7 @@ fun OrangeDialPreview_Lift() {
 @Preview(showBackground = true, widthDp = 393, heightDp = 430)
 @Composable
 fun OrangeDialPreview_Cardio() {
-    com.vital.ui.theme.VitalTheme(true) {
+    com.vital.ui.theme.VitalTheme(themeId = "dark") {
         Box(modifier = Modifier.fillMaxSize().background(VitalColors.orange)) {
             OrangeDial(
                 modifier = Modifier.fillMaxSize(),

@@ -19,6 +19,7 @@ data class Settings(
     val aiProvider: AiProvider = AiProvider.GEMINI,
     val aiApiKeyEncrypted: String? = null,
     // Appearance
+    val themeId: String = "dark",
     val trueBlack: Boolean = true,
     val lightMode: Boolean = false,
     val themeColor: String = "fudPink",

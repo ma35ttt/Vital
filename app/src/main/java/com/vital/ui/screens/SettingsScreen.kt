@@ -25,11 +25,13 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -57,6 +59,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.em
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
+import androidx.compose.ui.window.DialogProperties
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LifecycleEventEffect
@@ -68,8 +71,10 @@ import com.vital.ui.components.EditorialEyebrow
 import com.vital.ui.components.EditorialHeader
 import com.vital.ui.components.EditorialSectionHeader
 import com.vital.ui.components.Hairline
+import com.vital.ui.theme.ThemeSpec
 import com.vital.ui.theme.VitalColors
 import com.vital.ui.theme.VitalFonts
+import com.vital.ui.theme.VitalThemes
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 import java.util.Locale
@@ -97,6 +102,7 @@ fun SettingsScreen(
     var editingTargets by remember { mutableStateOf(false) }
     var editingKey by remember { mutableStateOf(false) }
     var keyRevealed by remember { mutableStateOf(false) }
+    var showThemePicker by remember { mutableStateOf(false) }
 
     LaunchedEffect(settings.aiApiKeyEncrypted) { keyRevealed = false }
 
@@ -210,20 +216,28 @@ fun SettingsScreen(
 
             item { SectionLabel("Appearance", topPadding = 28.dp) }
             item {
-                ThemeTabs(
-                    light = settings.lightMode,
-                    onSelect = viewModel::setLightMode
+                val theme = VitalThemes.byId(settings.themeId)
+                ValueRow(
+                    label = "Theme",
+                    value = theme.name,
+                    onClick = { showThemePicker = true },
+                    trailing = { Chevron() }
                 )
             }
             item {
+                val theme = VitalThemes.byId(settings.themeId)
                 ValueRow(
                     label = "True black",
-                    value = if (settings.lightMode) "Dark mode only" else "Pure #000 for AMOLED",
+                    value = when {
+                        theme.isLight -> "Dark themes only"
+                        settings.trueBlack -> "Pure #000 on dark themes"
+                        else -> "Off"
+                    },
                     trailing = {
                         EditorialSwitch(
                             checked = settings.trueBlack,
                             onCheckedChange = viewModel::setTrueBlack,
-                            enabled = !settings.lightMode
+                            enabled = !theme.isLight
                         )
                     }
                 )
@@ -430,6 +444,15 @@ fun SettingsScreen(
                 viewModel.setAiApiKey(key)
                 editingKey = false
             }
+        )
+    }
+
+    if (showThemePicker) {
+        ThemePickerDialog(
+            currentId = settings.themeId,
+            trueBlack = settings.trueBlack,
+            onSelect = viewModel::setTheme,
+            onDismiss = { showThemePicker = false }
         )
     }
 }
@@ -842,44 +865,6 @@ private fun ProviderTabs(
 }
 
 @Composable
-private fun ThemeTabs(
-    light: Boolean,
-    onSelect: (Boolean) -> Unit
-) {
-    val options = listOf(false to "Dark", true to "Light")
-    Column(modifier = Modifier.fillMaxWidth()) {
-        Row(
-            modifier = Modifier.padding(top = 10.dp),
-            horizontalArrangement = Arrangement.spacedBy(28.dp)
-        ) {
-            options.forEach { (isLight, label) ->
-                val isSelected = isLight == light
-                Column(
-                    modifier = Modifier
-                        .width(IntrinsicSize.Min)
-                        .clickable { onSelect(isLight) }
-                ) {
-                    Text(
-                        text = label,
-                        color = if (isSelected) VitalColors.ink else VitalColors.inkMuted,
-                        fontFamily = VitalFonts.JetBrainsMonoRegular,
-                        fontSize = 13.sp,
-                        modifier = Modifier.padding(bottom = 10.dp)
-                    )
-                    Box(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(2.dp)
-                            .background(if (isSelected) VitalColors.orange else Color.Transparent)
-                    )
-                }
-            }
-        }
-        Hairline()
-    }
-}
-
-@Composable
 private fun DataButton(
     text: String,
     filled: Boolean,
@@ -916,6 +901,235 @@ private fun Chevron() {
         fontSize = 20.sp,
         modifier = Modifier.padding(start = 4.dp)
     )
+}
+
+// ---- theme picker --------------------------------------------------------------------------
+
+/**
+ * Full-screen theme gallery. Each card previews its own palette directly (not the live
+ * tokens), so every card stays stable while the app recolours underneath. Tapping a card
+ * applies the theme app-wide and the surrounding chrome — including this dialog — recolours
+ * live; Close returns to Settings.
+ */
+@Composable
+private fun ThemePickerDialog(
+    currentId: String,
+    trueBlack: Boolean,
+    onSelect: (String) -> Unit,
+    onDismiss: () -> Unit
+) {
+    Dialog(
+        onDismissRequest = onDismiss,
+        properties = DialogProperties(usePlatformDefaultWidth = false)
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(VitalColors.paper)
+                .padding(top = 22.dp)
+        ) {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 24.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Column(modifier = Modifier.weight(1f)) {
+                    EditorialEyebrow(text = "Appearance")
+                    Text(
+                        text = "Theme",
+                        color = VitalColors.ink,
+                        fontFamily = VitalFonts.InterTight,
+                        fontSize = 30.sp,
+                        fontWeight = FontWeight.SemiBold,
+                        letterSpacing = (-0.03).em,
+                        modifier = Modifier.padding(top = 8.dp)
+                    )
+                }
+                Text(
+                    text = "Close",
+                    color = VitalColors.orange,
+                    fontFamily = VitalFonts.InterTight,
+                    fontSize = 14.sp,
+                    fontWeight = FontWeight.Medium,
+                    modifier = Modifier
+                        .clickable(onClick = onDismiss)
+                        .padding(8.dp)
+                )
+            }
+            if (trueBlack) {
+                Text(
+                    text = "True black is on · dark themes use a pure #000 background",
+                    color = VitalColors.inkMuted,
+                    fontFamily = VitalFonts.JetBrainsMonoRegular,
+                    fontSize = 10.sp,
+                    modifier = Modifier.padding(start = 24.dp, end = 24.dp, top = 10.dp)
+                )
+            }
+            Column(
+                modifier = Modifier
+                    .weight(1f)
+                    .verticalScroll(rememberScrollState())
+                    .padding(horizontal = 24.dp)
+            ) {
+                ThemeGroup(
+                    label = "Base themes",
+                    themes = VitalThemes.base,
+                    currentId = currentId,
+                    onSelect = onSelect,
+                    topPadding = 22.dp
+                )
+                ThemeGroup(
+                    label = "Ten new themes",
+                    themes = VitalThemes.featured,
+                    currentId = currentId,
+                    onSelect = onSelect,
+                    topPadding = 30.dp
+                )
+                Spacer(Modifier.height(28.dp))
+            }
+        }
+    }
+}
+
+@Composable
+private fun ThemeGroup(
+    label: String,
+    themes: List<ThemeSpec>,
+    currentId: String,
+    onSelect: (String) -> Unit,
+    topPadding: androidx.compose.ui.unit.Dp
+) {
+    Column(modifier = Modifier.padding(top = topPadding)) {
+        EditorialSectionHeader(title = label, trailing = themes.size.toString())
+        themes.chunked(2).forEach { row ->
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(top = 14.dp),
+                horizontalArrangement = Arrangement.spacedBy(14.dp)
+            ) {
+                row.forEach { theme ->
+                    ThemePreviewCard(
+                        theme = theme,
+                        selected = theme.id == currentId,
+                        onClick = { onSelect(theme.id) },
+                        modifier = Modifier.weight(1f)
+                    )
+                }
+                if (row.size == 1) Spacer(Modifier.weight(1f))
+            }
+        }
+    }
+}
+
+@Composable
+private fun ThemePreviewCard(
+    theme: ThemeSpec,
+    selected: Boolean,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    val p = theme.palette
+    Column(modifier = modifier.clickable(onClick = onClick)) {
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(150.dp)
+                .background(p.paper, RoundedCornerShape(14.dp))
+                .border(
+                    width = if (selected) 2.dp else 1.dp,
+                    color = if (selected) VitalColors.orange else p.rule,
+                    shape = RoundedCornerShape(14.dp)
+                )
+                .padding(14.dp)
+        ) {
+            Column(modifier = Modifier.fillMaxSize()) {
+                Text(
+                    text = "KCAL LEFT",
+                    color = p.orange,
+                    fontFamily = VitalFonts.InterTight,
+                    fontSize = 8.sp,
+                    fontWeight = FontWeight.Bold,
+                    letterSpacing = 0.18.em
+                )
+                Text(
+                    text = "1,260",
+                    color = p.ink,
+                    fontFamily = VitalFonts.InterTight,
+                    fontSize = 30.sp,
+                    lineHeight = 32.sp,
+                    fontWeight = FontWeight.SemiBold,
+                    letterSpacing = (-0.04).em,
+                    modifier = Modifier.padding(top = 8.dp)
+                )
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(top = 12.dp)
+                        .height(1.dp)
+                        .background(p.rule)
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth(0.55f)
+                            .height(1.dp)
+                            .background(p.orange)
+                    )
+                }
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(top = 10.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    Text(
+                        text = "of 2,500",
+                        color = p.inkMuted,
+                        fontFamily = VitalFonts.JetBrainsMonoRegular,
+                        fontSize = 9.sp
+                    )
+                    Text(
+                        text = "50%",
+                        color = p.inkMuted,
+                        fontFamily = VitalFonts.JetBrainsMonoRegular,
+                        fontSize = 9.sp
+                    )
+                }
+            }
+            if (selected) {
+                Text(
+                    text = "✓",
+                    color = p.orange,
+                    fontFamily = VitalFonts.InterTight,
+                    fontSize = 15.sp,
+                    fontWeight = FontWeight.Bold,
+                    modifier = Modifier.align(Alignment.TopEnd)
+                )
+            }
+        }
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(top = 9.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text(
+                text = theme.name,
+                color = VitalColors.ink,
+                fontFamily = VitalFonts.InterTight,
+                fontSize = 13.sp,
+                fontWeight = if (selected) FontWeight.SemiBold else FontWeight.Medium,
+                modifier = Modifier.weight(1f)
+            )
+            Text(
+                text = if (theme.isLight) "LIGHT" else "DARK",
+                color = VitalColors.inkMuted,
+                fontFamily = VitalFonts.JetBrainsMonoRegular,
+                fontSize = 9.sp
+            )
+        }
+    }
 }
 
 // ---- targets dialog ------------------------------------------------------------------------

@@ -35,16 +35,11 @@ class MainActivity : ComponentActivity() {
         setContent {
             val settings by settingsViewModel.settings.collectAsStateWithLifecycle()
             val trueBlack = settings.trueBlack
-            val lightMode = settings.lightMode
             CompositionLocalProvider(LocalTrueBlack provides trueBlack) {
-                VitalTheme(darkTheme = !lightMode, trueBlack = trueBlack) {
+                VitalTheme(themeId = settings.themeId, trueBlack = trueBlack) {
                     Surface(
                         modifier = Modifier.fillMaxSize(),
-                        color = when {
-                            lightMode -> VitalColors.paper
-                            trueBlack -> VitalColors.trueBlackBackground
-                            else -> VitalColors.falseBlackBackground
-                        }
+                        color = VitalColors.paper
                     ) {
                         VitalNavigation()
                     }
