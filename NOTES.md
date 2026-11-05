@@ -312,3 +312,16 @@ The approved Summary option B (24-hour day ring) replaces the old dial Summary, 
 - **Device check (e281c7, 1240 x 2772, density 476).** Today showed `2,344` left, `6%` eaten, P 31 / C 0 / F 4, a week line ending at today, and the two real sessions (`Bench press 16 min`, `Run 3 km`); tapping the Lift row opened Lift with the three logged sets intact; no `AndroidRuntime:E`.
 - **Not built yet.** The week chart has no scrub/tooltip and no week/month switch; the header has no day picker (today only).
 - **Not tested.** Visual comparison against `tmp/concepts/all-tabs.html` (user measures).
+
+### Cardio — editorial restyle (2026-11-05)
+
+`CardioScreen.kt` rewritten to the approved all-tabs mock; `CardioViewModel` is unchanged apart from a new `todayCount` flow for the hero meta.
+
+- **Layout.** Header (`Cardio` + `THU 05.11`), number-only hero (`CARDIO KCAL`, 72 sp value, plain hairline, `today` / `N sessions`), underlined type tabs, a 2 x 2 ruled entry grid (Duration, Distance · km, Speed · km/h, Incline · %), orange `Log session`, `Recent` rows (type, kcal, `dd.MM`) and the `Estimate · ACSM` note between hairlines. No gauge, target or scan row.
+- **Type tabs.** The mock draws four (Run / Bike / Walk / Other). The app keeps all eight `CardioType` values in a horizontally scrolling tab row so Rowing, Swimming, Elliptical and Stairs stay reachable; the first six are visible at 416 dp.
+- **Recent.** Rows show the three latest sessions across days. The trailing count is `3 shown`, not the mock's `2 today`, because the list is not day-scoped; the hero's `N sessions` is today-only.
+- **Estimate.** The note switches to orange `Above 6 km/h · the estimate is clamped.` when the typed speed exceeds the ACSM limit; otherwise it reads `Valid up to 6 km/h · above that the estimate is clamped.`
+- **Dialogs.** The session detail is restyled to the editorial sheet (hairline detail rows, orange outline Delete, orange filled Close).
+- **Device check (e281c7, 1240 x 2772, density 476).** Logged `30:00 · 5 km · 6 km/h · 1%`: the hero moved from 162 to 346 kcal, the meta to `2 sessions`, the form cleared, and `Run 184 kcal 05.11` appeared above the earlier run and walk; the detail dialog showed duration, distance, speed, incline and the ACSM kcal; no `AndroidRuntime:E`.
+- **Not built yet.** `SCAN TREADMILL` is gone from the main screen (OCR is M7); no date picker (today only); no edit, only soft delete.
+- **Not tested.** Visual comparison against `tmp/concepts/all-tabs.html` (user measures).
