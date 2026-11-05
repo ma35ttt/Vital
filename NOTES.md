@@ -325,3 +325,16 @@ The approved Summary option B (24-hour day ring) replaces the old dial Summary, 
 - **Device check (e281c7, 1240 x 2772, density 476).** Logged `30:00 · 5 km · 6 km/h · 1%`: the hero moved from 162 to 346 kcal, the meta to `2 sessions`, the form cleared, and `Run 184 kcal 05.11` appeared above the earlier run and walk; the detail dialog showed duration, distance, speed, incline and the ACSM kcal; no `AndroidRuntime:E`.
 - **Not built yet.** `SCAN TREADMILL` is gone from the main screen (OCR is M7); no date picker (today only); no edit, only soft delete.
 - **Not tested.** Visual comparison against `tmp/concepts/all-tabs.html` (user measures).
+
+### Meals — editorial restyle (2026-11-05)
+
+`MealsScreen.kt` rewritten to the approved all-tabs mock; the parser, search and Room writes in `MealsViewModel` are unchanged.
+
+- **Layout.** Header (`Meals` + `THU 05.11`), eaten hero (orange `EATEN`, 72 sp value, orange progress hairline, `of 2,500` / `N left`), underlined method tabs (Search / Text / Web / Recipe), the smart-text row with an orange `Add`, an orange ambiguity hint, SEARCH result rows (name, kcal / 100 g), `Meals` slot rows (Breakfast / Lunch / Dinner / Snacks; filled ones show the foods and kcal, empty ones an orange `+ Log <slot>`), and a `Today` macro block (value, target percent).
+- **Progress.** The hairline under the hero fills orange with eaten / target.
+- **Dialogs.** Raw/Cooked, food grams + slot, and slot detail are restyled to the editorial sheet (hairline rows, orange outline Cancel, orange filled Save/Close, orange Delete).
+- **Deviation.** The mock's floating `+` FAB is replaced by the inline `Add` on the smart-text row, so there is no separately-opened add sheet. Empty slot rows open the Text method pre-targeted at that slot rather than the mock's add sheet.
+- **Device check (e281c7, 1240 x 2772, density 476).** Typed `chicken breast 200g` in Text and confirmed Cooked: Breakfast gained a 200 g chicken breast and eaten moved 156 → 313. Search `rice` listed raw/cooked White Rice; the food dialog logged 100 g into Lunch (126 kcal). The Breakfast detail listed both entries and Delete removed one, dropping eaten 438 → 282 and protein 65 → 34 g. No `AndroidRuntime:E`.
+- **Still sample-only.** WEB and RECIPE tabs are labels only, as before.
+- **Not built yet.** No date picker (today only), no per-entry edit (delete only), the query is not cleared after a smart-text add.
+- **Not tested.** Visual comparison against `tmp/concepts/all-tabs.html` (user measures).
