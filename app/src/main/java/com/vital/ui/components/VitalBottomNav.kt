@@ -1,0 +1,172 @@
+package com.vital.ui.components
+
+import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.navigationBarsPadding
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Path
+import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.graphics.StrokeJoin
+import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.em
+import androidx.compose.ui.unit.sp
+import com.vital.ui.theme.VitalColors
+import com.vital.ui.theme.VitalFonts
+
+/** 5-tab shell: Meals · Lift · Today · Cardio · More. Today is the centre and the start. */
+data class VitalTab(val label: String, val route: String)
+
+val VITAL_TABS = listOf(
+    VitalTab("Meals", "meals"),
+    VitalTab("Lift", "lift"),
+    VitalTab("Today", "today"),
+    VitalTab("Cardio", "cardio"),
+    VitalTab("More", "more")
+)
+
+const val NAV_ROW_HEIGHT_DP = 64
+
+@Composable
+fun VitalBottomNav(
+    selectedIndex: Int,
+    onTabSelected: (Int) -> Unit,
+    modifier: Modifier = Modifier
+) {
+    Column(
+        modifier = modifier
+            .fillMaxWidth()
+            .background(VitalColors.paper)
+            .navigationBarsPadding()
+    ) {
+        Hairline()
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(NAV_ROW_HEIGHT_DP.dp)
+                .padding(horizontal = 10.dp, vertical = 7.dp),
+            horizontalArrangement = Arrangement.SpaceEvenly,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            VITAL_TABS.forEachIndexed { index, tab ->
+                val active = index == selectedIndex
+                val color = if (active) VitalColors.orange else VitalColors.navInactive
+                Column(
+                    modifier = Modifier
+                        .weight(1f)
+                        .fillMaxHeight()
+                        .clickable { onTabSelected(index) },
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.Center
+                ) {
+                    VitalNavGlyph(
+                        tabIndex = index,
+                        color = color,
+                        modifier = Modifier.size(21.dp)
+                    )
+                    Spacer(modifier = Modifier.height(5.dp))
+                    Text(
+                        text = tab.label,
+                        color = color,
+                        fontFamily = VitalFonts.InterTight,
+                        fontSize = 10.sp,
+                        fontWeight = if (active) FontWeight.SemiBold else FontWeight.Medium,
+                        letterSpacing = 0.01.em
+                    )
+                }
+            }
+        }
+    }
+}
+
+/** Custom stroke glyphs so the nav matches the editorial mocks, not Material icons. */
+@Composable
+fun VitalNavGlyph(
+    tabIndex: Int,
+    color: Color,
+    modifier: Modifier = Modifier
+) {
+    Canvas(modifier = modifier) {
+        val w = size.width
+        val h = size.height
+        val stroke = 1.7.dp.toPx()
+        fun p(x: Float, y: Float) = Offset(x * w, y * h)
+        val style = Stroke(width = stroke, cap = StrokeCap.Round, join = StrokeJoin.Round)
+
+        when (tabIndex) {
+            // Meals — fork and knife.
+            0 -> {
+                drawLine(color, p(0.28f, 0.12f), p(0.28f, 0.88f), strokeWidth = stroke, cap = StrokeCap.Round)
+                drawLine(color, p(0.14f, 0.12f), p(0.14f, 0.40f), strokeWidth = stroke, cap = StrokeCap.Round)
+                drawLine(color, p(0.42f, 0.12f), p(0.42f, 0.40f), strokeWidth = stroke, cap = StrokeCap.Round)
+                drawLine(color, p(0.14f, 0.40f), p(0.42f, 0.40f), strokeWidth = stroke, cap = StrokeCap.Round)
+                val blade = Path().apply {
+                    moveTo(0.72f * w, 0.12f * h)
+                    lineTo(0.86f * w, 0.30f * h)
+                    lineTo(0.72f * w, 0.48f * h)
+                }
+                drawPath(blade, color, style = style)
+                drawLine(color, p(0.72f, 0.48f), p(0.72f, 0.88f), strokeWidth = stroke, cap = StrokeCap.Round)
+            }
+
+            // Lift — dumbbell.
+            1 -> {
+                drawLine(color, p(0.22f, 0.50f), p(0.78f, 0.50f), strokeWidth = stroke, cap = StrokeCap.Round)
+                drawLine(color, p(0.22f, 0.26f), p(0.22f, 0.74f), strokeWidth = stroke, cap = StrokeCap.Round)
+                drawLine(color, p(0.78f, 0.26f), p(0.78f, 0.74f), strokeWidth = stroke, cap = StrokeCap.Round)
+                drawLine(color, p(0.10f, 0.36f), p(0.10f, 0.64f), strokeWidth = stroke, cap = StrokeCap.Round)
+                drawLine(color, p(0.90f, 0.36f), p(0.90f, 0.64f), strokeWidth = stroke, cap = StrokeCap.Round)
+            }
+
+            // Today — house.
+            2 -> {
+                val house = Path().apply {
+                    moveTo(0.12f * w, 0.44f * h)
+                    lineTo(0.50f * w, 0.12f * h)
+                    lineTo(0.88f * w, 0.44f * h)
+                    moveTo(0.22f * w, 0.40f * h)
+                    lineTo(0.22f * w, 0.88f * h)
+                    lineTo(0.78f * w, 0.88f * h)
+                    lineTo(0.78f * w, 0.40f * h)
+                }
+                drawPath(house, color, style = style)
+            }
+
+            // Cardio — heartbeat trace.
+            3 -> {
+                val trace = Path().apply {
+                    moveTo(0.06f * w, 0.55f * h)
+                    lineTo(0.30f * w, 0.55f * h)
+                    lineTo(0.42f * w, 0.24f * h)
+                    lineTo(0.56f * w, 0.80f * h)
+                    lineTo(0.66f * w, 0.55f * h)
+                    lineTo(0.94f * w, 0.55f * h)
+                }
+                drawPath(trace, color, style = style)
+            }
+
+            // More — three dots.
+            else -> {
+                drawCircle(color, radius = 1.4.dp.toPx(), center = p(0.22f, 0.50f))
+                drawCircle(color, radius = 1.4.dp.toPx(), center = p(0.50f, 0.50f))
+                drawCircle(color, radius = 1.4.dp.toPx(), center = p(0.78f, 0.50f))
+            }
+        }
+    }
+}

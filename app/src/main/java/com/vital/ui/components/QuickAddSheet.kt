@@ -195,7 +195,7 @@ private fun QuickAddRow(
 
 /** Stroke glyph, 20 du box, 1.8 du stroke, round caps and joins. */
 @Composable
-private fun QuickAddGlyph(
+internal fun QuickAddGlyph(
     action: QuickAddAction,
     color: Color,
     modifier: Modifier = Modifier
