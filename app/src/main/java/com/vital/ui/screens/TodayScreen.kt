@@ -193,8 +193,10 @@ private fun TodayRing(progress: Float, modifier: Modifier = Modifier) {
             animationSpec = tween(durationMillis = 700, easing = FastOutSlowInEasing)
         )
     }
-    val value = animated.value
     Canvas(modifier = modifier) {
+        // Read the animated value here, in the draw lambda, so each frame only redraws
+        // the ring instead of recomposing this composable.
+        val value = animated.value
         val stroke = 5.dp.toPx()
         val radius = size.minDimension / 2f - stroke / 2f
         val topLeft = Offset(

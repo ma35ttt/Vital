@@ -165,7 +165,6 @@ private fun DayRing(
             animationSpec = tween(durationMillis = 750, easing = FastOutSlowInEasing)
         )
     }
-    val revealValue = reveal.value
     Box(
         modifier = modifier,
         contentAlignment = Alignment.Center
@@ -210,7 +209,7 @@ private fun DayRing(
                     drawArc(
                         color = VitalColors.orange,
                         startAngle = start,
-                        sweepAngle = sweep * revealValue,
+                        sweepAngle = sweep * reveal.value,
                         useCenter = false,
                         topLeft = Offset(cx - ringRadius, cy - ringRadius),
                         size = Size(ringRadius * 2f, ringRadius * 2f),
@@ -226,7 +225,7 @@ private fun DayRing(
                     drawArc(
                         color = VitalColors.orange.copy(alpha = 0.45f),
                         startAngle = start,
-                        sweepAngle = sweep * revealValue,
+                        sweepAngle = sweep * reveal.value,
                         useCenter = false,
                         topLeft = Offset(cx - cardioRadius, cy - cardioRadius),
                         size = Size(cardioRadius * 2f, cardioRadius * 2f),

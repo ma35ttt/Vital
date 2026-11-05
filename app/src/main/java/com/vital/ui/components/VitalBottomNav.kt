@@ -27,7 +27,9 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.StrokeCap
@@ -158,7 +160,7 @@ fun VitalBottomNav(
  */
 @Composable
 private fun RestIndicator(progress: Float?) {
-    val fill by animateFloatAsState(
+    val fill = animateFloatAsState(
         targetValue = (progress ?: 0f).coerceIn(0f, 1f),
         animationSpec = tween(durationMillis = 260, easing = LinearEasing),
         label = "restFill"
@@ -168,16 +170,17 @@ private fun RestIndicator(progress: Float?) {
             .fillMaxWidth()
             .height(2.dp)
             .background(VitalColors.rule)
-    ) {
-        if (fill > 0f) {
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth(fill)
-                    .fillMaxHeight()
-                    .background(VitalColors.orange)
-            )
-        }
-    }
+            // Redraw the drain instead of recomposing the nav every frame.
+            .drawBehind {
+                val value = fill.value
+                if (value > 0f) {
+                    drawRect(
+                        color = VitalColors.orange,
+                        size = Size(size.width * value, size.height)
+                    )
+                }
+            }
+    )
 }
 
 /** Custom stroke glyphs so the nav matches the editorial mocks, not Material icons. */
