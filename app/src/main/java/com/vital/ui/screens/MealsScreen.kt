@@ -1,5 +1,8 @@
 package com.vital.ui.screens
 
+import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -31,6 +34,7 @@ import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Text
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -243,6 +247,14 @@ private fun MealsHero(
     progress: Float,
     modifier: Modifier = Modifier
 ) {
+    // Fill the eaten bar towards the current fraction instead of snapping when a meal is logged.
+    val animated = remember { Animatable(0f) }
+    LaunchedEffect(progress) {
+        animated.animateTo(
+            targetValue = progress.coerceIn(0f, 1f),
+            animationSpec = tween(durationMillis = 700, easing = FastOutSlowInEasing)
+        )
+    }
     Column(modifier = modifier.fillMaxWidth()) {
         EditorialEyebrow(text = "Eaten")
         Text(
@@ -264,7 +276,7 @@ private fun MealsHero(
             Box(
                 modifier = Modifier
                     .fillMaxHeight()
-                    .fillMaxWidth(progress)
+                    .fillMaxWidth(animated.value)
                     .background(VitalColors.orange)
             )
         }
@@ -551,7 +563,9 @@ private fun SearchStep(
         if (entries.isNotEmpty()) {
             item { SheetLabel("Logged", Modifier.padding(top = 10.dp)) }
             items(entries, key = { it.id }) { entry ->
-                EntryRow(entry = entry, onDelete = { onDelete(entry) })
+                Box(Modifier.animateItem()) {
+                    EntryRow(entry = entry, onDelete = { onDelete(entry) })
+                }
             }
         }
 
@@ -586,16 +600,20 @@ private fun SearchStep(
                 }
             } else {
                 items(choices, key = { it.name.lowercase() }) { choice ->
-                    ChoiceRow(choice = choice, onClick = { onSelect(choice) })
+                    Box(Modifier.animateItem()) {
+                        ChoiceRow(choice = choice, onClick = { onSelect(choice) })
+                    }
                 }
             }
         } else if (recent.isNotEmpty()) {
             item { SheetLabel("Recent", Modifier.padding(top = 22.dp)) }
             items(recent, key = { it.id }) { food ->
-                ChoiceRow(
-                    choice = FoodChoice(food.name, mapOf(food.variant to food)),
-                    onClick = { onSelect(FoodChoice(food.name, mapOf(food.variant to food))) }
-                )
+                Box(Modifier.animateItem()) {
+                    ChoiceRow(
+                        choice = FoodChoice(food.name, mapOf(food.variant to food)),
+                        onClick = { onSelect(FoodChoice(food.name, mapOf(food.variant to food))) }
+                    )
+                }
             }
         }
     }

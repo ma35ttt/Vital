@@ -2,6 +2,9 @@ package com.vital.ui.screens
 
 import android.content.Context
 import android.content.Intent
+import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -153,6 +156,16 @@ private fun DayRing(
     now: LocalTime,
     modifier: Modifier = Modifier
 ) {
+    // Grow the day's arcs from their start rather than popping them in when the day changes.
+    val reveal = remember { Animatable(0f) }
+    LaunchedEffect(day) {
+        reveal.snapTo(0f)
+        reveal.animateTo(
+            targetValue = 1f,
+            animationSpec = tween(durationMillis = 750, easing = FastOutSlowInEasing)
+        )
+    }
+    val revealValue = reveal.value
     Box(
         modifier = modifier,
         contentAlignment = Alignment.Center
@@ -197,7 +210,7 @@ private fun DayRing(
                     drawArc(
                         color = VitalColors.orange,
                         startAngle = start,
-                        sweepAngle = sweep,
+                        sweepAngle = sweep * revealValue,
                         useCenter = false,
                         topLeft = Offset(cx - ringRadius, cy - ringRadius),
                         size = Size(ringRadius * 2f, ringRadius * 2f),
@@ -213,7 +226,7 @@ private fun DayRing(
                     drawArc(
                         color = VitalColors.orange.copy(alpha = 0.45f),
                         startAngle = start,
-                        sweepAngle = sweep,
+                        sweepAngle = sweep * revealValue,
                         useCenter = false,
                         topLeft = Offset(cx - cardioRadius, cy - cardioRadius),
                         size = Size(cardioRadius * 2f, cardioRadius * 2f),

@@ -1,6 +1,10 @@
 package com.vital.ui.screens
 
 import androidx.activity.compose.BackHandler
+import androidx.compose.animation.animateContentSize
+import androidx.compose.animation.core.LinearEasing
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -364,6 +368,12 @@ private fun RestHero(
 
 @Composable
 private fun RestRing(progress: Float, modifier: Modifier = Modifier) {
+    // The controller ticks every 250 ms; ease between ticks so the arc drains continuously.
+    val animated by animateFloatAsState(
+        targetValue = progress.coerceIn(0f, 1f),
+        animationSpec = tween(durationMillis = 250, easing = LinearEasing),
+        label = "restRing"
+    )
     Canvas(modifier = modifier) {
         val stroke = 5.dp.toPx()
         val radius = size.minDimension / 2f - stroke / 2f
@@ -378,11 +388,11 @@ private fun RestRing(progress: Float, modifier: Modifier = Modifier) {
             radius = radius,
             style = Stroke(width = stroke)
         )
-        if (progress > 0f) {
+        if (animated > 0f) {
             drawArc(
                 color = VitalColors.orange,
                 startAngle = -90f,
-                sweepAngle = 360f * progress,
+                sweepAngle = 360f * animated,
                 useCenter = false,
                 topLeft = topLeft,
                 size = arcSize,
@@ -791,7 +801,7 @@ private fun SessionBlock(
     onClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    Column(modifier = modifier.fillMaxWidth()) {
+    Column(modifier = modifier.fillMaxWidth().animateContentSize()) {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
@@ -944,11 +954,13 @@ private fun ExercisePickerDialog(
                     modifier = Modifier.heightIn(max = 300.dp)
                 ) {
                     items(filtered, key = { it.id }) { option ->
-                        ExerciseRow(
-                            exercise = option,
-                            selected = option.id == selectedId,
-                            onClick = { onSelect(option) }
-                        )
+                        Box(Modifier.animateItem()) {
+                            ExerciseRow(
+                                exercise = option,
+                                selected = option.id == selectedId,
+                                onClick = { onSelect(option) }
+                            )
+                        }
                     }
                 }
                 Spacer(Modifier.height(12.dp))
@@ -1432,7 +1444,7 @@ private fun SessionDetailDialog(
             } else {
                 LazyColumn(modifier = Modifier.heightIn(max = 320.dp)) {
                     items(sets, key = { it.id }) { set ->
-                        Column(modifier = Modifier.fillMaxWidth()) {
+                        Column(modifier = Modifier.fillMaxWidth().animateItem()) {
                             Row(
                                 modifier = Modifier
                                     .fillMaxWidth()
