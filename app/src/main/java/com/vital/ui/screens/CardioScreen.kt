@@ -49,7 +49,6 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.vital.data.entity.CardioSession
 import com.vital.data.entity.CardioType
-import com.vital.domain.Acsm
 import com.vital.ui.CardioViewModel
 import com.vital.ui.components.EditorialButton
 import com.vital.ui.components.EditorialEyebrow
@@ -98,8 +97,6 @@ fun CardioScreen(
     var showDetail by rememberSaveable { mutableStateOf(false) }
 
     val durationSec = parseCardioDuration(durationText)
-    val speed = speedText.toDoubleOrNull()
-    val outOfRange = (speed ?: 0.0) > Acsm.MAX_SPEED_KMH
     val dateLabel = remember {
         LocalDate.now()
             .format(DateTimeFormatter.ofPattern("EEE dd.MM", Locale.US))
@@ -173,7 +170,6 @@ fun CardioScreen(
             }
             item {
                 EstimateNote(
-                    outOfRange = outOfRange,
                     modifier = Modifier.padding(top = 26.dp)
                 )
             }
@@ -488,7 +484,6 @@ private fun RecentRow(session: CardioSession, onClick: () -> Unit) {
 
 @Composable
 private fun EstimateNote(
-    outOfRange: Boolean,
     modifier: Modifier = Modifier
 ) {
     Column(modifier = modifier.fillMaxWidth()) {
@@ -498,12 +493,8 @@ private fun EstimateNote(
         )
         Hairline()
         Text(
-            text = if (outOfRange) {
-                "Above 6 km/h · the estimate is clamped."
-            } else {
-                "Valid up to 6 km/h · above that the estimate is clamped."
-            },
-            color = if (outOfRange) VitalColors.orange else VitalColors.inkMuted,
+            text = "Walking equation up to 6 km/h, running equation above it.",
+            color = VitalColors.inkMuted,
             fontFamily = VitalFonts.InterTight,
             fontSize = 12.sp,
             modifier = Modifier.padding(vertical = 12.dp)
