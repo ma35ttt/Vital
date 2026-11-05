@@ -28,6 +28,9 @@ const val LOCAL_USER_ID = "local-user"
 /** Bundled, comprehensive exercise catalog (curated + public-domain free-exercise-db). */
 private const val EXERCISE_CATALOG_ASSET = "exercises.json"
 
+/** Bundled Indian food composition table (IFCT 2017 + Gopalan 2004, CC0-1.0). */
+private const val FOOD_CATALOG_ASSET = "foods.json"
+
 @Singleton
 class SeedLoader @Inject constructor(
     @ApplicationContext private val context: Context,
@@ -63,6 +66,8 @@ class SeedLoader @Inject constructor(
         }
         // Idempotent by name, so an upgrade adds only the exercises the DB does not have yet.
         loadExercises()
+        // Same for the Indian food library: existing installs gain the new foods on upgrade.
+        loadFoodCatalog()
     }
 
     private suspend fun loadFoods() {
@@ -176,6 +181,26 @@ class SeedLoader @Inject constructor(
         val missing = catalog.filter { it.name.trim().lowercase() !in existing }
         if (missing.isNotEmpty()) {
             exerciseRepository.insertExercises(missing)
+        }
+    }
+
+    /**
+     * Adds any bundled Indian food that is not stored yet. Matching is on (name, variant) so
+     * the curated RAW/COOKED rows keep winning and a re-launch never duplicates the library.
+     */
+    private suspend fun loadFoodCatalog() {
+        val catalogJson = context.assets
+            .open(FOOD_CATALOG_ASSET)
+            .bufferedReader()
+            .use { it.readText() }
+        val catalog = FoodCatalog.parse(catalogJson)
+
+        val existing = foodRepository.getAllFoods().first()
+            .map { it.name.trim().lowercase() to it.variant }
+            .toSet()
+        val missing = catalog.filter { (it.name.trim().lowercase() to it.variant) !in existing }
+        if (missing.isNotEmpty()) {
+            foodRepository.insertFoods(missing)
         }
     }
 }

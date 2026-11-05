@@ -59,8 +59,3 @@ object ExerciseCatalog {
         }
     }
 }
-
-private fun String.toSeedSlug(): String {
-    val slug = lowercase().map { if (it.isLetterOrDigit()) it else '-' }.joinToString("")
-    return slug.trim('-').replace(Regex("-+"), "-")
-}
