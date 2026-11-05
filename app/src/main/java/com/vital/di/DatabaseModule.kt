@@ -1,6 +1,7 @@
 package com.vital.di
 
 import android.content.Context
+import com.vital.data.dao.CardioDao
 import com.vital.data.dao.ExerciseDao
 import com.vital.data.dao.FoodDao
 import com.vital.data.dao.MealLogDao
@@ -35,5 +36,6 @@ object DatabaseModule {
     @Provides fun provideRecipeDao(db: VitalDatabase): RecipeDao = db.recipeDao()
     @Provides fun provideExerciseDao(db: VitalDatabase): ExerciseDao = db.exerciseDao()
     @Provides fun provideWorkoutDao(db: VitalDatabase): WorkoutDao = db.workoutDao()
+    @Provides fun provideCardioDao(db: VitalDatabase): CardioDao = db.cardioDao()
     @Provides fun provideSettingsDao(db: VitalDatabase): SettingsDao = db.settingsDao()
 }
