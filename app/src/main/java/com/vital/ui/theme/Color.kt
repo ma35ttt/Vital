@@ -4,6 +4,18 @@ import androidx.compose.ui.graphics.Color
 
 object VitalColors {
 
+    // ===== EDITORIAL TOKENS (2026-11 redesign) =====
+    // The base is a quiet near-black page; orange is an accent, never a wallpaper.
+    // Structure comes from hairlines and space, not cards, borders or shadows.
+    val paper = Color(0xFF0B0B0B)            // page background
+    val ink = Color(0xFFF3F1ED)              // primary text (warm white)
+    val inkMuted = Color(0xFF9A948C)         // labels, meta, trailing values
+    val rule = Color(0xFF22201D)             // hairline separators
+    val ruleStrong = Color(0xFF3A3631)       // chart baseline / inactive bars
+    val chartBar = Color(0xFF2A2724)         // inactive chart bars
+    val navInactive = Color(0xFF6B6660)      // inactive nav icon and label
+    val sheet = Color(0xFF111110)            // bottom sheets sit just above the page
+
     // ===== DESIGN TOKENS (from chrome.md, REMAINING_TABS_BRIEF.md) =====
     // One accent, orange #FD3F00, plus black and #5F6971. No per-tab accents.
 

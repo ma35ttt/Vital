@@ -1,33 +1,25 @@
 package com.vital.ui.navigation
 
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
+import android.content.pm.ApplicationInfo
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
-import android.content.pm.ApplicationInfo
-import androidx.hilt.navigation.compose.hiltViewModel
-import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
+import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
-import com.vital.ui.components.GlassBottomNav
+import com.vital.ui.components.MoreSheet
 import com.vital.ui.components.QuickAddAction
-import com.vital.ui.components.QuickAddSheet
+import com.vital.ui.components.VITAL_TABS
+import com.vital.ui.components.VitalBottomNav
 import com.vital.ui.screens.CardioScreen
 import com.vital.ui.screens.CoachChatScreen
 import com.vital.ui.screens.DebugShowcaseScreen
@@ -35,132 +27,145 @@ import com.vital.ui.screens.LiftScreen
 import com.vital.ui.screens.MealsScreen
 import com.vital.ui.screens.ProgressScreen
 import com.vital.ui.screens.SettingsScreen
-import com.vital.ui.screens.SummaryDialScreen
+import com.vital.ui.screens.SummaryScreen
 import com.vital.ui.screens.TodayScreen
 import com.vital.ui.screens.WeeksScreen
-import com.vital.ui.MainViewModel
-import androidx.compose.foundation.clickable
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.BorderStroke
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.material3.Text
+import com.vital.ui.theme.VitalColors
 
 @Composable
 fun VitalNavigation() {
     val navController = rememberNavController()
-    val selectedTab = remember { mutableStateOf(0) }
-    val quickAddSheetOpen = remember { mutableStateOf(false) }
+    var moreOpen by remember { mutableStateOf(false) }
 
-    // Debug showcase route: only registered in a debuggable build, no BuildConfig needed.
     val context = LocalContext.current
     val isDebuggable = remember(context) {
         (context.applicationInfo.flags and ApplicationInfo.FLAG_DEBUGGABLE) != 0
     }
     val openDebugShowcase: (() -> Unit)? = if (isDebuggable) {
-        { navController.navigate("debug") }
+        { navController.navigate("debug") { launchSingleTop = true } }
     } else {
         null
     }
 
-    // One route for the nav and the QUICK ADD sheet, so the highlight always matches the page.
+    val backStackEntry by navController.currentBackStackEntryAsState()
+    val currentRoute = backStackEntry?.destination?.route
+    val tabIndex = when (currentRoute) {
+        "meals" -> 0
+        "lift" -> 1
+        "today" -> 2
+        "cardio" -> 3
+        else -> 4
+    }
+    val selectedIndex = if (moreOpen) 4 else tabIndex
+
     val navigateToTab: (Int) -> Unit = { index ->
-        selectedTab.value = index
-        quickAddSheetOpen.value = false
-        val route = when (index) {
-            0 -> "today"
-            1 -> "meals"
-            2 -> "lift"
-            3 -> "cardio"
-            4 -> "weeks"
-            else -> "settings"
-        }
-        navController.navigate(route) {
-            popUpTo("today") { inclusive = true }
-            launchSingleTop = true
+        moreOpen = false
+        val route = VITAL_TABS.getOrNull(index)?.route ?: "today"
+        if (route != "more") {
+            navController.navigate(route) {
+                popUpTo("today") { saveState = true }
+                launchSingleTop = true
+                restoreState = true
+            }
         }
     }
 
+    val openRoute: (String) -> Unit = { route ->
+        moreOpen = false
+        navController.navigate(route) { launchSingleTop = true }
+    }
+
     Scaffold(
+        containerColor = VitalColors.paper,
         bottomBar = {
-            GlassBottomNav(
-                selectedTab = selectedTab.value,
-                onTabSelected = navigateToTab,
-                onPlusClick = { quickAddSheetOpen.value = true }
+            VitalBottomNav(
+                selectedIndex = selectedIndex,
+                onTabSelected = { index ->
+                    if (index == 4) {
+                        moreOpen = !moreOpen
+                    } else {
+                        navigateToTab(index)
+                    }
+                }
             )
         }
     ) { innerPadding ->
         Box(modifier = Modifier.fillMaxSize()) {
-            NavHost(navController, "today") {
+            NavHost(
+                navController = navController,
+                startDestination = "today",
+                modifier = Modifier.padding(innerPadding)
+            ) {
                 composable("today") {
                     TodayScreen(
-                        modifier = Modifier.padding(innerPadding),
-                        onShowSummary = { navController.navigate("summary") },
-                        onNavigateToMeals = { navigateToTab(1) },
-                        onNavigateToLift = { navigateToTab(2) },
+                        modifier = Modifier.fillMaxSize(),
+                        onShowSummary = { openRoute("summary") },
+                        onNavigateToMeals = { navigateToTab(0) },
+                        onNavigateToLift = { navigateToTab(1) },
                         onNavigateToCardio = { navigateToTab(3) },
-                        onNavigateToWeeks = { navigateToTab(4) },
-                        onNavigateToSettings = { navigateToTab(5) }
+                        onNavigateToWeeks = { openRoute("weeks") },
+                        onNavigateToSettings = { openRoute("settings") }
                     )
                 }
                 composable("meals") {
                     MealsScreen(
-                        modifier = Modifier.padding(innerPadding),
-                        onShowSummary = { navController.navigate("summary") },
-                        onNavigateToToday = { navigateToTab(0) },
-                        onNavigateToLift = { navigateToTab(2) },
+                        modifier = Modifier.fillMaxSize(),
+                        onShowSummary = { openRoute("summary") },
+                        onNavigateToToday = { navigateToTab(2) },
+                        onNavigateToLift = { navigateToTab(1) },
                         onNavigateToCardio = { navigateToTab(3) },
-                        onNavigateToWeeks = { navigateToTab(4) },
-                        onNavigateToSettings = { navigateToTab(5) }
+                        onNavigateToWeeks = { openRoute("weeks") },
+                        onNavigateToSettings = { openRoute("settings") }
                     )
                 }
                 composable("lift") {
                     LiftScreen(
-                        modifier = Modifier.padding(innerPadding),
-                        onShowSummary = { navController.navigate("summary") },
-                        onNavigateToToday = { navigateToTab(0) },
-                        onNavigateToMeals = { navigateToTab(1) },
+                        modifier = Modifier.fillMaxSize(),
+                        onShowSummary = { openRoute("summary") },
+                        onNavigateToToday = { navigateToTab(2) },
+                        onNavigateToMeals = { navigateToTab(0) },
                         onNavigateToCardio = { navigateToTab(3) },
-                        onNavigateToWeeks = { navigateToTab(4) },
-                        onNavigateToSettings = { navigateToTab(5) }
+                        onNavigateToWeeks = { openRoute("weeks") },
+                        onNavigateToSettings = { openRoute("settings") }
                     )
                 }
                 composable("cardio") {
                     CardioScreen(
-                        modifier = Modifier.padding(innerPadding),
-                        onShowSummary = { navController.navigate("summary") },
-                        onNavigateToToday = { navigateToTab(0) },
-                        onNavigateToMeals = { navigateToTab(1) },
-                        onNavigateToLift = { navigateToTab(2) },
-                        onNavigateToWeeks = { navigateToTab(4) },
-                        onNavigateToSettings = { navigateToTab(5) }
+                        modifier = Modifier.fillMaxSize(),
+                        onShowSummary = { openRoute("summary") },
+                        onNavigateToToday = { navigateToTab(2) },
+                        onNavigateToMeals = { navigateToTab(0) },
+                        onNavigateToLift = { navigateToTab(1) },
+                        onNavigateToWeeks = { openRoute("weeks") },
+                        onNavigateToSettings = { openRoute("settings") }
                     )
                 }
                 composable("weeks") {
                     WeeksScreen(
-                        modifier = Modifier.padding(innerPadding),
-                        onShowSummary = { navController.navigate("summary") },
-                        onNavigateToToday = { navigateToTab(0) },
-                        onNavigateToMeals = { navigateToTab(1) },
-                        onNavigateToLift = { navigateToTab(2) },
+                        modifier = Modifier.fillMaxSize(),
+                        onShowSummary = { openRoute("summary") },
+                        onNavigateToToday = { navigateToTab(2) },
+                        onNavigateToMeals = { navigateToTab(0) },
+                        onNavigateToLift = { navigateToTab(1) },
                         onNavigateToCardio = { navigateToTab(3) },
-                        onNavigateToSettings = { navigateToTab(5) }
+                        onNavigateToSettings = { openRoute("settings") }
                     )
                 }
                 composable("settings") {
                     SettingsScreen(
-                        modifier = Modifier.padding(innerPadding),
-                        onNavigateToToday = { navigateToTab(0) },
-                        onNavigateToMeals = { navigateToTab(1) },
-                        onNavigateToLift = { navigateToTab(2) },
+                        modifier = Modifier.fillMaxSize(),
+                        onNavigateToToday = { navigateToTab(2) },
+                        onNavigateToMeals = { navigateToTab(0) },
+                        onNavigateToLift = { navigateToTab(1) },
                         onNavigateToCardio = { navigateToTab(3) },
-                        onNavigateToWeeks = { navigateToTab(4) },
+                        onNavigateToWeeks = { openRoute("weeks") },
                         onOpenDebugShowcase = openDebugShowcase
                     )
                 }
                 composable("summary") {
-                    SummaryDialScreen(
-                        onClose = { navController.popBackStack() }
+                    SummaryScreen(
+                        modifier = Modifier.fillMaxSize(),
+                        onBack = { navController.popBackStack() }
                     )
                 }
                 composable("coach") {
@@ -175,96 +180,26 @@ fun VitalNavigation() {
                 }
                 if (isDebuggable) {
                     composable("debug") {
-                        DebugShowcaseScreen(modifier = Modifier.padding(innerPadding))
+                        DebugShowcaseScreen(modifier = Modifier.fillMaxSize())
                     }
                 }
             }
 
-            // QUICK ADD bottom sheet (tap on +)
-            QuickAddSheet(
-                isOpen = quickAddSheetOpen.value,
-                onDismiss = { quickAddSheetOpen.value = false },
-                onAction = { action ->
+            MoreSheet(
+                isOpen = moreOpen,
+                onDismiss = { moreOpen = false },
+                onQuickAdd = { action ->
+                    moreOpen = false
                     when (action) {
-                        QuickAddAction.LogMeal -> navigateToTab(1)
-                        QuickAddAction.LogSet -> navigateToTab(2)
+                        QuickAddAction.LogMeal -> navigateToTab(0)
+                        QuickAddAction.LogSet -> navigateToTab(1)
                         QuickAddAction.LogCardio -> navigateToTab(3)
-                        QuickAddAction.LogBodyWeight -> navigateToTab(5)
+                        QuickAddAction.LogBodyWeight -> openRoute("settings")
                     }
-                }
+                },
+                onNavigate = openRoute,
+                showDebug = isDebuggable
             )
         }
     }
 }
-
-@Composable
-fun TabBar(
-    selectedTab: Int,
-    onTabSelected: (Int) -> Unit,
-    tabs: List<TabItem>
-) {
-
-    val tabColors = listOf(
-        com.vital.ui.theme.VitalColors.orange,
-        com.vital.ui.theme.VitalColors.orange,
-        com.vital.ui.theme.VitalColors.orange,
-        com.vital.ui.theme.VitalColors.orange,
-        com.vital.ui.theme.VitalColors.orange,
-        com.vital.ui.theme.VitalColors.orange
-    )
-
-    Surface(
-        modifier = Modifier
-            .fillMaxWidth()
-            .height(60.dp)
-            .padding(bottom = 8.dp),
-        color = com.vital.ui.theme.VitalColors.wellFill,
-        shape = RoundedCornerShape(topStart = 16.dp, topEnd = 16.dp),
-        border = BorderStroke(1.dp, com.vital.ui.theme.VitalColors.wellStroke)
-    ) {
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = androidx.compose.foundation.layout.Arrangement.SpaceEvenly,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            tabs.forEachIndexed { index, tab ->
-                val isSelected = index == selectedTab
-                val accentColor = tabColors[index]
-
-                androidx.compose.material3.Surface(
-                    modifier = Modifier
-                        .weight(1f)
-                        .height(48.dp)
-                        .padding(horizontal = 4.dp, vertical = 6.dp)
-                        .clickable { onTabSelected(index) },
-                    color = if (isSelected) accentColor else Color.Transparent,
-                    shape = RoundedCornerShape(8.dp)
-                ) {
-                    Box(
-                        modifier = Modifier.fillMaxSize(),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Text(
-                            text = tab.label,
-                            color = if (isSelected) Color.Black else com.vital.ui.theme.VitalColors.textMuted,
-                            fontSize = 10.sp,
-                            fontWeight = FontWeight.Bold,
-                            letterSpacing = 1.5.sp
-                        )
-                    }
-                }
-            }
-        }
-    }
-}
-
-data class TabItem(val label: String, val icon: String)
-
-val MAIN_TABS = listOf(
-    TabItem("TDY", "today"),
-    TabItem("MLS", "meals"),
-    TabItem("LFT", "lift"),
-    TabItem("CRD", "cardio"),
-    TabItem("WKS", "weeks"),
-    TabItem("SET", "settings")
-)
