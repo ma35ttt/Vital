@@ -1,23 +1,33 @@
 package com.vital.ui.navigation
 
 import android.content.pm.ApplicationInfo
+import androidx.compose.animation.core.animateDpAsState
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.unit.dp
+import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
+import com.vital.ui.LiveIslandViewModel
 import com.vital.ui.components.MoreSheet
 import com.vital.ui.components.QuickAddAction
+import com.vital.ui.components.RestIsland
 import com.vital.ui.components.VITAL_TABS
 import com.vital.ui.components.VitalBottomNav
 import com.vital.ui.screens.CardioScreen
@@ -83,6 +93,22 @@ fun VitalNavigation() {
         navController.navigate(route) { launchSingleTop = true }
     }
 
+    val islandViewModel: LiveIslandViewModel = hiltViewModel()
+    val islandState by islandViewModel.state.collectAsStateWithLifecycle()
+    var islandExpanded by remember { mutableStateOf(false) }
+    var islandHeightPx by remember { mutableStateOf(0) }
+    val density = LocalDensity.current
+    // The card floats over the page, so give the content room for exactly its height.
+    val islandInset by animateDpAsState(
+        targetValue = if (islandExpanded && islandState.isActive) {
+            with(density) { islandHeightPx.toDp() } + 8.dp
+        } else {
+            0.dp
+        },
+        animationSpec = tween(220),
+        label = "islandInset"
+    )
+
     Scaffold(
         containerColor = VitalColors.paper,
         bottomBar = {
@@ -102,7 +128,10 @@ fun VitalNavigation() {
             NavHost(
                 navController = navController,
                 startDestination = "today",
-                modifier = Modifier.padding(innerPadding)
+                modifier = Modifier.padding(
+                    top = innerPadding.calculateTopPadding() + islandInset,
+                    bottom = innerPadding.calculateBottomPadding()
+                )
             ) {
                 composable("today") {
                     TodayScreen(
@@ -210,6 +239,29 @@ fun VitalNavigation() {
                 onNavigate = openRoute,
                 showDebug = isDebuggable
             )
+
+            // Lift already shows the same countdown full size; the island would duplicate it.
+            if (currentRoute != "lift") {
+                RestIsland(
+                state = islandState,
+                expanded = islandExpanded,
+                onExpandedChange = { islandExpanded = it },
+                onExtend = { islandViewModel.extendBy(ISLAND_EXTEND_SECONDS) },
+                onSkip = islandViewModel::skip,
+                onOpenLift = {
+                    islandExpanded = false
+                    navigateToTab(1)
+                },
+                onHeightChanged = { islandHeightPx = it },
+                modifier = Modifier
+                    .align(Alignment.TopCenter)
+                    .statusBarsPadding()
+                    .padding(top = 6.dp)
+                )
+            }
         }
     }
 }
+
+/** The island's +15 s matches a short top-up rather than a whole extra minute. */
+private const val ISLAND_EXTEND_SECONDS = 15
