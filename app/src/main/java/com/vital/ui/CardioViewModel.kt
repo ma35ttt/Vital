@@ -67,6 +67,11 @@ class CardioViewModel @Inject constructor(
             .map { sessions -> sessions.take(3) }
             .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
 
+    val todayCount: StateFlow<Int> =
+        cardioRepository.getCardioForDate(LOCAL_USER_ID, date)
+            .map { it.size }
+            .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), 0)
+
     val type: StateFlow<CardioType> = draft.type.asStateFlow()
     val durationText: StateFlow<String> = draft.durationText.asStateFlow()
     val distanceText: StateFlow<String> = draft.distanceText.asStateFlow()
