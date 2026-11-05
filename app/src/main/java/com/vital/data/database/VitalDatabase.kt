@@ -27,7 +27,7 @@ import com.vital.data.seed.Converters
         Settings::class,
         SyncMeta::class
     ],
-    version = 2,
+    version = 3,
     exportSchema = true
 )
 @TypeConverters(Converters::class)
@@ -56,13 +56,25 @@ abstract class VitalDatabase : RoomDatabase() {
             }
         }
 
+        /** v3 adds the per-activity cardio fields; existing sessions keep them as null. */
+        private val MIGRATION_2_3 = object : Migration(2, 3) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL("ALTER TABLE cardio_sessions ADD COLUMN level INTEGER")
+                db.execSQL("ALTER TABLE cardio_sessions ADD COLUMN cadenceSpm REAL")
+                db.execSQL("ALTER TABLE cardio_sessions ADD COLUMN floors INTEGER")
+                db.execSQL("ALTER TABLE cardio_sessions ADD COLUMN laps INTEGER")
+                db.execSQL("ALTER TABLE cardio_sessions ADD COLUMN stroke TEXT")
+                db.execSQL("ALTER TABLE cardio_sessions ADD COLUMN intensity TEXT")
+            }
+        }
+
         fun getDatabase(context: Context): VitalDatabase {
             return INSTANCE ?: synchronized(this) {
                 val instance = Room.databaseBuilder(
                     context.applicationContext,
                     VitalDatabase::class.java,
                     "vital.db"
-                ).addMigrations(MIGRATION_1_2)
+                ).addMigrations(MIGRATION_1_2, MIGRATION_2_3)
                     .fallbackToDestructiveMigration()
                     .build()
                 INSTANCE = instance

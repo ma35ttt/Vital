@@ -8,6 +8,8 @@ import com.vital.data.entity.MuscleGroup
 import com.vital.data.entity.Equipment
 import com.vital.data.entity.CardioType
 import com.vital.data.entity.KcalSource
+import com.vital.data.entity.StrokeType
+import com.vital.data.entity.Intensity
 import com.vital.data.entity.PhotoType
 import com.vital.data.entity.AiProvider
 import kotlinx.serialization.json.Json
@@ -85,6 +87,26 @@ class Converters {
     @TypeConverter
     fun toKcalSource(source: KcalSource?): String? {
         return source?.name
+    }
+
+    @TypeConverter
+    fun fromStrokeType(value: String?): StrokeType? {
+        return value?.let { StrokeType.valueOf(it) }
+    }
+
+    @TypeConverter
+    fun toStrokeType(type: StrokeType?): String? {
+        return type?.name
+    }
+
+    @TypeConverter
+    fun fromIntensity(value: String?): Intensity? {
+        return value?.let { Intensity.valueOf(it) }
+    }
+
+    @TypeConverter
+    fun toIntensity(value: Intensity?): String? {
+        return value?.name
     }
 
     @TypeConverter

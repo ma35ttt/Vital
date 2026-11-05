@@ -4,17 +4,21 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.vital.data.entity.CardioSession
 import com.vital.data.entity.CardioType
+import com.vital.data.entity.Intensity
 import com.vital.data.entity.KcalSource
 import com.vital.data.entity.Settings
+import com.vital.data.entity.StrokeType
 import com.vital.data.repository.CardioRepository
 import com.vital.data.repository.SettingsRepository
 import com.vital.data.seed.LOCAL_USER_ID
 import com.vital.domain.Acsm
+import com.vital.domain.Met
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
@@ -29,22 +33,20 @@ import kotlin.math.roundToInt
 
 /**
  * Cardio's in-progress form. The nav entry (and therefore the ViewModel) is destroyed when
- * the user switches tabs, so the four fields and the selected type live here until the
- * process dies. Saved sessions are Room rows.
+ * the user switches tabs, so the selected type and the typed values live here until the
+ * process dies. Values are keyed by [CardioField], so switching activity keeps the shared
+ * ones (duration, distance) and simply hides the rest. Saved sessions are Room rows.
  */
 @Singleton
 class CardioDraftStore @Inject constructor() {
     val type = MutableStateFlow(CardioType.RUNNING)
-    val durationText = MutableStateFlow("")
-    val distanceText = MutableStateFlow("")
-    val speedText = MutableStateFlow("")
-    val inclineText = MutableStateFlow("")
+    val values = MutableStateFlow<Map<CardioField, String>>(emptyMap())
 }
 
 /**
  * Cardio reads today's sessions for the hero total and the three most recent sessions for
- * the RECENT list. Calories are always an ACSM walking estimate from the form; the app has
- * no calorie field on this tab.
+ * the RECENT list. Walking and running estimate with ACSM; every other activity uses a MET
+ * estimate. The app has no calorie field on this tab.
  */
 @HiltViewModel
 class CardioViewModel @Inject constructor(
@@ -73,69 +75,75 @@ class CardioViewModel @Inject constructor(
             .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), 0)
 
     val type: StateFlow<CardioType> = draft.type.asStateFlow()
-    val durationText: StateFlow<String> = draft.durationText.asStateFlow()
-    val distanceText: StateFlow<String> = draft.distanceText.asStateFlow()
-    val speedText: StateFlow<String> = draft.speedText.asStateFlow()
-    val inclineText: StateFlow<String> = draft.inclineText.asStateFlow()
+    val values: StateFlow<Map<CardioField, String>> = draft.values.asStateFlow()
+
+    /** Current body weight, read once here so the note can preview the estimate. */
+    private val weightKg: StateFlow<Double> =
+        settingsRepository.getSettings(LOCAL_USER_ID)
+            .map { it?.bodyWeightKg ?: fallback.bodyWeightKg }
+            .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), fallback.bodyWeightKg)
+
+    /** Live calories for the current form, or null while the duration is missing/invalid. */
+    val estimateKcal: StateFlow<Double?> =
+        combine(draft.type, draft.values, weightKg) { type, values, weight ->
+            parseCardioEntry(type, values)?.let { estimateSessionKcal(type, it, weight) }
+        }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), null)
 
     fun setType(value: CardioType) {
         draft.type.value = value
     }
 
-    fun setDuration(text: String) {
-        draft.durationText.value = text
-            .filter { it.isDigit() || it == ':' }
-            .take(8)
+    fun setValue(field: CardioField, text: String) {
+        val filtered = when (field.input) {
+            CardioInput.TEXT -> text.filter { it.isDigit() || it == ':' }.take(8)
+            CardioInput.INTEGER -> text.filter { it.isDigit() }.take(4)
+            CardioInput.DECIMAL -> filterDecimal(text)
+            CardioInput.PICKER -> return
+        }
+        draft.values.value = draft.values.value + (field to filtered)
     }
 
-    fun setDistance(text: String) {
-        draft.distanceText.value = filterDecimal(text)
-    }
-
-    fun setSpeed(text: String) {
-        draft.speedText.value = filterDecimal(text)
-    }
-
-    fun setIncline(text: String) {
-        draft.inclineText.value = filterDecimal(text)
+    fun cycle(field: CardioField) {
+        if (field.input != CardioInput.PICKER) return
+        val next = cyclePicker(field, draft.values.value[field]) ?: return
+        draft.values.value = draft.values.value + (field to next)
     }
 
     fun save() {
-        val durationSec = parseCardioDuration(durationText.value) ?: return
-        val typedDistance = distanceText.value.toDoubleOrNull()?.takeIf { it > 0.0 }
-        val typedSpeed = speedText.value.toDoubleOrNull()?.takeIf { it > 0.0 }
-        val speed = typedSpeed ?: typedDistance?.let { km ->
-            if (durationSec > 0) km / (durationSec / 3_600.0) else null
-        }
-        // The mock shows the distance for a treadmill entry, so fill it in from speed x time.
-        val distance = typedDistance ?: typedSpeed?.let { kmh -> kmh * durationSec / 3_600.0 }
-        val incline = inclineText.value.toDoubleOrNull()?.coerceAtLeast(0.0) ?: 0.0
+        val type = draft.type.value
+        val entry = parseCardioEntry(type, draft.values.value) ?: return
 
         viewModelScope.launch {
             saveMutex.withLock {
-                // Read the current weight here: nothing on this screen collects the settings
-                // StateFlow, so a WhileSubscribed flow would stay at its fallback value.
-                val weightKg = settingsRepository.getSettings(LOCAL_USER_ID)
+                // Read the current weight here: the screen only collects the estimate flow.
+                val weight = settingsRepository.getSettings(LOCAL_USER_ID)
                     .first()?.bodyWeightKg ?: fallback.bodyWeightKg
-                val kcal = estimateCardioKcal(speed, incline, weightKg, durationSec)
+                val kcal = estimateSessionKcal(type, entry, weight)
 
                 cardioRepository.insertCardioSession(
                     CardioSession.create(
                         userId = LOCAL_USER_ID,
                         date = date,
-                        type = type.value,
-                        durationSec = durationSec,
+                        type = type,
+                        durationSec = entry.durationSec,
                         kcal = kcal ?: 0.0,
-                        distanceKm = distance,
-                        speedKmh = speed,
-                        inclinePct = incline,
-                        kcalSource = if (kcal != null) KcalSource.ACSM else KcalSource.READ
+                        distanceKm = entry.distanceKm,
+                        speedKmh = entry.speedKmh,
+                        inclinePct = entry.inclinePct,
+                        level = entry.level,
+                        cadenceSpm = entry.cadenceSpm,
+                        floors = entry.floors,
+                        laps = entry.laps,
+                        stroke = entry.stroke,
+                        intensity = entry.intensity,
+                        kcalSource = when {
+                            kcal == null -> KcalSource.READ
+                            type.usesAcsm -> KcalSource.ACSM
+                            else -> KcalSource.MET
+                        }
                     )
                 )
-                draft.durationText.value = ""
-                draft.distanceText.value = ""
-                draft.speedText.value = ""
-                draft.inclineText.value = ""
+                draft.values.value = emptyMap()
             }
         }
     }
@@ -152,6 +160,64 @@ class CardioViewModel @Inject constructor(
         }.take(6)
         return filtered
     }
+}
+
+/**
+ * A typed Cardio form parsed into the values a session stores. Null when the duration is
+ * missing or invalid. Distance and speed are inferred from each other when only one is set;
+ * rowing's /500 m pace is converted to a speed so it lands in the same column.
+ */
+internal data class CardioEntry(
+    val durationSec: Int,
+    val distanceKm: Double?,
+    val speedKmh: Double?,
+    val inclinePct: Double?,
+    val level: Int?,
+    val cadenceSpm: Double?,
+    val floors: Int?,
+    val laps: Int?,
+    val stroke: StrokeType?,
+    val intensity: Intensity?
+)
+
+internal fun parseCardioEntry(type: CardioType, values: Map<CardioField, String>): CardioEntry? {
+    val durationSec = parseCardioDuration(values[CardioField.DURATION].orEmpty()) ?: return null
+
+    val typedDistanceKm = values[CardioField.DISTANCE_KM]?.toDoubleOrNull()?.takeIf { it > 0.0 }
+    val typedDistanceM = values[CardioField.DISTANCE_M]?.toDoubleOrNull()?.takeIf { it > 0.0 }
+    val distanceKm = typedDistanceKm ?: typedDistanceM?.let { it / 1000.0 }
+
+    val typedSpeed = values[CardioField.SPEED]?.toDoubleOrNull()?.takeIf { it > 0.0 }
+    val paceSpeed = paceToSpeedKmh(values[CardioField.PACE])
+    val speedKmh = typedSpeed ?: paceSpeed ?: distanceKm?.let { km ->
+        if (durationSec > 0) km / (durationSec / 3_600.0) else null
+    }
+    // Mirror the existing screen: a treadmill-style speed fills in the distance.
+    val distance = distanceKm ?: speedKmh?.let { it * durationSec / 3_600.0 }
+
+    return CardioEntry(
+        durationSec = durationSec,
+        distanceKm = distance,
+        speedKmh = speedKmh,
+        inclinePct = values[CardioField.INCLINE]?.toDoubleOrNull()?.coerceAtLeast(0.0),
+        level = values[CardioField.LEVEL]?.toIntOrNull(),
+        cadenceSpm = values[CardioField.CADENCE]?.toDoubleOrNull(),
+        floors = values[CardioField.FLOORS]?.toIntOrNull(),
+        laps = values[CardioField.LAPS]?.toIntOrNull(),
+        stroke = resolveStroke(type, values[CardioField.STROKE]),
+        intensity = resolveIntensity(type, values[CardioField.INTENSITY])
+    )
+}
+
+/** Walking/running go through ACSM; every other activity uses its MET value. */
+internal fun estimateSessionKcal(
+    type: CardioType,
+    entry: CardioEntry,
+    weightKg: Double
+): Double? = if (type.usesAcsm) {
+    estimateCardioKcal(entry.speedKmh, entry.inclinePct, weightKg, entry.durationSec)
+} else {
+    Met.kcal(type, weightKg, entry.durationSec, entry.intensity, entry.stroke)
 }
 
 /**
@@ -176,9 +242,19 @@ internal fun parseCardioDuration(text: String): Int? {
     return seconds.takeIf { it > 0 }
 }
 
+/** Rowing's `2:30` per 500 m as a speed in km/h (1800 / seconds). */
+internal fun paceToSpeedKmh(pace: String?): Double? {
+    val seconds = pace?.let { parseCardioDuration(it) } ?: return null
+    return if (seconds > 0) 1_800.0 / seconds else null
+}
+
+/** A running speed in km/h as the /500 m split, for the detail dialog. */
+internal fun speedToPace(speedKmh: Double): Int? =
+    if (speedKmh > 0.0) (1_800.0 / speedKmh).roundToInt() else null
+
 internal fun estimateCardioKcal(
     speedKmh: Double?,
-    inclinePercent: Double,
+    inclinePercent: Double?,
     weightKg: Double,
     durationSeconds: Int
 ): Double? {
@@ -187,7 +263,7 @@ internal fun estimateCardioKcal(
     // equation inside Acsm, so the estimate keeps working at jog/run pace.
     return Acsm.kcal(
         speedKmh = speed,
-        inclinePercent = inclinePercent,
+        inclinePercent = inclinePercent ?: 0.0,
         weightKg = weightKg,
         durationSeconds = durationSeconds
     )

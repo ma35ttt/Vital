@@ -49,7 +49,19 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.vital.data.entity.CardioSession
 import com.vital.data.entity.CardioType
+import com.vital.data.entity.KcalSource
+import com.vital.domain.Met
+import com.vital.ui.CardioField
+import com.vital.ui.CardioFieldSpec
+import com.vital.ui.CardioInput
 import com.vital.ui.CardioViewModel
+import com.vital.ui.display
+import com.vital.ui.fieldSpecs
+import com.vital.ui.pickerDisplay
+import com.vital.ui.resolveIntensity
+import com.vital.ui.resolveStroke
+import com.vital.ui.speedToPace
+import com.vital.ui.usesAcsm
 import com.vital.ui.components.EditorialButton
 import com.vital.ui.components.EditorialEyebrow
 import com.vital.ui.components.EditorialHeader
@@ -88,15 +100,13 @@ fun CardioScreen(
     val todayCount by viewModel.todayCount.collectAsStateWithLifecycle(0)
     val recent by viewModel.recentSessions.collectAsStateWithLifecycle(emptyList())
     val type by viewModel.type.collectAsStateWithLifecycle(CardioType.RUNNING)
-    val durationText by viewModel.durationText.collectAsStateWithLifecycle("")
-    val distanceText by viewModel.distanceText.collectAsStateWithLifecycle("")
-    val speedText by viewModel.speedText.collectAsStateWithLifecycle("")
-    val inclineText by viewModel.inclineText.collectAsStateWithLifecycle("")
+    val values by viewModel.values.collectAsStateWithLifecycle()
+    val estimateKcal by viewModel.estimateKcal.collectAsStateWithLifecycle()
 
     var detailSession by remember { mutableStateOf<CardioSession?>(null) }
     var showDetail by rememberSaveable { mutableStateOf(false) }
 
-    val durationSec = parseCardioDuration(durationText)
+    val durationSec = parseCardioDuration(values[CardioField.DURATION].orEmpty())
     val dateLabel = remember {
         LocalDate.now()
             .format(DateTimeFormatter.ofPattern("EEE dd.MM", Locale.US))
@@ -139,14 +149,10 @@ fun CardioScreen(
             }
             item {
                 CardioFieldGrid(
-                    durationText = durationText,
-                    distanceText = distanceText,
-                    speedText = speedText,
-                    inclineText = inclineText,
-                    onDurationChange = viewModel::setDuration,
-                    onDistanceChange = viewModel::setDistance,
-                    onSpeedChange = viewModel::setSpeed,
-                    onInclineChange = viewModel::setIncline,
+                    type = type,
+                    values = values,
+                    onValueChange = viewModel::setValue,
+                    onCycle = viewModel::cycle,
                     modifier = Modifier.padding(top = 18.dp)
                 )
             }
@@ -170,6 +176,9 @@ fun CardioScreen(
             }
             item {
                 EstimateNote(
+                    type = type,
+                    values = values,
+                    estimateKcal = estimateKcal,
                     modifier = Modifier.padding(top = 26.dp)
                 )
             }
@@ -278,70 +287,40 @@ private fun CardioTypeTabs(
 
 @Composable
 private fun CardioFieldGrid(
-    durationText: String,
-    distanceText: String,
-    speedText: String,
-    inclineText: String,
-    onDurationChange: (String) -> Unit,
-    onDistanceChange: (String) -> Unit,
-    onSpeedChange: (String) -> Unit,
-    onInclineChange: (String) -> Unit,
+    type: CardioType,
+    values: Map<CardioField, String>,
+    onValueChange: (CardioField, String) -> Unit,
+    onCycle: (CardioField) -> Unit,
     modifier: Modifier = Modifier
 ) {
+    val specs = type.fieldSpecs()
     Column(modifier = modifier.fillMaxWidth()) {
         Hairline()
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(IntrinsicSize.Min)
-        ) {
-            CardioField(
-                label = "Duration",
-                value = durationText,
-                onValueChange = onDurationChange,
-                keyboardType = KeyboardType.Text,
-                imeAction = ImeAction.Next,
-                startPadding = 0.dp,
-                modifier = Modifier.weight(1f)
-            )
-            CellDivider()
-            CardioField(
-                label = "Distance · km",
-                value = distanceText,
-                onValueChange = onDistanceChange,
-                keyboardType = KeyboardType.Decimal,
-                imeAction = ImeAction.Next,
-                startPadding = 20.dp,
-                modifier = Modifier.weight(1f)
-            )
+        specs.chunked(2).forEach { row ->
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(IntrinsicSize.Min)
+            ) {
+                row.forEachIndexed { index, spec ->
+                    if (index > 0) CellDivider()
+                    CardioFieldCell(
+                        spec = spec,
+                        value = values[spec.field],
+                        onValueChange = { onValueChange(spec.field, it) },
+                        onCycle = { onCycle(spec.field) },
+                        startPadding = if (index == 0) 0.dp else 20.dp,
+                        modifier = Modifier.weight(1f)
+                    )
+                }
+                if (row.size == 1) {
+                    // Other has three fields; the empty half keeps the divider straight.
+                    CellDivider()
+                    Spacer(Modifier.weight(1f))
+                }
+            }
+            Hairline()
         }
-        Hairline()
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(IntrinsicSize.Min)
-        ) {
-            CardioField(
-                label = "Speed · km/h",
-                value = speedText,
-                onValueChange = onSpeedChange,
-                keyboardType = KeyboardType.Decimal,
-                imeAction = ImeAction.Next,
-                startPadding = 0.dp,
-                modifier = Modifier.weight(1f)
-            )
-            CellDivider()
-            CardioField(
-                label = "Incline · %",
-                value = inclineText,
-                onValueChange = onInclineChange,
-                keyboardType = KeyboardType.Decimal,
-                imeAction = ImeAction.Done,
-                startPadding = 20.dp,
-                modifier = Modifier.weight(1f)
-            )
-        }
-        Hairline()
     }
 }
 
@@ -356,12 +335,11 @@ private fun CellDivider() {
 }
 
 @Composable
-private fun CardioField(
-    label: String,
-    value: String,
+private fun CardioFieldCell(
+    spec: CardioFieldSpec,
+    value: String?,
     onValueChange: (String) -> Unit,
-    keyboardType: KeyboardType,
-    imeAction: ImeAction,
+    onCycle: () -> Unit,
     startPadding: androidx.compose.ui.unit.Dp,
     modifier: Modifier = Modifier
 ) {
@@ -373,40 +351,69 @@ private fun CardioField(
         )
     ) {
         Text(
-            text = label,
+            text = spec.label,
             color = VitalColors.inkMuted,
             fontFamily = VitalFonts.InterTight,
             fontSize = 11.sp,
             fontWeight = FontWeight.Medium
         )
-        Box(modifier = Modifier.padding(top = 7.dp)) {
-            if (value.isEmpty()) {
+        if (spec.input == CardioInput.PICKER) {
+            Row(
+                modifier = Modifier
+                    .padding(top = 7.dp)
+                    .clickable(onClick = onCycle),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
                 Text(
-                    text = "—",
-                    color = VitalColors.inkMuted,
-                    fontFamily = VitalFonts.InterTight,
-                    fontSize = 26.sp,
-                    fontWeight = FontWeight.SemiBold
-                )
-            }
-            BasicTextField(
-                value = value,
-                onValueChange = onValueChange,
-                singleLine = true,
-                textStyle = TextStyle(
-                    color = VitalColors.ink,
+                    text = pickerDisplay(spec.field, value),
+                    color = VitalColors.orange,
                     fontFamily = VitalFonts.InterTight,
                     fontSize = 26.sp,
                     fontWeight = FontWeight.SemiBold,
                     letterSpacing = (-0.02).em
-                ),
-                cursorBrush = SolidColor(VitalColors.orange),
-                keyboardOptions = KeyboardOptions(
-                    keyboardType = keyboardType,
-                    imeAction = imeAction
-                ),
-                modifier = Modifier.fillMaxWidth()
-            )
+                )
+                Text(
+                    text = "▾",
+                    color = VitalColors.orange,
+                    fontFamily = VitalFonts.InterTight,
+                    fontSize = 15.sp,
+                    modifier = Modifier.padding(start = 7.dp)
+                )
+            }
+        } else {
+            Box(modifier = Modifier.padding(top = 7.dp)) {
+                if (value.isNullOrEmpty()) {
+                    Text(
+                        text = "—",
+                        color = VitalColors.inkMuted,
+                        fontFamily = VitalFonts.InterTight,
+                        fontSize = 26.sp,
+                        fontWeight = FontWeight.SemiBold
+                    )
+                }
+                BasicTextField(
+                    value = value.orEmpty(),
+                    onValueChange = onValueChange,
+                    singleLine = true,
+                    textStyle = TextStyle(
+                        color = VitalColors.ink,
+                        fontFamily = VitalFonts.InterTight,
+                        fontSize = 26.sp,
+                        fontWeight = FontWeight.SemiBold,
+                        letterSpacing = (-0.02).em
+                    ),
+                    cursorBrush = SolidColor(VitalColors.orange),
+                    keyboardOptions = KeyboardOptions(
+                        keyboardType = when (spec.input) {
+                            CardioInput.INTEGER -> KeyboardType.Number
+                            CardioInput.DECIMAL -> KeyboardType.Decimal
+                            else -> KeyboardType.Text
+                        },
+                        imeAction = ImeAction.Next
+                    ),
+                    modifier = Modifier.fillMaxWidth()
+                )
+            }
         }
     }
 }
@@ -484,16 +491,33 @@ private fun RecentRow(session: CardioSession, onClick: () -> Unit) {
 
 @Composable
 private fun EstimateNote(
+    type: CardioType,
+    values: Map<CardioField, String>,
+    estimateKcal: Double?,
     modifier: Modifier = Modifier
 ) {
+    val body = if (type.usesAcsm) {
+        "Walking equation up to 6 km/h, running equation above it."
+    } else {
+        val met = Met.value(
+            type = type,
+            intensity = resolveIntensity(type, values[CardioField.INTENSITY]),
+            stroke = resolveStroke(type, values[CardioField.STROKE])
+        )
+        buildString {
+            append(estimateSourceLabel(type, values))
+            if (met != null) append(" · ${formatCardioSpeed(met)} MET")
+            if (estimateKcal != null) append(" · ~${formatCardioKcal(estimateKcal)} kcal")
+        }
+    }
     Column(modifier = modifier.fillMaxWidth()) {
         EditorialSectionHeader(
             title = "Estimate",
-            trailing = "ACSM"
+            trailing = if (type.usesAcsm) "ACSM" else "MET"
         )
         Hairline()
         Text(
-            text = "Walking equation up to 6 km/h, running equation above it.",
+            text = body,
             color = VitalColors.inkMuted,
             fontFamily = VitalFonts.InterTight,
             fontSize = 12.sp,
@@ -501,6 +525,14 @@ private fun EstimateNote(
         )
         Hairline()
     }
+}
+
+private fun estimateSourceLabel(type: CardioType, values: Map<CardioField, String>): String = when (type) {
+    CardioType.SWIMMING ->
+        "Swimming, " + (resolveStroke(type, values[CardioField.STROKE])?.display()?.lowercase() ?: "freestyle")
+    CardioType.OTHER ->
+        "Other, " + (resolveIntensity(type, values[CardioField.INTENSITY])?.display()?.lowercase() ?: "moderate")
+    else -> cardioTypeLabel(type)
 }
 
 // ---- detail dialog -------------------------------------------------------------------------
@@ -529,11 +561,8 @@ private fun CardioDetailDialog(
                 letterSpacing = 0.16.em
             )
             Spacer(Modifier.height(14.dp))
-            DetailLine("Duration", formatRestTime(session.durationSec))
-            session.distanceKm?.let { DetailLine("Distance", formatCardioDistance(it)) }
-            session.speedKmh?.let { DetailLine("Speed", "${formatCardioSpeed(it)} km/h") }
-            session.inclinePct?.let { DetailLine("Incline", "${formatCardioSpeed(it)} %") }
-            DetailLine("Kcal", "${formatCardioKcal(session.kcal)} · ACSM est")
+            cardioDetailLines(session).forEach { (label, value) -> DetailLine(label, value) }
+            DetailLine("Kcal", "${formatCardioKcal(session.kcal)} · ${kcalSourceLabel(session.kcalSource)}")
             Spacer(Modifier.height(16.dp))
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 DialogOutlineButton(
@@ -645,4 +674,43 @@ private fun formatCardioDistance(km: Double): String {
         String.format(Locale.US, "%.2f", rounded).trimEnd('0').trimEnd('.')
     }
     return "$text km"
+}
+
+private fun formatCardioMetres(km: Double): String =
+    "%,d m".format(Locale.US, (km * 1_000.0).roundToInt())
+
+private fun formatPaceBySeconds(seconds: Int): String =
+    "%d:%02d".format(Locale.US, seconds / 60, seconds % 60)
+
+private fun kcalSourceLabel(source: KcalSource): String = when (source) {
+    KcalSource.ACSM -> "ACSM est"
+    KcalSource.MET -> "MET est"
+    KcalSource.READ -> "recorded"
+}
+
+/** The lines the detail dialog shows, driven by the session's own activity fields. */
+private fun cardioDetailLines(session: CardioSession): List<Pair<String, String>> {
+    val lines = mutableListOf("Duration" to formatRestTime(session.durationSec))
+    session.type.fieldSpecs()
+        .filter { it.field != CardioField.DURATION }
+        .mapNotNull { spec ->
+            cardioDetailValue(session, spec.field)?.let { spec.label to it }
+        }
+        .forEach { lines += it }
+    return lines
+}
+
+private fun cardioDetailValue(session: CardioSession, field: CardioField): String? = when (field) {
+    CardioField.DISTANCE_KM -> session.distanceKm?.let { formatCardioDistance(it) }
+    CardioField.DISTANCE_M -> session.distanceKm?.let { formatCardioMetres(it) }
+    CardioField.SPEED -> session.speedKmh?.let { "${formatCardioSpeed(it)} km/h" }
+    CardioField.PACE -> session.speedKmh?.let { speedToPace(it) }?.let { formatPaceBySeconds(it) }
+    CardioField.INCLINE -> session.inclinePct?.let { "${formatCardioSpeed(it)} %" }
+    CardioField.LEVEL -> session.level?.toString()
+    CardioField.CADENCE -> session.cadenceSpm?.let { "${formatEditorialNumber(it)} spm" }
+    CardioField.FLOORS -> session.floors?.toString()
+    CardioField.LAPS -> session.laps?.toString()
+    CardioField.STROKE -> session.stroke?.display()
+    CardioField.INTENSITY -> session.intensity?.display()
+    CardioField.DURATION -> null
 }
