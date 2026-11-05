@@ -4,6 +4,7 @@ import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -11,8 +12,10 @@ import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.navigationBarsPadding
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -47,7 +50,8 @@ const val NAV_ROW_HEIGHT_DP = 64
 fun VitalBottomNav(
     selectedIndex: Int,
     onTabSelected: (Int) -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    showMoreDot: Boolean = false
 ) {
     Column(
         modifier = modifier
@@ -75,11 +79,31 @@ fun VitalBottomNav(
                     horizontalAlignment = Alignment.CenterHorizontally,
                     verticalArrangement = Arrangement.Center
                 ) {
-                    VitalNavGlyph(
-                        tabIndex = index,
-                        color = color,
-                        modifier = Modifier.size(21.dp)
-                    )
+                    Box {
+                        VitalNavGlyph(
+                            tabIndex = index,
+                            color = color,
+                            modifier = Modifier.size(21.dp)
+                        )
+                        // Quiet 8 dp "something needs you" dot on More, with a paper ring so it
+                        // reads clearly against the glyph. See the notification mock, option A.
+                        if (tab.route == "more" && showMoreDot) {
+                            Box(
+                                modifier = Modifier
+                                    .align(Alignment.TopEnd)
+                                    .offset(x = 5.dp, y = (-3).dp)
+                                    .size(12.dp)
+                                    .background(VitalColors.paper, CircleShape),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Box(
+                                    modifier = Modifier
+                                        .size(8.dp)
+                                        .background(VitalColors.orange, CircleShape)
+                                )
+                            }
+                        }
+                    }
                     Spacer(modifier = Modifier.height(5.dp))
                     Text(
                         text = tab.label,

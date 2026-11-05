@@ -25,6 +25,7 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import com.vital.ui.LiveIslandViewModel
+import com.vital.ui.ReminderStatusViewModel
 import com.vital.ui.components.MoreSheet
 import com.vital.ui.components.QuickAddAction
 import com.vital.ui.components.RestIsland
@@ -95,6 +96,8 @@ fun VitalNavigation() {
 
     val islandViewModel: LiveIslandViewModel = hiltViewModel()
     val islandState by islandViewModel.state.collectAsStateWithLifecycle()
+    val reminderViewModel: ReminderStatusViewModel = hiltViewModel()
+    val moreDotVisible by reminderViewModel.moreDotVisible.collectAsStateWithLifecycle()
     var islandExpanded by remember { mutableStateOf(false) }
     var islandHeightPx by remember { mutableStateOf(0) }
     val density = LocalDensity.current
@@ -120,7 +123,8 @@ fun VitalNavigation() {
                     } else {
                         navigateToTab(index)
                     }
-                }
+                },
+                showMoreDot = moreDotVisible
             )
         }
     ) { innerPadding ->

@@ -10,18 +10,9 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Favorite
 import com.vital.ui.theme.VitalColors
-import com.vital.ui.screens.WeeksPeriod
 import com.vital.ui.components.Period
 
 class MainViewModel @Inject constructor() : ViewModel() {
-
-    // Weeks screen data
-    val weeksPeriod = MutableStateFlow(WeeksPeriod.L)
-    val weeklyMacroData = MutableStateFlow(emptyList<Float>())
-    val weeklyVolumeData = MutableStateFlow(emptyList<Float>())
-    val weeklyWeightData = MutableStateFlow(emptyList<Float>())
-    val weeklyPrData = MutableStateFlow(emptyList<Float>())
-    val weeklyLabels12 = MutableStateFlow(emptyList<String>())
 
     // Today screen data
     val remainingKcal = MutableStateFlow(0f)
@@ -31,6 +22,8 @@ class MainViewModel @Inject constructor() : ViewModel() {
     val proteinTarget = MutableStateFlow(180)
     val carbsTarget = MutableStateFlow(250)
     val fatTarget = MutableStateFlow(85)
+    /** Progress screen only; Weeks now reads Room through WeeksViewModel. */
+    val weeklyWeightData = MutableStateFlow(emptyList<Float>())
     val weeklyKcalData = MutableStateFlow(emptyList<Float>())
     val weeklyLabels = MutableStateFlow(emptyList<String>())
     val workoutsToday = MutableStateFlow(emptyList<WorkoutCapsule>())
@@ -67,12 +60,10 @@ class MainViewModel @Inject constructor() : ViewModel() {
 
     private fun loadSampleData() {
         viewModelScope.launch {
-            // Sample data for Weeks screen
-            weeklyLabels12.value = com.vital.ui.screens.WeeksScreenPreviewData.weeklyLabels12
-            weeklyMacroData.value = com.vital.ui.screens.WeeksScreenPreviewData.weeklyMacro
-            weeklyVolumeData.value = com.vital.ui.screens.WeeksScreenPreviewData.weeklyVolume
-            weeklyWeightData.value = com.vital.ui.screens.WeeksScreenPreviewData.weeklyWeight
-            weeklyPrData.value = com.vital.ui.screens.WeeksScreenPreviewData.weeklyPrs
+            weeklyWeightData.value = listOf(
+                0.50f, 0.48f, 0.49f, 0.47f, 0.46f, 0.45f,
+                0.44f, 0.43f, 0.42f, 0.41f, 0.40f, 0.39f
+            )
 
             // Sample data for Meals screen
             mealsToday.value = listOf(
@@ -86,10 +77,6 @@ class MainViewModel @Inject constructor() : ViewModel() {
             progressPhotos.value = com.vital.ui.screens.ProgressScreenPreviewData.samplePhotos
             measurements.value = com.vital.ui.screens.ProgressScreenPreviewData.sampleMeasurements
         }
-    }
-
-    fun setWeeksPeriod(period: WeeksPeriod) {
-        weeksPeriod.value = period
     }
 }
 
