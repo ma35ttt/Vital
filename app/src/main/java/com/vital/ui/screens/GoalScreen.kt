@@ -61,6 +61,9 @@ import kotlin.math.roundToInt
 
 private const val LB_PER_KG = 2.2046226218
 
+/** The mock's healthy-band green; semantic, so it stays outside the single-accent palette. */
+private val HealthyGreen = Color(0xFF2FA36B)
+
 /**
  * The body-goal hub: where the user is, where they're headed, and the daily plan derived from
  * their height, age, sex and cardio level. "Edit goal" opens the same fields inline; saving also
@@ -416,12 +419,17 @@ private fun HealthyRangeBar(
     modifier: Modifier = Modifier
 ) {
     val range = plan.healthyRange
-    val points = listOfNotNull(range.minKg, range.maxKg, nowKg, goalKg)
-    val lo0 = points.minOrNull() ?: 0.0
-    val hi0 = points.maxOrNull() ?: 0.0
-    val pad = ((hi0 - lo0) * 0.20).coerceAtLeast(4.0)
-    val lo = (lo0 - pad).coerceAtLeast(0.0)
-    val hi = hi0 + pad
+    // The bar is a fixed BMI 15–35 window, not a zoom on the user's data. That keeps the
+    // healthy band a consistent middle slice and puts NOW/GOAL where the design expects.
+    val metres = heightCm / 100.0
+    val square = metres * metres
+    val bmiLow = 15.0 * square
+    val bmiHigh = 35.0 * square
+    val markerMin = listOfNotNull(nowKg, goalKg).minOrNull() ?: nowKg
+    val markerMax = listOfNotNull(nowKg, goalKg).maxOrNull() ?: nowKg
+    val contextSpan = (bmiHigh - bmiLow).coerceAtLeast(1.0)
+    val lo = if (markerMin < bmiLow) markerMin - contextSpan * 0.02 else bmiLow
+    val hi = if (markerMax > bmiHigh) markerMax + contextSpan * 0.02 else bmiHigh
     val span = (hi - lo).coerceAtLeast(1.0)
 
     fun frac(value: Double): Float = ((value - lo) / span).toFloat().coerceIn(0f, 1f)
@@ -494,7 +502,7 @@ private fun HealthyRangeBar(
                     modifier = Modifier
                         .weight((fMax - fMin).coerceAtLeast(0.005f))
                         .fillMaxHeight()
-                        .background(VitalColors.orange.copy(alpha = 0.45f))
+                        .background(HealthyGreen.copy(alpha = 0.55f))
                 )
                 Box(
                     modifier = Modifier
@@ -524,7 +532,7 @@ private fun HealthyRangeBar(
             modifier = Modifier.padding(top = 2.dp),
             horizontalArrangement = Arrangement.spacedBy(14.dp)
         ) {
-            LegendDot(label = "HEALTHY", color = VitalColors.orange.copy(alpha = 0.45f))
+            LegendDot(label = "HEALTHY", color = HealthyGreen.copy(alpha = 0.55f))
             LegendDot(label = "NOW", color = VitalColors.inkMuted)
             if (goalKg != null) LegendDot(label = "GOAL", color = VitalColors.orange)
         }
