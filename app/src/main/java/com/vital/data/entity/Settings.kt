@@ -23,6 +23,8 @@ data class Settings(
     val trueBlack: Boolean = true,
     val lightMode: Boolean = false,
     val themeColor: String = "fudPink",
+    // Ask the display for its highest refresh rate (120Hz panels) so motion is smooth.
+    val highRefreshRate: Boolean = true,
     // Rest timer
     val restPresetSec: Int = 180,
     // Notifications

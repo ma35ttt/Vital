@@ -246,6 +246,18 @@ fun SettingsScreen(
                     }
                 )
             }
+            item {
+                ValueRow(
+                    label = "Smooth motion",
+                    value = if (settings.highRefreshRate) "Highest refresh rate" else "System default",
+                    trailing = {
+                        EditorialSwitch(
+                            checked = settings.highRefreshRate,
+                            onCheckedChange = viewModel::setHighRefreshRate
+                        )
+                    }
+                )
+            }
 
             item { SectionLabel("AI coach", topPadding = 28.dp) }
             item {

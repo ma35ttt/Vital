@@ -42,6 +42,10 @@ class SettingsViewModel @Inject constructor(
 
     fun setTrueBlack(enabled: Boolean) = updateSettings { it.copy(trueBlack = enabled) }
 
+    /** Requests the display's highest refresh rate; see [com.vital.ui.DisplayRefresh]. */
+    fun setHighRefreshRate(enabled: Boolean) =
+        updateSettings { it.copy(highRefreshRate = enabled) }
+
     /** Switches the app theme; legacy light-mode flag is kept in sync for older readers. */
     fun setTheme(themeId: String) = updateSettings {
         it.copy(themeId = themeId, lightMode = VitalThemes.byId(themeId).isLight)
