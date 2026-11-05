@@ -28,7 +28,7 @@ import com.vital.data.seed.Converters
         SyncMeta::class,
         SyncCursor::class
     ],
-    version = 6,
+    version = 7,
     exportSchema = true
 )
 @TypeConverters(Converters::class)
@@ -112,6 +112,27 @@ abstract class VitalDatabase : RoomDatabase() {
             }
         }
 
+        /**
+         * v7 adds the body-goal fields used to estimate maintenance and the daily target. Every
+         * column is nullable or defaulted, so existing rows keep eating exactly what they did
+         * before until the user sets a goal.
+         */
+        private val MIGRATION_6_7 = object : Migration(6, 7) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL("ALTER TABLE settings ADD COLUMN heightCm REAL NOT NULL DEFAULT 178.0")
+                db.execSQL("ALTER TABLE settings ADD COLUMN age INTEGER NOT NULL DEFAULT 30")
+                db.execSQL("ALTER TABLE settings ADD COLUMN sex TEXT NOT NULL DEFAULT 'MALE'")
+                db.execSQL(
+                    "ALTER TABLE settings ADD COLUMN activityLevel TEXT NOT NULL DEFAULT 'MODERATE'"
+                )
+                db.execSQL("ALTER TABLE settings ADD COLUMN goalType TEXT NOT NULL DEFAULT 'MAINTAIN'")
+                db.execSQL("ALTER TABLE settings ADD COLUMN goalWeightKg REAL")
+                db.execSQL(
+                    "ALTER TABLE settings ADD COLUMN goalRateKgPerWeek REAL NOT NULL DEFAULT 0.5"
+                )
+            }
+        }
+
         fun getDatabase(context: Context): VitalDatabase {
             return INSTANCE ?: synchronized(this) {
                 val instance = Room.databaseBuilder(
@@ -119,7 +140,8 @@ abstract class VitalDatabase : RoomDatabase() {
                     VitalDatabase::class.java,
                     "vital.db"
                 ).addMigrations(
-                    MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5, MIGRATION_5_6
+                    MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5, MIGRATION_5_6,
+                    MIGRATION_6_7
                 )
                     .fallbackToDestructiveMigration()
                     .build()

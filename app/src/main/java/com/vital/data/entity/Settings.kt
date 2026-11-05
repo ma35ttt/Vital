@@ -15,6 +15,14 @@ data class Settings(
     val carbsTarget: Int = 250,
     val fatTarget: Int = 85,
     val bodyWeightKg: Double = 75.0,
+    // Body goals — drive the maintenance estimate and the daily target.
+    val heightCm: Double = 178.0,
+    val age: Int = 30,
+    val sex: Sex = Sex.MALE,
+    val activityLevel: ActivityLevel = ActivityLevel.MODERATE,
+    val goalType: GoalType = GoalType.MAINTAIN,
+    val goalWeightKg: Double? = null,
+    val goalRateKgPerWeek: Double = 0.5,
     // AI settings
     val aiProvider: AiProvider = AiProvider.GEMINI,
     val aiApiKeyEncrypted: String? = null,
@@ -50,4 +58,19 @@ data class Settings(
 
 enum class AiProvider {
     GEMINI, OPENROUTER
+}
+
+/** Biological sex as used by the Mifflin-St Jeor energy equation. */
+enum class Sex {
+    MALE, FEMALE
+}
+
+/** Self-reported cardio/activity level; each bucket maps to a TDEE multiplier in [com.vital.domain]. */
+enum class ActivityLevel {
+    NONE, LIGHT, MODERATE, HIGH
+}
+
+/** What the user is aiming for; drives the daily target around maintenance. */
+enum class GoalType {
+    LOSE, MAINTAIN, GAIN
 }
