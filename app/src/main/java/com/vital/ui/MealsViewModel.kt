@@ -30,7 +30,17 @@ import java.time.LocalTime
 import javax.inject.Inject
 import com.vital.domain.Food as ParserFood
 
-enum class MealMethod { SEARCH, TEXT, WEB, RECIPE }
+/** One searchable food; a name with RAW and COOKED rows is grouped so the picker asks once. */
+data class FoodChoice(
+    val name: String,
+    val variants: Map<FoodVariant, Food>
+) {
+    val default: Food
+        get() = variants[FoodVariant.NONE] ?: variants[FoodVariant.RAW] ?: variants.values.first()
+
+    val needsVariant: Boolean
+        get() = FoodVariant.RAW in variants && FoodVariant.COOKED in variants
+}
 
 /**
  * Meals reads and writes the real MealLogEntry table for today. The smart-text parser is
@@ -61,17 +71,34 @@ class MealsViewModel @Inject constructor(
     private val _query = MutableStateFlow("")
     val query: StateFlow<String> = _query.asStateFlow()
 
-    private val _method = MutableStateFlow(MealMethod.SEARCH)
-    val method: StateFlow<MealMethod> = _method.asStateFlow()
-
     val parsed: StateFlow<ParseResult> = combine(foods, _query) { list, text ->
         if (text.isBlank()) ParseResult(emptyList(), emptyList())
         else parseSmartText(text, list.toParserFoods())
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), ParseResult(emptyList(), emptyList()))
 
-    val searchResults: StateFlow<List<Food>> = combine(foods, _query) { list, text ->
+    /** Search over the 600+ bundled foods, grouped by name so RAW/COOKED becomes one row. */
+    val choices: StateFlow<List<FoodChoice>> = combine(foods, _query) { list, text ->
         if (text.isBlank()) emptyList()
-        else list.filter { it.name.contains(text, ignoreCase = true) }.take(8)
+        else list.asSequence()
+            .filter { it.matches(text) }
+            .groupBy { it.name.trim().lowercase() }
+            .values
+            .take(12)
+            .map { rows -> FoodChoice(rows.first().name, rows.associateBy { it.variant }) }
+    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
+
+    /** Foods logged in the last two weeks, most recent first, to fill the sheet's Recent list. */
+    val recentFoods: StateFlow<List<Food>> = combine(
+        foods,
+        mealLogRepository.getMealsForDateRange(
+            LOCAL_USER_ID,
+            LocalDate.now().minusDays(14).toString(),
+            date
+        )
+    ) { list, logs ->
+        logs.mapNotNull { it.foodId }.distinct()
+            .mapNotNull { id -> list.firstOrNull { it.id == id } }
+            .take(6)
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
 
     /** Eaten kcal comes from the logged rows, not from macro-derived calories, so the hero
@@ -84,9 +111,8 @@ class MealsViewModel @Inject constructor(
         _query.value = text
     }
 
-    fun setMethod(method: MealMethod) {
-        _method.value = method
-    }
+    /** Serving weight for whole items (an egg, a banana); null when only grams make sense. */
+    fun gramsPerUnitFor(food: Food): Double? = food.name.gramsPerUnit()
 
     /** The slot the current time falls into; the ADD button logs here. */
     fun defaultSlot(): MealSlot = when (LocalTime.now().hour) {
@@ -208,6 +234,11 @@ private fun Food.toParserMacros(): FoodMacros =
         carbsPer100g = carbsPer100,
         fatPer100g = fatPer100
     )
+
+/** Name match plus the Hindi name and source code stored in [referenceName]. */
+private fun Food.matches(text: String): Boolean =
+    name.contains(text, ignoreCase = true) ||
+        referenceName?.contains(text, ignoreCase = true) == true
 
 /** "Eggs (Whole)" -> "eggs", "Ground Beef 93%" -> "ground beef". */
 private fun String.normalizedName(): String =
