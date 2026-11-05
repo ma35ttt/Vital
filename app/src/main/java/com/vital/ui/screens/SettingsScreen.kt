@@ -68,8 +68,10 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LifecycleEventEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.vital.auth.AccountState
 import com.vital.data.entity.AiProvider
 import com.vital.data.entity.Settings
+import com.vital.ui.AccountViewModel
 import com.vital.ui.SettingsViewModel
 import com.vital.ui.components.EditorialEyebrow
 import com.vital.ui.components.EditorialHeader
@@ -98,10 +100,14 @@ fun SettingsScreen(
     onNavigateToWeeks: () -> Unit,
     onOpenDebugShowcase: (() -> Unit)? = null,
     onBack: () -> Unit = {},
-    viewModel: SettingsViewModel = hiltViewModel()
+    viewModel: SettingsViewModel = hiltViewModel(),
+    accountViewModel: AccountViewModel = hiltViewModel()
 ) {
     val settings by viewModel.settings.collectAsStateWithLifecycle()
     val user by viewModel.user.collectAsStateWithLifecycle()
+    val account by accountViewModel.account.collectAsStateWithLifecycle()
+    val signingIn by accountViewModel.signingIn.collectAsStateWithLifecycle()
+    val signInError by accountViewModel.signInError.collectAsStateWithLifecycle()
     val context = LocalContext.current
     var editingTargets by remember { mutableStateOf(false) }
     var editingKey by remember { mutableStateOf(false) }
@@ -178,6 +184,18 @@ fun SettingsScreen(
                 TargetsMacroGrid(
                     settings = settings,
                     modifier = Modifier.padding(top = 22.dp)
+                )
+            }
+
+            item { SectionLabel("Account", topPadding = 28.dp) }
+            item {
+                AccountSection(
+                    account = account,
+                    isConfigured = accountViewModel.isConfigured,
+                    signingIn = signingIn,
+                    error = signInError,
+                    onSignIn = { accountViewModel.signIn(context) },
+                    onSignOut = accountViewModel::signOut
                 )
             }
 
@@ -588,6 +606,83 @@ private fun TargetsMacroGrid(
 }
 
 // ---- shared rows ---------------------------------------------------------------------------
+
+@Composable
+private fun AccountSection(
+    account: AccountState,
+    isConfigured: Boolean,
+    signingIn: Boolean,
+    error: String?,
+    onSignIn: () -> Unit,
+    onSignOut: () -> Unit
+) {
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(top = 4.dp)
+    ) {
+        when (account) {
+            is AccountState.SignedIn -> {
+                Text(
+                    text = account.displayName?.takeIf { it.isNotBlank() } ?: "Signed in",
+                    color = VitalColors.ink,
+                    fontFamily = VitalFonts.InterTight,
+                    fontSize = 16.sp,
+                    fontWeight = FontWeight.Medium
+                )
+                account.email?.takeIf { it.isNotBlank() }?.let { email ->
+                    Text(
+                        text = email,
+                        color = VitalColors.inkMuted,
+                        fontFamily = VitalFonts.InterTight,
+                        fontSize = 13.sp,
+                        modifier = Modifier.padding(top = 2.dp)
+                    )
+                }
+                DialogButton(
+                    text = "SIGN OUT",
+                    onClick = onSignOut,
+                    filled = false,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(top = 16.dp)
+                )
+            }
+
+            AccountState.SignedOut -> {
+                Text(
+                    text = if (isConfigured) {
+                        "Back up your logs and restore them on another device."
+                    } else {
+                        "Sign-in is not set up yet. Add a Firebase project to enable it."
+                    },
+                    color = VitalColors.inkMuted,
+                    fontFamily = VitalFonts.InterTight,
+                    fontSize = 13.sp,
+                    lineHeight = 18.sp
+                )
+                DialogButton(
+                    text = if (signingIn) "SIGNING IN\u2026" else "SIGN IN WITH GOOGLE",
+                    onClick = onSignIn,
+                    enabled = isConfigured && !signingIn,
+                    filled = true,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(top = 16.dp)
+                )
+                if (error != null) {
+                    Text(
+                        text = error,
+                        color = VitalColors.orange,
+                        fontFamily = VitalFonts.InterTight,
+                        fontSize = 12.sp,
+                        modifier = Modifier.padding(top = 10.dp)
+                    )
+                }
+            }
+        }
+    }
+}
 
 @Composable
 private fun SectionLabel(title: String, topPadding: androidx.compose.ui.unit.Dp) {

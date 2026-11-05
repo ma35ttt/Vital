@@ -32,6 +32,14 @@ coil = "2.7.0"
 # ML Kit
 mlkitTextRecognition = "16.0.0"
 
+# Firebase / Google sign-in
+# Pinned for Kotlin 2.2 compatibility: newer Firebase/Google Identity artifacts are
+# published with Kotlin metadata 2.4, which the 2.2 compiler cannot read.
+firebaseBom = "33.7.0"
+credentials = "1.6.0"
+googleid = "1.1.1"
+googleServices = "4.5.0"
+
 # Security
 argon2 = "2.11"
 
@@ -94,6 +102,14 @@ coil-compose = { group = "io.coil-kt", name = "coil-compose", version.ref = "coi
 # ML Kit
 mlkit-text-recognition = { group = "com.google.mlkit", name = "text-recognition", version.ref = "mlkitTextRecognition" }
 
+# Firebase / Google sign-in
+firebase-bom = { group = "com.google.firebase", name = "firebase-bom", version.ref = "firebaseBom" }
+firebase-auth = { group = "com.google.firebase", name = "firebase-auth" }
+firebase-firestore = { group = "com.google.firebase", name = "firebase-firestore" }
+androidx-credentials = { group = "androidx.credentials", name = "credentials", version.ref = "credentials" }
+androidx-credentials-play-services-auth = { group = "androidx.credentials", name = "credentials-play-services-auth", version.ref = "credentials" }
+googleid = { group = "com.google.android.libraries.identity.googleid", name = "googleid", version.ref = "googleid" }
+
 # Security
 argon2 = { group = "org.jetbrains.kotlinx", name = "argon2", version.ref = "argon2" }
 # Note: Using androidx.security:security-crypto for encrypted shared prefs
@@ -117,3 +133,4 @@ android-application = { id = "com.android.application", version.ref = "agp" }
 kotlin-serialization = { id = "org.jetbrains.kotlin.plugin.serialization", version.ref = "kotlin" }
 ksp = { id = "com.google.devtools.ksp", version.ref = "ksp" }
 hilt = { id = "com.google.dagger.hilt.android", version.ref = "hilt" }
+google-services = { id = "com.google.gms.google-services", version.ref = "googleServices" }

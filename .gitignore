@@ -20,3 +20,6 @@ Notes/*.tar.gz
 Notes/old/
 .DS_Store
 design/*.zip
+# Firebase config (per-project; drop your own in app/)
+google-services.json
+app/google-services.json

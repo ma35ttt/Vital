@@ -4,6 +4,8 @@ import android.content.Context
 import android.content.SharedPreferences
 import androidx.security.crypto.EncryptedSharedPreferences
 import androidx.security.crypto.MasterKey
+import com.vital.auth.AccountRepository
+import com.vital.auth.FirebaseAccountRepository
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -14,6 +16,12 @@ import java.security.GeneralSecurityException
 @Module
 @InstallIn(SingletonComponent::class)
 object AuthModule {
+
+    @Provides
+    @Singleton
+    fun provideAccountRepository(
+        @dagger.hilt.android.qualifiers.ApplicationContext context: Context
+    ): AccountRepository = FirebaseAccountRepository(context)
 
     @Provides
     @Singleton
