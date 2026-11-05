@@ -59,9 +59,11 @@ surprises.
 - **Export / Import JSON** buttons are drawn but unwired; PIN and biometric are read-only
   until the M6 auth gate.
 - **More dot** only watches meal and workout reminders, not the daily or water reminders.
-- **Live island** only tracks the rest timer (not cardio or water) and does not survive the
-  app being backgrounded or killed (no foreground service yet). The 30 s auto-expand is
-  code-only and has not been watched end to end.
+- **Live island** tracks only the rest timer (not cardio or water). It now survives the app
+  being backgrounded via the foreground service, and the timer, pill, expanded card and
+  notification were watched end to end. Still open: the notification's PAUSE / CANCEL buttons
+  do not sync back to the in-app timer, and the island cannot outlive a killed process (the
+  service is `START_NOT_STICKY` and the countdown is in-memory).
 - **Lift** has no per-set edit (delete only), no warm-up/RPE controls and no plate-inventory
   setting.
 - **Meals** WEB and RECIPE are labels only; the query is not cleared after a smart-text add.

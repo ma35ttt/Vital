@@ -497,4 +497,34 @@ A visual "how Vital works" walk-through shown once per install, mocked before co
 - **Not built yet.** The tutorial cannot be replayed (no Settings row yet); the Today / Train /
   Progress pages are static illustrations, not live data.
 
+### M5 — Live island: blinking mark and foreground service (2026-11-05)
+
+Mocked first (`tmp/concepts/island-icon.html` / `.png`). Two changes: the compact pill's
+blinking dot becomes the app mark, and the rest timer now survives the app being backgrounded.
+
+- **Blinking mark.** `RestIsland`'s `LiveDot()` (a 6 dp orange dot) is replaced by `LiveMark()`,
+  an 18 dp image of a new transparent drawable `ic_vital_mark.png` — the launcher's orange
+  ring-grid foreground, trimmed of its safe-zone margin by a PIL pass — on the same 900 ms
+  1 ↔ 0.25 alpha blink. It sits at the end of the compact pill and at the top-right of the
+  expanded card. Decision from the mock: icon without the black disc.
+- **Foreground service.** `RestTimerRelay` (`@Singleton`) mirrors every `RestTimerController`
+  change to the existing but previously unused `RestTimerForegroundService`: start on start,
+  restart with the new remaining/total on `+15 sec`, cancel on `stop`. The service keeps its own
+  deadline and posts an ongoing `progress` notification (PAUSE / CANCEL actions) using the real
+  total as the denominator; it now returns `START_NOT_STICKY` and posts before the first tick.
+  No manifest or build changes were needed — the service and `FOREGROUND_SERVICE_SPECIAL_USE`
+  permission were already declared.
+- **Permission.** `VitalNavigation` requests `POST_NOTIFICATIONS` (Android 13+) the first time an
+  island rest becomes active.
+- **Device check (e281c7, 1240 x 2772, density 476).** Logging a set starts the timer and the
+  notification (`isForeground=true`, id 1001, PAUSE / CANCEL actions). Home-button backgrounding
+  leaves it counting (01:58 → 01:54 over 4 s). The pill shows the mark in both light and dark,
+  the expanded card shows it at top-right, and on completion the notification and service both
+  stop and the island folds away.
+- **Not tested.** The permission prompt never appeared on this device because it auto-grants
+  `POST_NOTIFICATIONS` on install and rejects `pm revoke` / `pm reset-permissions`; the request
+  branch is code-only here. Notification PAUSE / CANCEL affect the notification only — they do
+  not stop the in-app `RestTimerController`, so a rest cancelled from the notification would
+  still show if the app were reopened while it still had time left.
+
 

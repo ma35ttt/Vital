@@ -1,6 +1,11 @@
 package com.vital.ui.navigation
 
+import android.Manifest
 import android.content.pm.ApplicationInfo
+import android.content.pm.PackageManager
+import android.os.Build
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.layout.Box
@@ -9,15 +14,18 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.dp
+import androidx.core.content.ContextCompat
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.compose.NavHost
@@ -107,6 +115,25 @@ fun VitalNavigation() {
 
     val islandViewModel: LiveIslandViewModel = hiltViewModel()
     val islandState by islandViewModel.state.collectAsStateWithLifecycle()
+
+    // The rest notification is the point of the foreground service, so ask for
+    // POST_NOTIFICATIONS the first time a rest actually starts (Android 13+).
+    val notificationPermission = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.RequestPermission()
+    ) { }
+    var askedNotificationPermission by rememberSaveable { mutableStateOf(false) }
+    LaunchedEffect(islandState.isActive) {
+        if (islandState.isActive && !askedNotificationPermission &&
+            Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU
+        ) {
+            askedNotificationPermission = true
+            val granted = ContextCompat.checkSelfPermission(
+                context,
+                Manifest.permission.POST_NOTIFICATIONS
+            ) == PackageManager.PERMISSION_GRANTED
+            if (!granted) notificationPermission.launch(Manifest.permission.POST_NOTIFICATIONS)
+        }
+    }
     val reminderViewModel: ReminderStatusViewModel = hiltViewModel()
     val moreDotVisible by reminderViewModel.moreDotVisible.collectAsStateWithLifecycle()
     var islandExpanded by remember { mutableStateOf(false) }

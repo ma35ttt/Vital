@@ -35,6 +35,7 @@ class RestTimerForegroundService : Service(), LifecycleOwner {
     private var notificationManager: NotificationManager? = null
     private var timerJob: Job? = null
     private var endTimeMs: Long = 0
+    private var totalSeconds: Int = 300
     private var isRunning = false
 
     companion object {
@@ -45,6 +46,7 @@ class RestTimerForegroundService : Service(), LifecycleOwner {
         const val ACTION_CANCEL = "com.vital.ACTION_CANCEL_TIMER"
         const val ACTION_TICK = "com.vital.ACTION_TIMER_TICK"
         const val EXTRA_DURATION_SECONDS = "duration_seconds"
+        const val EXTRA_TOTAL_SECONDS = "total_seconds"
         const val EXTRA_REMAINING_SECONDS = "remaining_seconds"
     }
 
@@ -62,6 +64,8 @@ class RestTimerForegroundService : Service(), LifecycleOwner {
             when (action) {
                 ACTION_START -> {
                     val duration = intent.getIntExtra(EXTRA_DURATION_SECONDS, 180)
+                    totalSeconds = intent.getIntExtra(EXTRA_TOTAL_SECONDS, duration)
+                        .coerceAtLeast(1)
                     startTimer(duration)
                 }
                 ACTION_PAUSE -> pauseTimer()
@@ -69,7 +73,7 @@ class RestTimerForegroundService : Service(), LifecycleOwner {
             }
         }
 
-        return START_STICKY
+        return START_NOT_STICKY
     }
 
     private fun createNotificationChannel() {
@@ -92,17 +96,18 @@ class RestTimerForegroundService : Service(), LifecycleOwner {
         endTimeMs = SystemClock.elapsedRealtime() + (durationSeconds * 1000L)
         isRunning = true
 
+        // A foreground service must post its notification promptly; do it before the loop.
+        updateNotification(durationSeconds)
+
         timerJob = scope.launch {
             while (isRunning) {
+                delay(1000)
                 val remaining = max(0, (endTimeMs - SystemClock.elapsedRealtime()) / 1000)
-                updateNotification(remaining.toInt())
-
                 if (remaining <= 0) {
                     timerComplete()
                     break
                 }
-
-                delay(1000)
+                updateNotification(remaining.toInt())
             }
         }
     }
@@ -186,7 +191,9 @@ class RestTimerForegroundService : Service(), LifecycleOwner {
             .addAction(R.drawable.ic_close, "CANCEL", cancelPendingIntent)
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N && !isComplete) {
-            builder.setProgress(100, (remainingSeconds * 100 / 300).coerceIn(0, 100), false)
+            val fraction = (remainingSeconds * 100 / totalSeconds.coerceAtLeast(1))
+                .coerceIn(0, 100)
+            builder.setProgress(100, fraction, false)
         }
 
         val notification = builder.build()

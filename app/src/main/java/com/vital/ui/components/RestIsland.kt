@@ -8,6 +8,7 @@ import androidx.compose.animation.core.infiniteRepeatable
 import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
@@ -22,7 +23,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentWidth
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -42,11 +42,13 @@ import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.em
 import androidx.compose.ui.unit.sp
+import com.vital.R
 import com.vital.ui.LiveIslandState
 import com.vital.ui.formatRestTime
 import com.vital.ui.theme.VitalColors
@@ -162,12 +164,12 @@ private fun CompactIsland(state: LiveIslandState) {
             fontSize = 11.sp
         )
         Spacer(Modifier.width(1.dp))
-        LiveDot()
+        LiveMark()
     }
 }
 
 @Composable
-private fun LiveDot() {
+private fun LiveMark() {
     val transition = rememberInfiniteTransition(label = "live")
     val alpha by transition.animateFloat(
         initialValue = 1f,
@@ -178,11 +180,12 @@ private fun LiveDot() {
         ),
         label = "liveAlpha"
     )
-    Box(
+    Image(
+        painter = painterResource(R.drawable.ic_vital_mark),
+        contentDescription = null,
         modifier = Modifier
-            .size(6.dp)
+            .size(18.dp)
             .alpha(alpha)
-            .background(VitalColors.orange, CircleShape)
     )
 }
 
@@ -217,7 +220,7 @@ private fun ExpandedIsland(
                     modifier = Modifier.padding(top = 3.dp)
                 )
             }
-            LiveDot()
+            LiveMark()
         }
 
         ProgressHairline(
