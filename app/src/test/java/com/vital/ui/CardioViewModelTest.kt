@@ -31,12 +31,14 @@ class CardioViewModelTest {
     }
 
     @Test
-    fun `acsm estimate uses body weight and clamps above six`() {
+    fun `acsm estimate uses body weight and switches to running above six`() {
         val atSix = estimateCardioKcal(6.0, 2.0, 68.0, 32 * 60 + 10)
         assertEquals(187.0, atSix!!, 0.5)
 
-        val aboveSix = estimateCardioKcal(8.0, 2.0, 68.0, 32 * 60 + 10)
-        assertEquals(atSix, aboveSix!!, 0.001)
+        // 8 km/h uses the running equation, so it is no longer clamped to the walking value.
+        val aboveSix = estimateCardioKcal(8.0, 2.0, 68.0, 32 * 60 + 10)!!
+        assertEquals(356.1, aboveSix, 1.0)
+        org.junit.Assert.assertTrue(aboveSix > atSix)
     }
 
     @Test
