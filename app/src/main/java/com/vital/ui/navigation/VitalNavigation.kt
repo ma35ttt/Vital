@@ -62,10 +62,18 @@ fun VitalNavigation() {
         moreOpen = false
         val route = VITAL_TABS.getOrNull(index)?.route ?: "today"
         if (route != "more") {
-            navController.navigate(route) {
-                popUpTo("today") { saveState = true }
-                launchSingleTop = true
-                restoreState = true
+            if (route == "today") {
+                // restoreState would also restore a detail route (e.g. Settings) saved on top
+                // of Today, so return to Today by popping rather than re-navigating.
+                if (!navController.popBackStack("today", inclusive = false)) {
+                    navController.navigate("today") { launchSingleTop = true }
+                }
+            } else {
+                navController.navigate(route) {
+                    popUpTo("today") { saveState = true }
+                    launchSingleTop = true
+                    restoreState = true
+                }
             }
         }
     }

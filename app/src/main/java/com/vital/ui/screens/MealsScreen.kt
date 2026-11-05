@@ -896,8 +896,8 @@ private fun DialogButton(
         Text(
             text = text,
             color = when {
-                !enabled -> VitalColors.black.copy(alpha = 0.5f)
-                filled -> VitalColors.black
+                !enabled -> VitalColors.onAccent.copy(alpha = 0.5f)
+                filled -> VitalColors.onAccent
                 else -> VitalColors.orange
             },
             fontFamily = VitalFonts.InterTight,

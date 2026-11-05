@@ -365,3 +365,17 @@ The approved Summary option B (24-hour day ring) replaces the old dial Summary, 
 - **Device check (e281c7, 1240 x 2772, density 476).** The targets dialog opened from the hero, saving `2,400` updated the hero immediately; Meal reminders toggled off; the disabled PIN/biometric switches drew muted; Export/Import and the note rendered; Back returned to Today; no `AndroidRuntime:E`.
 - **Not built yet.** Export/Import are still unwired (DATA step), PIN/biometric still read-only until the M6 gate, body weight and rest preset are not editable here.
 - **Not tested.** Visual comparison against `tmp/concepts/all-tabs.html` (user measures).
+
+### Light mode / Porcelain palette (2026-11-05)
+
+Adds a toggleable light theme (Porcelain) from the accent-theme comparison, chosen by the user.
+
+- **Palette.** `Color.kt` now holds a `DarkPalette` and a `LightPalette` behind a snapshot-backed `currentPalette`. The editorial tokens (`paper`, `ink`, `inkMuted`, `rule`, `ruleStrong`, `chartBar`, `navInactive`, `sheet`, `orange`) are getters, so every composable that reads one recomposes on a mode change. A new `onAccent` token is dark in dark mode and cream `#FFF6EF` in light mode; buttons, filled dialog actions and switch knobs use it instead of hard-coded black. Legacy pre-editorial tokens stay dark only (Progress/Coach/Debug are not light-themed yet).
+- **Porcelain.** `paper #F2EEE5`, `ink #141210`, `inkMuted #6E675D`, `rule #D9D2C5`, `ruleStrong #BFB5A4`, `sheet #FBF8F2`, accent `#E8420C`.
+- **Theme plumbing.** `VitalTheme(darkTheme = !lightMode)` publishes the palette, builds the matching Material scheme and sets light/dark status- and navigation-bar icons via `WindowInsetsControllerCompat`. `MainActivity` paints the Surface with the palette and only applies true black in dark mode.
+- **Settings.** New Appearance section with a Dark / Light tab pair and the True black switch (dimmed and disabled under Light; value reads `Dark mode only`).
+- **Persistence.** `Settings.lightMode` (default false), `SettingsViewModel.setLightMode`, DB version 2 with `MIGRATION_1_2` adding the column so existing rows survive.
+- **Switch fix.** The switch now uses an orange track and `onAccent` knob when on; off is an empty track with a `ruleStrong` border and muted knob; disabled is 60% alpha with a `rule` border. The earlier black knob (which read as a dot on the light theme) is gone.
+- **Navigation fix.** Tapping Today while a More detail route was open used to restore that detail route, because `restoreState` restored Today's saved stack. Today now pops back to the tab instead of re-navigating.
+- **Device check (e281c7).** Light and dark both applied instantly from Settings and survived relaunch; Today, Meals, Lift, Cardio, Summary, the More sheet, the targets dialog and Export all rendered on Porcelain with cream on-accent text; the switch matched the mock in both modes; Today tapped back correctly from Settings; no `AndroidRuntime:E`.
+- **Not built yet.** Progress, Coach and Debug stay dark; there is no auto/system mode and no independent accent picker (themeColor) yet.

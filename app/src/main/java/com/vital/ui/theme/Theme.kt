@@ -1,6 +1,6 @@
 package com.vital.ui.theme
 
-import android.content.Context
+import android.app.Activity
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.darkColorScheme
@@ -12,68 +12,69 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.platform.LocalContext
 import androidx.core.view.WindowCompat
-import com.vital.ui.theme.VitalColors
+import androidx.core.view.WindowInsetsControllerCompat
 import com.vital.ui.theme.VitalTypography.Typography
 
-private val DarkColorScheme = darkColorScheme(
+@Composable
+private fun darkScheme(): androidx.compose.material3.ColorScheme = darkColorScheme(
     primary = VitalColors.orange,
     onPrimary = VitalColors.black,
     secondary = VitalColors.orange,
     onSecondary = VitalColors.black,
     tertiary = VitalColors.orange,
     onTertiary = VitalColors.black,
-    background = VitalColors.black,
-    onBackground = VitalColors.textPrimary,
-    surface = VitalColors.wellFill,
-    onSurface = VitalColors.textPrimary,
-    surfaceVariant = VitalColors.wellFill,
-    onSurfaceVariant = VitalColors.textMuted,
-    outline = VitalColors.wellStroke,
-    outlineVariant = VitalColors.wellStroke,
+    background = VitalColors.paper,
+    onBackground = VitalColors.ink,
+    surface = VitalColors.paper,
+    onSurface = VitalColors.ink,
+    surfaceVariant = VitalColors.sheet,
+    onSurfaceVariant = VitalColors.inkMuted,
+    outline = VitalColors.ruleStrong,
+    outlineVariant = VitalColors.rule,
     scrim = Color.Black,
-    inverseSurface = VitalColors.textPrimary,
-    inverseOnSurface = VitalColors.black,
+    inverseSurface = VitalColors.ink,
+    inverseOnSurface = VitalColors.paper,
     inversePrimary = VitalColors.orange,
     primaryContainer = VitalColors.orange,
     onPrimaryContainer = VitalColors.black,
-    secondaryContainer = VitalColors.orange,
-    onSecondaryContainer = VitalColors.black,
-    tertiaryContainer = VitalColors.orange,
-    onTertiaryContainer = VitalColors.black,
-    surfaceContainer = VitalColors.wellFill,
-    surfaceContainerHigh = VitalColors.wellFill,
-    surfaceContainerHighest = VitalColors.wellFill,
-    surfaceContainerLow = VitalColors.black,
-    surfaceContainerLowest = VitalColors.black,
-    surfaceBright = VitalColors.wellFill,
-    surfaceDim = VitalColors.black,
+    surfaceContainer = VitalColors.sheet,
+    surfaceContainerHigh = VitalColors.sheet,
+    surfaceContainerHighest = VitalColors.sheet,
+    surfaceContainerLow = VitalColors.paper,
+    surfaceContainerLowest = VitalColors.paper,
+    surfaceBright = VitalColors.sheet,
+    surfaceDim = VitalColors.paper
 )
 
-private val LightColorScheme = lightColorScheme(
+@Composable
+private fun lightScheme(): androidx.compose.material3.ColorScheme = lightColorScheme(
     primary = VitalColors.orange,
-    onPrimary = VitalColors.black,
+    onPrimary = Color.White,
     secondary = VitalColors.orange,
-    onSecondary = VitalColors.black,
+    onSecondary = Color.White,
     tertiary = VitalColors.orange,
-    onTertiary = VitalColors.black,
-    background = Color(0xFFF5F5F5),
-    onBackground = Color(0xFF1C1C1C),
-    surface = Color.White,
-    onSurface = Color(0xFF1C1C1C),
-    surfaceVariant = Color(0xFFE0E0E0),
-    onSurfaceVariant = Color(0xFF6E6E6E),
-    outline = Color(0xFFC0C0C0),
-    outlineVariant = Color(0xFFC0C0C0),
+    onTertiary = Color.White,
+    background = VitalColors.paper,
+    onBackground = VitalColors.ink,
+    surface = VitalColors.paper,
+    onSurface = VitalColors.ink,
+    surfaceVariant = VitalColors.sheet,
+    onSurfaceVariant = VitalColors.inkMuted,
+    outline = VitalColors.ruleStrong,
+    outlineVariant = VitalColors.rule,
     scrim = Color.Black,
-    inverseSurface = Color(0xFF1C1C1C),
-    inverseOnSurface = Color.White,
+    inverseSurface = VitalColors.ink,
+    inverseOnSurface = VitalColors.paper,
     inversePrimary = VitalColors.orange,
-    primaryContainer = VitalColors.orange.copy(alpha = 0.2f),
+    primaryContainer = VitalColors.orange.copy(alpha = 0.18f),
     onPrimaryContainer = VitalColors.orange,
-    secondaryContainer = VitalColors.orange.copy(alpha = 0.2f),
-    onSecondaryContainer = VitalColors.orange,
-    tertiaryContainer = VitalColors.orange.copy(alpha = 0.2f),
-    onTertiaryContainer = VitalColors.orange,
+    surfaceContainer = VitalColors.sheet,
+    surfaceContainerHigh = VitalColors.sheet,
+    surfaceContainerHighest = VitalColors.sheet,
+    surfaceContainerLow = VitalColors.paper,
+    surfaceContainerLowest = VitalColors.paper,
+    surfaceBright = VitalColors.sheet,
+    surfaceDim = VitalColors.paper
 )
 
 // True black is ON by default. MainActivity provides the live value from Settings.
@@ -82,33 +83,29 @@ val LocalTrueBlack = staticCompositionLocalOf { true }
 @Composable
 fun VitalTheme(
     darkTheme: Boolean = isSystemInDarkTheme(),
-    // True black setting overrides background
+    // True black only affects the dark palette.
     trueBlack: Boolean = true,
-    // Accent color for current tab - always orange now
-    accentColor: Color = VitalColors.orange,
     content: @Composable () -> Unit
 ) {
-    val colorScheme = if (darkTheme) {
-        if (trueBlack) {
-            DarkColorScheme.copy(background = VitalColors.trueBlackBackground)
-        } else {
-            DarkColorScheme.copy(background = VitalColors.falseBlackBackground)
-        }
-    } else {
-        LightColorScheme
-    }
+    // Publish the palette before anything reads a token this frame.
+    applyPalette(darkTheme)
+    val colorScheme = if (darkTheme) darkScheme() else lightScheme()
 
-    // Apply status bar / navigation bar colors
     val context = LocalContext.current
     SideEffect {
-        val window = (context as? android.app.Activity)?.window
+        val window = (context as? Activity)?.window
         if (window != null) {
             WindowCompat.setDecorFitsSystemWindows(window, false)
-            window.statusBarColor = colorScheme.background.toArgb()
-            window.navigationBarColor = colorScheme.background.toArgb()
-            val isLight = !darkTheme
-            window.setStatusBarContrastEnforced(!isLight)
-            window.setNavigationBarContrastEnforced(!isLight)
+            val page = if (darkTheme && trueBlack) {
+                VitalColors.trueBlackBackground
+            } else {
+                VitalColors.paper
+            }
+            window.statusBarColor = page.toArgb()
+            window.navigationBarColor = page.toArgb()
+            val controller = WindowInsetsControllerCompat(window, window.decorView)
+            controller.isAppearanceLightStatusBars = !darkTheme
+            controller.isAppearanceLightNavigationBars = !darkTheme
         }
     }
 
@@ -119,12 +116,8 @@ fun VitalTheme(
     )
 }
 
-// Helper to get current theme's accent color (always orange now)
 @Composable
-fun currentAccentColor(): Color {
-    return VitalColors.orange
-}
+fun currentAccentColor(): Color = VitalColors.orange
 
-// Helper to check if true black is enabled
 @Composable
 fun isTrueBlackEnabled(): Boolean = LocalTrueBlack.current

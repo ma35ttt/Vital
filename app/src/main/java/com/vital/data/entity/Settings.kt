@@ -20,6 +20,7 @@ data class Settings(
     val aiApiKeyEncrypted: String? = null,
     // Appearance
     val trueBlack: Boolean = true,
+    val lightMode: Boolean = false,
     val themeColor: String = "fudPink",
     // Rest timer
     val restPresetSec: Int = 180,

@@ -904,7 +904,7 @@ private fun DialogButton(
     ) {
         Text(
             text = text,
-            color = VitalColors.black,
+            color = VitalColors.onAccent,
             fontFamily = VitalFonts.InterTight,
             fontSize = 15.sp,
             fontWeight = FontWeight.SemiBold

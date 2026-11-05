@@ -1,26 +1,78 @@
 package com.vital.ui.theme
 
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.graphics.Color
+
+/**
+ * Two palettes share one token set. The editorial tokens resolve through [currentPalette],
+ * which is a snapshot state, so every composable that reads a colour recomposes when the
+ * mode flips. Legacy tokens from the pre-editorial design stay dark-only; the screens that
+ * still use them (progress, coach, debug showcase) are launched from More and are not part
+ * of the light-mode surface yet.
+ */
+private data class Palette(
+    val paper: Color,
+    val ink: Color,
+    val inkMuted: Color,
+    val rule: Color,
+    val ruleStrong: Color,
+    val chartBar: Color,
+    val navInactive: Color,
+    val sheet: Color,
+    val orange: Color,
+    val onAccent: Color
+)
+
+private val DarkPalette = Palette(
+    paper = Color(0xFF0B0B0B),
+    ink = Color(0xFFF3F1ED),
+    inkMuted = Color(0xFF9A948C),
+    rule = Color(0xFF22201D),
+    ruleStrong = Color(0xFF3A3631),
+    chartBar = Color(0xFF2A2724),
+    navInactive = Color(0xFF6B6660),
+    sheet = Color(0xFF111110),
+    orange = Color(0xFFFD3F00),
+    onAccent = Color(0xFF0B0B0B)
+)
+
+/** Porcelain: warm paper, near-black ink, vermilion accent. */
+private val LightPalette = Palette(
+    paper = Color(0xFFF2EEE5),
+    ink = Color(0xFF141210),
+    inkMuted = Color(0xFF6E675D),
+    rule = Color(0xFFD9D2C5),
+    ruleStrong = Color(0xFFBFB5A4),
+    chartBar = Color(0xFFDCD5C7),
+    navInactive = Color(0xFF8C8377),
+    sheet = Color(0xFFFBF8F2),
+    orange = Color(0xFFE8420C),
+    onAccent = Color(0xFFFFF6EF)
+)
+
+private val currentPalette = mutableStateOf(DarkPalette)
+
+/** Called from [VitalTheme]; `dark = false` selects Porcelain. */
+fun applyPalette(dark: Boolean) {
+    currentPalette.value = if (dark) DarkPalette else LightPalette
+}
 
 object VitalColors {
 
-    // ===== EDITORIAL TOKENS (2026-11 redesign) =====
-    // The base is a quiet near-black page; orange is an accent, never a wallpaper.
-    // Structure comes from hairlines and space, not cards, borders or shadows.
-    val paper = Color(0xFF0B0B0B)            // page background
-    val ink = Color(0xFFF3F1ED)              // primary text (warm white)
-    val inkMuted = Color(0xFF9A948C)         // labels, meta, trailing values
-    val rule = Color(0xFF22201D)             // hairline separators
-    val ruleStrong = Color(0xFF3A3631)       // chart baseline / inactive bars
-    val chartBar = Color(0xFF2A2724)         // inactive chart bars
-    val navInactive = Color(0xFF6B6660)      // inactive nav icon and label
-    val sheet = Color(0xFF111110)            // bottom sheets sit just above the page
+    // ===== EDITORIAL TOKENS (2026-11) — switch with the mode =====
+    val paper get() = currentPalette.value.paper          // page background
+    val ink get() = currentPalette.value.ink              // primary text
+    val inkMuted get() = currentPalette.value.inkMuted    // labels, meta, trailing values
+    val rule get() = currentPalette.value.rule            // hairline separators
+    val ruleStrong get() = currentPalette.value.ruleStrong // chart baseline / inactive bars
+    val chartBar get() = currentPalette.value.chartBar    // inactive chart bars
+    val navInactive get() = currentPalette.value.navInactive // inactive nav icon and label
+    val sheet get() = currentPalette.value.sheet          // sheets and dialogs
+    val orange get() = currentPalette.value.orange        // the single accent
+    val onAccent get() = currentPalette.value.onAccent    // text/knobs on an accent fill
 
-    // ===== DESIGN TOKENS (from chrome.md, REMAINING_TABS_BRIEF.md) =====
-    // One accent, orange #FD3F00, plus black and #5F6971. No per-tab accents.
-
-    val orange = Color(0xFFFD3F00)           // hero fill, active states, accents
-    val black = Color(0xFF000000)            // screen background, sheets, text on orange
+    // ===== LEGACY DESIGN TOKENS (dark only) =====
+    val black = Color(0xFF000000)            // text on orange, legacy page background
     val chipOnOrange = Color(0xFFE83A00)     // header chips on orange screen fill
     val chipOnOrangeStroke = Color(0xFFC93300) // header chips on orange screen stroke
     val chipDark = Color(0xFF0C0C0C)         // header chips on black screen fill
@@ -35,7 +87,7 @@ object VitalColors {
     val iconWellStroke = Color(0xFF232323)   // icon well stroke
     val panelGrey = Color(0xFF5F6971)        // data panels (use insetShadow, top/left #424143)
     val panelGreyShadow = Color(0xFF424143)  // inner shadow top/left
-    val chartBarOnGrey = Color(0xFF171A1D)   // FIX: 3.1:1 on #5F6971 (mock #2B2F33 was 2.4:1)
+    val chartBarOnGrey = Color(0xFF171A1D)   // FIX: 3.1:1 on #5F6971
     val sheetTopHighlight = Color(0xFF1C1C1C) // 1 du line at y 404
     val sheetHighlight = sheetTopHighlight    // alias for chrome.md "sheetHighlight"
     val fabRimStroke = Color(0xFF1F1F1F)     // FAB stroke
@@ -45,7 +97,7 @@ object VitalColors {
     val navBottomHighlight = Color(0xFF121212) // inner bottom edge white 7%
     val navGlow = Color(0xFFFD3F00).copy(alpha = 0.45f) // orange glow alpha .45
     val tabInactive = Color(0xFFBDBDBD)      // inactive tab label
-    val toggleOnFill = orange                // toggle on = orange fill
+    val toggleOnFill get() = orange          // toggle on = orange fill
     val toggleOnKnob = black                 // toggle on = black knob
     val toggleOffFill = Color(0xFF1A1A1A)    // toggle off fill
     val toggleOffStroke = Color(0xFF1F1F1F)  // toggle off stroke
@@ -91,15 +143,15 @@ object VitalColors {
     val ActivityMutedIcon = Color(0xFF757577)
 
     // Tab accents (black text on accent fills) - DEPRECATED: use orange only
-    val AccentTDY = orange
-    val AccentMLS = orange
-    val AccentLFT = orange
-    val AccentCRD = orange
-    val AccentWKS = orange
-    val AccentSET = orange
+    val AccentTDY get() = orange
+    val AccentMLS get() = orange
+    val AccentLFT get() = orange
+    val AccentCRD get() = orange
+    val AccentWKS get() = orange
+    val AccentSET get() = orange
 
     // Reference-measured colors (from vital-ui tokens.css)
-    val RefOrange = orange
+    val RefOrange get() = orange
     val RefOrangeChip = chipOnOrange
     val RefInk = Color(0xFF070707)
     val RefInkDeep = black
@@ -136,12 +188,12 @@ object VitalColors {
     val InnerDialRim = black
 
     // Knob colors (from knob.js)
-    val KnobOrange = orange
+    val KnobOrange get() = orange
     val KnobInk = Color(0xFF070707)
 
     // Icon colors
-    val FabIcon = orange
-    val ActivityFanIcon = orange
+    val FabIcon get() = orange
+    val ActivityFanIcon get() = orange
 
     // OrangeDial (Meals / Lift / Cardio hero art) from chrome.md + brief section 3
     val dialOuterStroke = Color(0xFF1A1A1A)   // outer disc 1.5 du stroke
