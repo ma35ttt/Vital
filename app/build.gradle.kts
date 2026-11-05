@@ -5,6 +5,17 @@ plugins {
     id("com.google.devtools.ksp")
     id("com.google.dagger.hilt.android")
     id("androidx.baselineprofile")
+    // Applied only when app/google-services.json is present, so the project builds and
+    // runs (sign-in disabled) before a Firebase project has been created.
+    id("com.google.gms.google-services") apply false
+}
+
+// The google-services plugin fails the build if google-services.json is missing, so it is
+// applied here only once the file exists. Drop google-services.json into app/ (see the
+// README in com/vital/auth) to turn Firebase sign-in and sync on.
+val hasGoogleServices = file("google-services.json").exists()
+if (hasGoogleServices) {
+    apply(plugin = "com.google.gms.google-services")
 }
 
 android {
@@ -136,6 +147,15 @@ dependencies {
 
     // ML Kit
     implementation("com.google.mlkit:text-recognition:16.0.0")
+
+    // Firebase (Auth + Firestore) for Google sign-in and cloud sync, plus the
+    // Credential Manager APIs that drive the Google account picker.
+    implementation(platform(libs.firebase.bom))
+    implementation(libs.firebase.auth)
+    implementation(libs.firebase.firestore)
+    implementation(libs.androidx.credentials)
+    implementation(libs.androidx.credentials.play.services.auth)
+    implementation(libs.googleid)
 
     // PIN hashing - use PBKDF2 via Android Keystore / Security library
     // implementation("org.jetbrains.kotlinx:argon2:2.11") - not available

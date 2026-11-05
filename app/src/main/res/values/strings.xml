@@ -135,6 +135,23 @@
     <string name="widgets">WIDGETS</string>
     <string name="configure_widgets">CONFIGURE WIDGETS</string>
 
+    <!-- Account / cloud sync -->
+    <string name="account">ACCOUNT</string>
+    <string name="sign_in_with_google">SIGN IN WITH GOOGLE</string>
+    <string name="sign_out">SIGN OUT</string>
+    <string name="sync_now">SYNC NOW</string>
+    <string name="sync_signed_out_hint">Sign in to back up your logs and restore them on another device.</string>
+    <string name="sync_not_configured_hint">Sign-in is not set up yet. Add a Firebase project to enable it.</string>
+    <string name="sync_never">Not synced yet</string>
+    <string name="sync_last">Last synced %1$s</string>
+    <string name="sync_syncing">SYNCING\u2026</string>
+    <string name="sync_failed">Last sync failed</string>
+    <string name="signed_in_as">Signed in as %1$s</string>
+
+    <!-- Web client id used by Google sign-in. Leave blank to use the client id that the
+         google-services plugin generates from google-services.json (default_web_client_id). -->
+    <string name="google_web_client_id" translatable="false"></string>
+
     <!-- Summary Dial -->
     <string name="summary_dial_title">KCAL LEFT</string>
     <string name="period_last_7d">L</string>
