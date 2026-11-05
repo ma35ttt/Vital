@@ -6,23 +6,27 @@ import android.content.pm.PackageManager
 import android.os.Build
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.compose.foundation.gestures.detectHorizontalDragGestures
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInHorizontally
+import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.pager.HorizontalPager
+import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberUpdatedState
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -36,7 +40,6 @@ import com.vital.ui.ReminderStatusViewModel
 import com.vital.ui.TutorialViewModel
 import com.vital.ui.components.MoreSheet
 import com.vital.ui.components.QuickAddAction
-import com.vital.ui.components.VITAL_TABS
 import com.vital.ui.components.VitalBottomNav
 import com.vital.ui.screens.CardioScreen
 import com.vital.ui.screens.CoachChatScreen
@@ -51,7 +54,16 @@ import com.vital.ui.screens.TodayScreen
 import com.vital.ui.screens.TutorialScreen
 import com.vital.ui.screens.WeeksScreen
 import com.vital.ui.theme.VitalColors
-import kotlin.math.abs
+import kotlinx.coroutines.launch
+
+/** The four content tabs, in bottom-nav order. Each becomes a page of the tab pager. */
+private val TAB_ROUTES = listOf("meals", "lift", "today", "cardio")
+
+/** The NavHost destination that hosts the tab pager; detail routes push on top of it. */
+private const val TABS_ROUTE = "tabs"
+
+/** Today is the centre tab and the start page. */
+private const val TODAY_PAGE = 2
 
 @Composable
 fun VitalNavigation() {
@@ -64,7 +76,14 @@ fun VitalNavigation() {
     }
 
     val navController = rememberNavController()
+    val scope = rememberCoroutineScope()
     var moreOpen by remember { mutableStateOf(false) }
+
+    // The four tabs are pages of one pager, so a swipe tracks the finger and settles with
+    // velocity instead of jumping on a threshold. Detail screens are NavHost destinations on top.
+    val pagerState = rememberPagerState(initialPage = TODAY_PAGE, pageCount = { TAB_ROUTES.size })
+    // Set when a tab is chosen while a detail route is open; applied once the pager is composed.
+    var pendingTab by remember { mutableStateOf<Int?>(null) }
 
     val context = LocalContext.current
     val isDebuggable = remember(context) {
@@ -78,57 +97,24 @@ fun VitalNavigation() {
 
     val backStackEntry by navController.currentBackStackEntryAsState()
     val currentRoute = backStackEntry?.destination?.route
-    val tabIndex = when (currentRoute) {
-        "meals" -> 0
-        "lift" -> 1
-        "today" -> 2
-        "cardio" -> 3
-        else -> 4
-    }
-    val selectedIndex = if (moreOpen) 4 else tabIndex
+    // Null before the NavHost settles on its start destination: treat that as the tabs.
+    val onTabs = currentRoute == null || currentRoute == TABS_ROUTE
+
+    // On a detail route the bar keeps its old behaviour and highlights More.
+    val selectedIndex = if (moreOpen || !onTabs) 4 else pagerState.currentPage
 
     val navigateToTab: (Int) -> Unit = { index ->
         moreOpen = false
-        val route = VITAL_TABS.getOrNull(index)?.route ?: "today"
-        if (route != "more") {
-            if (route == "today") {
-                // restoreState would also restore a detail route (e.g. Settings) saved on top
-                // of Today, so return to Today by popping rather than re-navigating.
-                if (!navController.popBackStack("today", inclusive = false)) {
-                    navController.navigate("today") { launchSingleTop = true }
-                }
+        if (index in TAB_ROUTES.indices) {
+            if (onTabs) {
+                scope.launch { pagerState.animateScrollToPage(index) }
             } else {
-                navController.navigate(route) {
-                    popUpTo("today") { saveState = true }
-                    launchSingleTop = true
-                    restoreState = true
-                }
+                // Pop the detail route first, then snap the pager once it is composed again.
+                pendingTab = index
+                navController.popBackStack(TABS_ROUTE, inclusive = false)
             }
         }
     }
-
-    // Swipe left/right to step through the four content tabs. "More" is a sheet, not a page, so
-    // it is skipped and the ends clamp. The index is read at gesture time (not from the composed
-    // value) so a swipe that closely follows another never acts on a stale route.
-    val tabRoutes = setOf("meals", "lift", "today", "cardio")
-    fun currentTabIndex(): Int = when (navController.currentBackStackEntry?.destination?.route) {
-        "meals" -> 0
-        "lift" -> 1
-        "today" -> 2
-        "cardio" -> 3
-        else -> -1
-    }
-    val swipeModifier = Modifier.tabSwipe(
-        enabled = !moreOpen && currentRoute in tabRoutes,
-        onSwipeLeft = {
-            val index = currentTabIndex()
-            if (index in 0..2) navigateToTab(index + 1)
-        },
-        onSwipeRight = {
-            val index = currentTabIndex()
-            if (index in 1..3) navigateToTab(index - 1)
-        }
-    )
 
     val openRoute: (String) -> Unit = { route ->
         moreOpen = false
@@ -183,58 +169,79 @@ fun VitalNavigation() {
         Box(modifier = Modifier.fillMaxSize()) {
             NavHost(
                 navController = navController,
-                startDestination = "today",
+                startDestination = TABS_ROUTE,
                 modifier = Modifier
                     .padding(
                         top = innerPadding.calculateTopPadding(),
                         bottom = innerPadding.calculateBottomPadding()
-                    )
-                    .then(swipeModifier)
+                    ),
+                // Detail routes ease in from the right and settle back on pop.
+                enterTransition = {
+                    slideInHorizontally(animationSpec = tween(300)) { it / 6 } +
+                        fadeIn(animationSpec = tween(220))
+                },
+                exitTransition = { fadeOut(animationSpec = tween(180)) },
+                popEnterTransition = { fadeIn(animationSpec = tween(220)) },
+                popExitTransition = {
+                    slideOutHorizontally(animationSpec = tween(300)) { it / 6 } +
+                        fadeOut(animationSpec = tween(180))
+                }
             ) {
-                composable("today") {
-                    TodayScreen(
+                composable(TABS_ROUTE) {
+                    LaunchedEffect(pendingTab) {
+                        pendingTab?.let { page ->
+                            pagerState.scrollToPage(page)
+                            pendingTab = null
+                        }
+                    }
+                    HorizontalPager(
+                        state = pagerState,
                         modifier = Modifier.fillMaxSize(),
-                        onShowSummary = { openRoute("summary") },
-                        onNavigateToMeals = { navigateToTab(0) },
-                        onNavigateToLift = { navigateToTab(1) },
-                        onNavigateToCardio = { navigateToTab(3) },
-                        onNavigateToWeeks = { openRoute("weeks") },
-                        onNavigateToSettings = { openRoute("settings") }
-                    )
-                }
-                composable("meals") {
-                    MealsScreen(
-                        modifier = Modifier.fillMaxSize(),
-                        onShowSummary = { openRoute("summary") },
-                        onNavigateToToday = { navigateToTab(2) },
-                        onNavigateToLift = { navigateToTab(1) },
-                        onNavigateToCardio = { navigateToTab(3) },
-                        onNavigateToWeeks = { openRoute("weeks") },
-                        onNavigateToSettings = { openRoute("settings") }
-                    )
-                }
-                composable("lift") {
-                    LiftScreen(
-                        modifier = Modifier.fillMaxSize(),
-                        onShowSummary = { openRoute("summary") },
-                        onNavigateToToday = { navigateToTab(2) },
-                        onNavigateToMeals = { navigateToTab(0) },
-                        onNavigateToCardio = { navigateToTab(3) },
-                        onNavigateToWeeks = { openRoute("weeks") },
-                        onNavigateToSettings = { openRoute("settings") },
-                        viewModel = liftViewModel
-                    )
-                }
-                composable("cardio") {
-                    CardioScreen(
-                        modifier = Modifier.fillMaxSize(),
-                        onShowSummary = { openRoute("summary") },
-                        onNavigateToToday = { navigateToTab(2) },
-                        onNavigateToMeals = { navigateToTab(0) },
-                        onNavigateToLift = { navigateToTab(1) },
-                        onNavigateToWeeks = { openRoute("weeks") },
-                        onNavigateToSettings = { openRoute("settings") }
-                    )
+                        userScrollEnabled = !moreOpen,
+                        // Pre-compose the neighbours so the first frames of a swipe are ready.
+                        beyondViewportPageCount = 1,
+                        key = { it }
+                    ) { page ->
+                        when (page) {
+                            0 -> MealsScreen(
+                                modifier = Modifier.fillMaxSize(),
+                                onShowSummary = { openRoute("summary") },
+                                onNavigateToToday = { navigateToTab(2) },
+                                onNavigateToLift = { navigateToTab(1) },
+                                onNavigateToCardio = { navigateToTab(3) },
+                                onNavigateToWeeks = { openRoute("weeks") },
+                                onNavigateToSettings = { openRoute("settings") }
+                            )
+                            1 -> LiftScreen(
+                                modifier = Modifier.fillMaxSize(),
+                                onShowSummary = { openRoute("summary") },
+                                onNavigateToToday = { navigateToTab(2) },
+                                onNavigateToMeals = { navigateToTab(0) },
+                                onNavigateToCardio = { navigateToTab(3) },
+                                onNavigateToWeeks = { openRoute("weeks") },
+                                onNavigateToSettings = { openRoute("settings") },
+                                viewModel = liftViewModel
+                            )
+                            2 -> TodayScreen(
+                                modifier = Modifier.fillMaxSize(),
+                                onShowSummary = { openRoute("summary") },
+                                onNavigateToMeals = { navigateToTab(0) },
+                                onNavigateToLift = { navigateToTab(1) },
+                                onNavigateToCardio = { navigateToTab(3) },
+                                onNavigateToWeeks = { openRoute("weeks") },
+                                onNavigateToSettings = { openRoute("settings") }
+                            )
+                            else -> CardioScreen(
+                                modifier = Modifier.fillMaxSize(),
+                                onShowSummary = { openRoute("summary") },
+                                onNavigateToToday = { navigateToTab(2) },
+                                onNavigateToMeals = { navigateToTab(0) },
+                                onNavigateToLift = { navigateToTab(1) },
+                                onNavigateToWeeks = { openRoute("weeks") },
+                                onNavigateToSettings = { openRoute("settings") }
+                            )
+                        }
+                    }
                 }
                 composable("weeks") {
                     WeeksScreen(
@@ -309,40 +316,6 @@ fun VitalNavigation() {
                 onNavigate = openRoute,
                 showDebug = isDebuggable
             )
-        }
-    }
-}
-
-/**
- * Horizontal swipe to step through the content tabs. It is attached to the NavHost rather than to
- * each screen, so it only listens on the tab routes and a horizontal scroller inside a screen
- * (for example Cardio's row) still wins: that child consumes the drag before this detector ever
- * passes the touch slop, which cancels it.
- */
-@Composable
-private fun Modifier.tabSwipe(
-    enabled: Boolean,
-    onSwipeLeft: () -> Unit,
-    onSwipeRight: () -> Unit
-): Modifier {
-    val swipeLeft by rememberUpdatedState(onSwipeLeft)
-    val swipeRight by rememberUpdatedState(onSwipeRight)
-    return this.pointerInput(enabled) {
-        if (!enabled) return@pointerInput
-        val threshold = 72.dp.toPx()
-        var travel = 0f
-        detectHorizontalDragGestures(
-            onDragStart = { travel = 0f },
-            onDragCancel = { travel = 0f },
-            onDragEnd = {
-                if (abs(travel) >= threshold) {
-                    if (travel < 0f) swipeLeft() else swipeRight()
-                }
-                travel = 0f
-            }
-        ) { change, dragAmount ->
-            travel += dragAmount
-            change.consume()
         }
     }
 }

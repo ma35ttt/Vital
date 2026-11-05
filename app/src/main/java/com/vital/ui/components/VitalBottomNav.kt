@@ -1,7 +1,9 @@
 package com.vital.ui.components
 
+import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
@@ -31,6 +33,7 @@ import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.StrokeJoin
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.text.PlatformTextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -77,7 +80,16 @@ fun VitalBottomNav(
         ) {
             VITAL_TABS.forEachIndexed { index, tab ->
                 val active = index == selectedIndex
-                val color = if (active) VitalColors.orange else VitalColors.navInactive
+                val color by animateColorAsState(
+                    targetValue = if (active) VitalColors.orange else VitalColors.navInactive,
+                    animationSpec = tween(durationMillis = 220),
+                    label = "navColor$index"
+                )
+                val glyphScale by animateFloatAsState(
+                    targetValue = if (active) 1f else 0.88f,
+                    animationSpec = spring(dampingRatio = 0.6f, stiffness = 500f),
+                    label = "navScale$index"
+                )
                 Column(
                     modifier = Modifier
                         .weight(1f)
@@ -90,7 +102,12 @@ fun VitalBottomNav(
                         VitalNavGlyph(
                             tabIndex = index,
                             color = color,
-                            modifier = Modifier.size(21.dp)
+                            modifier = Modifier
+                                .size(21.dp)
+                                .graphicsLayer {
+                                    scaleX = glyphScale
+                                    scaleY = glyphScale
+                                }
                         )
                         // Quiet 8 dp "something needs you" dot on More, with a paper ring so it
                         // reads clearly against the glyph. See the notification mock, option A.
