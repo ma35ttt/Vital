@@ -527,4 +527,44 @@ blinking dot becomes the app mark, and the rest timer now survives the app being
   not stop the in-app `RestTimerController`, so a rest cancelled from the notification would
   still show if the app were reopened while it still had time left.
 
+### M5 — Rest timer: nav-line indicator and out-of-app chip (2026-11-05)
+
+Mocked first (`tmp/concepts/nav-timer.html` / `.png`): line-only, non-interactive in-app, plus a
+floating chip outside. Decision recorded from the mock questions: **no pill in the app**, the
+divider is the only in-app surface, and the out-of-app surface is a `TYPE_APPLICATION_OVERLAY`
+chip.
+
+- **In-app = a line, nothing else.** `RestIsland` (pill + expandable card) is deleted.
+  `VitalBottomNav` takes a nullable `restProgress` and its 1 dp `Hairline` becomes a 2 dp track
+  (`RestIndicator`): an orange fill, left-aligned, whose width is `remaining / total`, so it
+  drains as time runs out. It carries no `clickable`, so the line is read-only. The fill is
+  animated with a 260 ms linear tween so short rests do not step visibly. `VitalNavigation` no
+  longer reserves island inset space; it just passes `islandState.progress` when a rest is active.
+- **Out-of-app = a floating chip + the notification.** `RestTimerForegroundService` is now
+  `@AndroidEntryPoint` and draws a small black pill (brand mark + `2:41`) with `WindowManager`
+  at `TYPE_APPLICATION_OVERLAY`, top-centre, below the status bar. It is attached only while a
+  rest is running **and** the app is not on screen. `AppVisibility` (`@Singleton`,
+  `MainActivity.onStart/onStop`) tells the service which; the chip hides the instant Vital comes
+  back. `Settings.canDrawOverlays` gates it and a new **Settings → REST TIMER → Timer chip over
+  other apps** row deep-links to `ACTION_MANAGE_OVERLAY_PERMISSION` and re-reads on resume.
+- **Notification now drives the timer.** Actions are `+15s` (new `ic_plus`) and `DONE`, and both
+  route through `RestTimerController.extend(15)` / `stop()` so the line, the chip and the
+  notification stay in step. The old PAUSE/RESUME/CANCEL actions are gone.
+- **Controls live where the user said.** Because the line is non-interactive, the Lift screen
+  now shows `+15 sec` / `Skip rest` under the rest hero while a rest is running
+  (`LiftViewModel.extendRest/skipRest`). Between that and the notification, every rest is
+  steerable.
+- **Manifest.** `SYSTEM_ALERT_WINDOW` added (approved); the runtime grant is a system-settings
+  toggle, not a dialog.
+- **Device check (e281c7).** Logging a set filled the nav line orange on Lift and Today and it
+  drained (fully orange → ~46% at 1:20 left). Home-button backgrounding showed the chip at the
+  top of the home screen, counting `1:48 → 1:26`; reopening the app hid it. The notification
+  expanded to `+15s` / `DONE`: `+15s` jumped `0:38 → 0:54` (and the progress denominator grew),
+  `DONE` removed the notification and the chip, and Lift returned to `0:00` with the controls
+  gone and the line neutral. Settings shows `REST TIMER — Timer chip over other apps — Allowed`.
+- **Not tested.** The overlay permission prompt itself: this ROM auto-grants `SYSTEM_ALERT_WINDOW`
+  (`Settings.canDrawOverlays` already true), and `adb appops set` is blocked without
+  `MANAGE_APP_OPS_MODES`, so the "Not allowed" state and the deep-link round-trip were not
+  exercised by hand.
+
 

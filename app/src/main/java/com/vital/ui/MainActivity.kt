@@ -10,11 +10,13 @@ import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.getValue
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.ui.Modifier
+import com.vital.service.AppVisibility
 import com.vital.ui.navigation.VitalNavigation
 import com.vital.ui.theme.LocalTrueBlack
 import com.vital.ui.theme.VitalColors
 import com.vital.ui.theme.VitalTheme
 import dagger.hilt.android.AndroidEntryPoint
+import javax.inject.Inject
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -24,6 +26,9 @@ import kotlinx.coroutines.cancel
 class MainActivity : ComponentActivity() {
     private val settingsViewModel: SettingsViewModel by viewModels()
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main)
+
+    @Inject
+    lateinit var appVisibility: AppVisibility
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -46,6 +51,17 @@ class MainActivity : ComponentActivity() {
                 }
             }
         }
+    }
+
+    override fun onStart() {
+        super.onStart()
+        appVisibility.onForeground()
+    }
+
+    override fun onStop() {
+        // The rest chip only belongs over other apps, so hide it the moment Vital leaves.
+        appVisibility.onBackground()
+        super.onStop()
     }
 
     override fun onDestroy() {

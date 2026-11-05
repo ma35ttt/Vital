@@ -41,8 +41,9 @@ Screenshot anything visual and drop it in `tmp/` with a matching name.
 ## During daily use
 
 - 05.11 Live island: closing the app makes the rest island vanish; it should stay visible at the
-  top of the phone outside the app and keep counting. (annoying) — known gap, no foreground
-  service or notification yet; M6 has "rest timer foreground service".
+  top of the phone outside the app and keep counting. (annoying) — **resolved 05.11**: the in-app
+  pill is gone (the nav divider is now the in-app line) and the timer survives backgrounding as a
+  notification plus a floating chip; see NOTES "nav-line indicator and out-of-app chip".
 
 ## Carried in from M4 (known follow-ups, not new)
 

@@ -24,8 +24,9 @@ data class LiveIslandState(
 }
 
 /**
- * Feeds the live island in the app shell. It reads the same singletons as Lift, so the
- * island keeps counting on every tab and survives leaving the Lift screen.
+ * Feeds the rest-timer surface in the app shell (the divider line above the bottom nav). It
+ * reads the same singletons as Lift, so the line keeps advancing on every tab and survives
+ * leaving the Lift screen.
  */
 @OptIn(ExperimentalCoroutinesApi::class)
 @HiltViewModel
@@ -48,10 +49,6 @@ class LiveIslandViewModel @Inject constructor(
             SharingStarted.WhileSubscribed(5_000),
             LiveIslandState()
         )
-
-    fun extendBy(seconds: Int) = restTimer.extend(seconds)
-
-    fun skip() = restTimer.stop()
 
     /** Same fallback as Lift: the drafted exercise, else Bench Press, else the first row. */
     private fun nameOf(list: List<Exercise>, id: String?): String? =

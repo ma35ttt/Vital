@@ -3,6 +3,7 @@ package com.vital.ui.screens
 import android.Manifest
 import android.content.Intent
 import android.content.pm.PackageManager
+import android.net.Uri
 import android.os.Build
 import android.provider.Settings as AndroidSettings
 import androidx.compose.foundation.background
@@ -57,6 +58,8 @@ import androidx.compose.ui.unit.em
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.compose.LifecycleEventEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.vital.data.entity.AiProvider
 import com.vital.data.entity.Settings
@@ -108,6 +111,22 @@ fun SettingsScreen(
             PackageManager.PERMISSION_GRANTED
     } else {
         true
+    }
+
+    val openOverlaySettings: () -> Unit = {
+        val intent = Intent(
+            AndroidSettings.ACTION_MANAGE_OVERLAY_PERMISSION,
+            Uri.parse("package:${context.packageName}")
+        )
+        runCatching { context.startActivity(intent) }
+        Unit
+    }
+
+    // "Display over other apps" can only be granted in system settings, so this deep-links
+    // there and re-reads the state when the user comes back.
+    var overlayAllowed by remember { mutableStateOf(AndroidSettings.canDrawOverlays(context)) }
+    LifecycleEventEffect(Lifecycle.Event.ON_RESUME) {
+        overlayAllowed = AndroidSettings.canDrawOverlays(context)
     }
 
     val dateLabel = remember {
@@ -328,6 +347,16 @@ fun SettingsScreen(
                             onCheckedChange = viewModel::setWaterRemindersEnabled
                         )
                     }
+                )
+            }
+
+            item { SectionLabel("Rest timer", topPadding = 28.dp) }
+            item {
+                ValueRow(
+                    label = "Timer chip over other apps",
+                    value = if (overlayAllowed) "Allowed" else "Not allowed",
+                    onClick = openOverlaySettings,
+                    trailing = { Chevron() }
                 )
             }
 
