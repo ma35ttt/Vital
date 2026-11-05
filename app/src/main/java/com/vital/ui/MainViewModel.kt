@@ -74,16 +74,6 @@ class MainViewModel @Inject constructor() : ViewModel() {
             weeklyWeightData.value = com.vital.ui.screens.WeeksScreenPreviewData.weeklyWeight
             weeklyPrData.value = com.vital.ui.screens.WeeksScreenPreviewData.weeklyPrs
 
-            // Sample data for Today screen
-            remainingKcal.value = 850f
-            proteinCurrent.value = 120f
-            carbsCurrent.value = 180f
-            fatCurrent.value = 55f
-            weeklyKcalData.value = com.vital.ui.screens.TodayScreenPreviewData.weeklyKcal
-            weeklyLabels.value = com.vital.ui.screens.TodayScreenPreviewData.weeklyLabels
-            workoutsToday.value = com.vital.ui.screens.TodayScreenPreviewData.sampleWorkouts
-            cardioToday.value = com.vital.ui.screens.TodayScreenPreviewData.sampleCardio
-
             // Sample data for Meals screen
             mealsToday.value = listOf(
                 MealCapsule("Breakfast", "520 kcal", Icons.Default.Favorite, VitalColors.orange, listOf(0.2f, 0.35f, 0.45f, 0.38f, 0.52f), "BREAKFAST"),

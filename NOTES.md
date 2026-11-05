@@ -299,3 +299,16 @@ The approved Summary option B (24-hour day ring) replaces the old dial Summary, 
 - **Device check (e281c7, 1240 x 2772, density 476).** Logged `82.5 × 10` from the inline fields: set 3 appeared with the right time, volume moved to 2,105 kg, the plate result moved to `25 + 5 + 1.25`, the ring refilled, and force-stop + relaunch kept all three sets. The picker opened scrolled to `Bench Press` with `Selected`; no `AndroidRuntime:E`.
 - **Not built yet.** No per-set edit (delete only, from the session dialog), no warm-up/RPE controls, no plate inventory settings.
 - **Not tested.** Visual comparison against `tmp/concepts/all-tabs.html` (user measures).
+
+### Today — editorial restyle (2026-11-05)
+
+`TodayScreen.kt` rewritten to the approved all-tabs mock and backed by a new `TodayViewModel`; the `MainViewModel` Today samples are no longer used.
+
+- **Layout.** Header (`Today` + `THU 05.11`), kcal-left hero (orange eyebrow, 72 sp value, `of 2,500 · 6% eaten`, 104 dp ring), three-cell macro grid, `This week` line chart with day labels and weekly kcal total, and `Workouts` rows (`Lift`/`Cardio`, title, duration or distance).
+- **Live data.** `TodayViewModel` combines today's meals, workout sessions + their sets, cardio and settings with the trailing seven days of meals. Lift duration uses `endedAt`, else the last set time, so an open session still has a length; lift title is the most-used exercise. The week total and the chart use meal kcal only.
+- **Ring.** The 104 dp ring is eaten / target, drawn clockwise from 12 o'clock (5 dp orange over a `ruleStrong` track).
+- **Chart.** The trailing week is a muted polyline; only the final segment into today is orange, with an orange dot at today. All-zero weeks draw a flat line.
+- **Navigation.** Tapping a Lift row opens the Lift tab and a Cardio row opens Cardio. The old `SHOW MORE` button is gone because Summary now lives in the More sheet; Today's unused navigation callbacks stay in the signature so `VitalNavigation` did not need to change.
+- **Device check (e281c7, 1240 x 2772, density 476).** Today showed `2,344` left, `6%` eaten, P 31 / C 0 / F 4, a week line ending at today, and the two real sessions (`Bench press 16 min`, `Run 3 km`); tapping the Lift row opened Lift with the three logged sets intact; no `AndroidRuntime:E`.
+- **Not built yet.** The week chart has no scrub/tooltip and no week/month switch; the header has no day picker (today only).
+- **Not tested.** Visual comparison against `tmp/concepts/all-tabs.html` (user measures).
