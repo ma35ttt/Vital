@@ -286,3 +286,16 @@ The approved Summary option B (24-hour day ring) replaces the old dial Summary, 
 - **Device check (e281c7, 1240 x 2772, density 476).** Nav renders with Today orange and the four others muted; More opens above the nav with quick-add and go-to rows; Summary showed the logged bench-press set (1 min), the 30 min / 3 km run and the chicken-breast meal (156 kcal, P 31 / C 0 / F 4, 2,344 left) with the lift and cardio arcs and the meal dot on the ring; Share day opened the chooser; no `AndroidRuntime:E`.
 - **Not built yet.** There is no day picker (today only); the ring does not yet show a body-weight marker; quick-add rows jump to a tab rather than opening that tab's add flow directly.
 - **Not tested.** Visual comparison against `tmp/concepts/summary-options.html` (user measures); the old `SummaryDialScreen.kt` and `GlassBottomNav.kt` are now unused but still compiled.
+
+### Lift — editorial restyle (2026-11-05)
+
+`LiftScreen.kt` rewritten to the approved all-tabs mock; the ViewModel and Room writes are unchanged.
+
+- **Layout.** One ruled column: header (`Lift` + `THU 05.11`), rest hero (orange `REST` eyebrow, 72 sp timer, `set N logged · target M:SS`, 104 dp ring), exercise row (name + last set), weight/reps grid (hairline top/bottom, 1 dp centre rule), orange `Log set` button, rest presets as underlined mono tabs, plate calculator (`per side · exact/nearest` + `25 + 5 + 1.25`), and the session list (`Set N`, `weight × reps`, exercise name, `HH:mm`).
+- **Rest ring.** The ring is the stored preset's countdown: `remaining / restPresetSec`, drawn clockwise from 12 o'clock with a 5 dp orange stroke over a `ruleStrong` track. It is empty when the timer is not running.
+- **Presets.** The selected tab is `Settings.restPresetSec`. The ViewModel clamps its list base to 60 s, so a stored value below 60 shows `0:30 · 1:00 · 2:00` with `0:30` selected — the list and selection can therefore disagree about the base, which is why the mock's middle-tab selection is not forced.
+- **Dialogs.** The exercise picker and session detail are restyled to the same system (sheet fill, hairline rows, orange filled Close) and the picker now scrolls to the selected exercise on open.
+- **Deviation.** The mock's weight/reps cells show a small `kg` suffix; the value is now an inline `BasicTextField`, so the unit moved into the cell label (`Weight · kg`) to keep the number and unit tight while typing. Session rows also carry the exercise name, which the mock omits, so multi-exercise sessions stay readable.
+- **Device check (e281c7, 1240 x 2772, density 476).** Logged `82.5 × 10` from the inline fields: set 3 appeared with the right time, volume moved to 2,105 kg, the plate result moved to `25 + 5 + 1.25`, the ring refilled, and force-stop + relaunch kept all three sets. The picker opened scrolled to `Bench Press` with `Selected`; no `AndroidRuntime:E`.
+- **Not built yet.** No per-set edit (delete only, from the session dialog), no warm-up/RPE controls, no plate inventory settings.
+- **Not tested.** Visual comparison against `tmp/concepts/all-tabs.html` (user measures).

@@ -1,6 +1,5 @@
 package com.vital.ui.screens
 
-import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -8,6 +7,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -17,14 +17,14 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -34,20 +34,23 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
-import androidx.compose.ui.text.PlatformTextStyle
+import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.em
+import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -57,25 +60,29 @@ import com.vital.data.entity.WorkoutSet
 import com.vital.domain.PlateCalculator
 import com.vital.domain.PlateLoad
 import com.vital.ui.LiftViewModel
-import com.vital.ui.components.FabGlyph
-import com.vital.ui.components.ScreenScaffold
-import com.vital.ui.components.ScreenVariant
-import com.vital.ui.components.insetShadow
+import com.vital.ui.components.EditorialButton
+import com.vital.ui.components.EditorialEyebrow
+import com.vital.ui.components.EditorialHeader
+import com.vital.ui.components.EditorialSectionHeader
+import com.vital.ui.components.Hairline
+import com.vital.ui.components.formatEditorialNumber
 import com.vital.ui.formatLiftVolume
 import com.vital.ui.formatLiftWeight
 import com.vital.ui.formatRestTime
-import com.vital.ui.theme.DesignUnitsProvider
 import com.vital.ui.theme.VitalColors
 import com.vital.ui.theme.VitalFonts
-import com.vital.ui.theme.duToDp
-import com.vital.ui.theme.duToSp
+import java.time.Instant
+import java.time.LocalDate
+import java.time.ZoneId
+import java.time.format.DateTimeFormatter
+import java.util.Locale
 
 /**
- * Lift, built to docs/measurements/lift.md.
+ * Lift, restyled to the editorial-dark hybrid mock.
  *
- * The sheet starts at 405 du (ScreenScaffold). The LazyColumn top padding is 8 du, the
- * title row is 25 du and every block is 8 du apart, so the wells land at 454, the presets
- * at 516, the plate panel at 560 and the session row at 727.
+ * The screen is a single ruled column: a rest hero with a 104 dp progress ring, the
+ * selected exercise, a weight/reps grid, the log button, rest presets as underlined
+ * tabs, the plate calculator and the session's set list. No cards or wells.
  */
 @Composable
 fun LiftScreen(
@@ -98,6 +105,7 @@ fun LiftScreen(
     val restRemaining by viewModel.restRemaining.collectAsStateWithLifecycle()
     val weightText by viewModel.weightText.collectAsStateWithLifecycle()
     val repsText by viewModel.repsText.collectAsStateWithLifecycle()
+    val settings by viewModel.settings.collectAsStateWithLifecycle()
 
     var showExercisePicker by rememberSaveable { mutableStateOf(false) }
     var showSessionDetail by rememberSaveable { mutableStateOf(false) }
@@ -106,315 +114,332 @@ fun LiftScreen(
     val reps = repsText.toIntOrNull()
     val canLog = exercise != null && weight != null && weight > 0.0 && reps != null && reps > 0
 
-    val currentSet = exerciseSets.size + 1
-    val firstLetter = (currentSet - 1).coerceAtLeast(1)
-    val dialLetters = listOf(firstLetter, firstLetter + 1, firstLetter + 2).map { it.toString() }
-    val dialHighlight = (currentSet - firstLetter).coerceIn(0, 2)
-
-    val presetSeconds = restPresets.getOrElse(1) { 180 }
-    val heroValue = if (restRemaining > 0) formatRestTime(restRemaining) else "0:00"
-    val dialInnerLabel = exercise?.name?.uppercase() ?: "SELECT EXERCISE"
-    val dialInnerValue = weight?.let { formatLiftWeight(it) } ?: "—"
-    val dialInnerUnit = if (weight != null) "kg" else ""
-    val dialPillText = if (exercise != null) {
-        "SET $currentSet · ×${reps?.toString() ?: "—"}"
+    val presetSeconds = settings.restPresetSec
+    val restProgress = if (presetSeconds > 0) {
+        (restRemaining.toFloat() / presetSeconds).coerceIn(0f, 1f)
     } else {
-        "SET —"
+        0f
     }
-    val dialTopPill = "OF ${formatRestTime(presetSeconds)}"
+    val exerciseNames = remember(exercises) { exercises.associate { it.id to it.name } }
+    val dateLabel = remember {
+        LocalDate.now().format(DateTimeFormatter.ofPattern("EEE dd.MM", Locale.US)).uppercase()
+    }
 
-    DesignUnitsProvider {
-        ScreenScaffold(
-            variant = ScreenVariant.OrangeHero,
-            title = "LIFT",
-            heroLabel = "REST LEFT",
-            heroValue = heroValue,
-            onShowMore = onShowSummary,
-            dialLetters = dialLetters,
-            dialHighlightedIndex = dialHighlight,
-            dialInnerLabel = dialInnerLabel,
-            dialInnerValue = dialInnerValue,
-            dialInnerUnit = dialInnerUnit,
-            dialPillText = dialPillText,
-            dialTopPill = dialTopPill,
-            dialFabGlyph = FabGlyph.Plus
+    Column(
+        modifier = modifier
+            .fillMaxSize()
+            .background(VitalColors.paper)
+    ) {
+        LazyColumn(
+            modifier = Modifier.fillMaxSize(),
+            contentPadding = PaddingValues(
+                start = 24.dp,
+                end = 24.dp,
+                top = 18.dp,
+                bottom = 24.dp
+            )
         ) {
-            LazyColumn(
-                modifier = Modifier.fillMaxSize(),
-                contentPadding = PaddingValues(
-                    start = 16.duToDp(),
-                    end = 16.duToDp(),
-                    top = 8.duToDp(),
-                    bottom = 16.duToDp()
-                ),
-                verticalArrangement = Arrangement.spacedBy(8.duToDp())
-            ) {
-                item {
-                    TitleRow(
-                        exerciseName = exercise?.name,
-                        lastSet = lastSet,
-                        onClick = { showExercisePicker = true }
-                    )
-                }
-                item {
-                    WeightRepsRow(
-                        weightText = weightText,
-                        repsText = repsText,
-                        onWeightChange = viewModel::setWeight,
-                        onRepsChange = viewModel::setReps,
-                        canLog = canLog,
-                        onLogSet = viewModel::logSet
-                    )
-                }
-                item {
-                    RestPresetRow(
-                        presets = restPresets,
-                        onSelect = viewModel::setRestPreset
-                    )
-                }
-                item {
-                    PlatePanel(
-                        targetWeight = weight,
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(159.duToDp())
-                    )
-                }
-                item {
-                    SessionRow(
-                        setsCount = sessionSets.size,
-                        volume = volume,
-                        onClick = { showSessionDetail = true },
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(44.duToDp())
-                    )
-                }
+            item {
+                EditorialHeader(
+                    title = "Lift",
+                    dateLabel = dateLabel
+                )
+            }
+            item {
+                RestHero(
+                    remaining = restRemaining,
+                    presetSeconds = presetSeconds,
+                    loggedSets = exerciseSets.size,
+                    progress = restProgress,
+                    modifier = Modifier.padding(top = 26.dp)
+                )
+            }
+            item {
+                ExerciseRow(
+                    name = exercise?.name,
+                    lastSet = lastSet,
+                    onClick = { showExercisePicker = true },
+                    modifier = Modifier.padding(top = 24.dp)
+                )
+            }
+            item {
+                WeightRepsGrid(
+                    weightText = weightText,
+                    repsText = repsText,
+                    onWeightChange = viewModel::setWeight,
+                    onRepsChange = viewModel::setReps,
+                    modifier = Modifier.padding(top = 12.dp)
+                )
+            }
+            item {
+                EditorialButton(
+                    text = "Log set",
+                    onClick = viewModel::logSet,
+                    enabled = canLog,
+                    modifier = Modifier.padding(top = 22.dp)
+                )
+            }
+            item {
+                RestPresetTabs(
+                    presets = restPresets,
+                    selectedSeconds = presetSeconds,
+                    onSelect = viewModel::setRestPreset,
+                    modifier = Modifier.padding(top = 22.dp)
+                )
+            }
+            item {
+                PlateBlock(
+                    targetWeight = weight,
+                    modifier = Modifier.padding(top = 24.dp)
+                )
+            }
+            item {
+                SessionBlock(
+                    sets = sessionSets,
+                    exerciseNames = exerciseNames,
+                    volume = volume,
+                    onClick = { showSessionDetail = true },
+                    modifier = Modifier.padding(top = 24.dp)
+                )
             }
         }
+    }
 
-        if (showExercisePicker) {
-            ExercisePickerDialog(
-                exercises = exercises,
-                selectedId = exercise?.id,
-                onSelect = { selected ->
-                    viewModel.selectExercise(selected)
-                    showExercisePicker = false
+    if (showExercisePicker) {
+        ExercisePickerDialog(
+            exercises = exercises,
+            selectedId = exercise?.id,
+            onSelect = { selected ->
+                viewModel.selectExercise(selected)
+                showExercisePicker = false
+            },
+            onDismiss = { showExercisePicker = false }
+        )
+    }
+
+    if (showSessionDetail) {
+        SessionDetailDialog(
+            sets = sessionSets,
+            exerciseNames = exerciseNames,
+            volume = volume,
+            onDelete = viewModel::deleteSet,
+            onDismiss = { showSessionDetail = false }
+        )
+    }
+}
+
+// ---- hero ----------------------------------------------------------------------------------
+
+@Composable
+private fun RestHero(
+    remaining: Int,
+    presetSeconds: Int,
+    loggedSets: Int,
+    progress: Float,
+    modifier: Modifier = Modifier
+) {
+    Row(
+        modifier = modifier.fillMaxWidth(),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.SpaceBetween
+    ) {
+        Column(modifier = Modifier.weight(1f)) {
+            EditorialEyebrow(text = "Rest")
+            Text(
+                text = if (remaining > 0) formatRestTime(remaining) else "0:00",
+                color = VitalColors.ink,
+                fontFamily = VitalFonts.InterTight,
+                fontSize = 72.sp,
+                fontWeight = FontWeight.Medium,
+                letterSpacing = (-0.055).em,
+                modifier = Modifier.padding(top = 14.dp)
+            )
+            Text(
+                text = buildAnnotatedString {
+                    append("set ")
+                    withStyle(SpanStyle(color = VitalColors.ink, fontWeight = FontWeight.Medium)) {
+                        append(loggedSets.toString())
+                    }
+                    append(" logged · target ")
+                    withStyle(SpanStyle(color = VitalColors.ink, fontWeight = FontWeight.Medium)) {
+                        append(formatRestTime(presetSeconds))
+                    }
                 },
-                onDismiss = { showExercisePicker = false }
+                color = VitalColors.inkMuted,
+                fontFamily = VitalFonts.JetBrainsMonoRegular,
+                fontSize = 11.sp,
+                modifier = Modifier.padding(top = 15.dp)
             )
         }
+        RestRing(
+            progress = progress,
+            modifier = Modifier.size(104.dp)
+        )
+    }
+}
 
-        if (showSessionDetail) {
-            SessionDetailDialog(
-                sets = sessionSets,
-                exerciseNames = exercises.associate { it.id to it.name },
-                volume = volume,
-                onDelete = viewModel::deleteSet,
-                onDismiss = { showSessionDetail = false }
+@Composable
+private fun RestRing(progress: Float, modifier: Modifier = Modifier) {
+    Canvas(modifier = modifier) {
+        val stroke = 5.dp.toPx()
+        val radius = size.minDimension / 2f - stroke / 2f
+        val topLeft = Offset(
+            size.width / 2f - radius,
+            size.height / 2f - radius
+        )
+        val arcSize = Size(radius * 2f, radius * 2f)
+
+        drawCircle(
+            color = VitalColors.ruleStrong,
+            radius = radius,
+            style = Stroke(width = stroke)
+        )
+        if (progress > 0f) {
+            drawArc(
+                color = VitalColors.orange,
+                startAngle = -90f,
+                sweepAngle = 360f * progress,
+                useCenter = false,
+                topLeft = topLeft,
+                size = arcSize,
+                style = Stroke(width = stroke, cap = StrokeCap.Round)
             )
         }
     }
 }
 
-// ---- title ---------------------------------------------------------------------------------
+// ---- exercise ------------------------------------------------------------------------------
 
 @Composable
-private fun TitleRow(
-    exerciseName: String?,
+private fun ExerciseRow(
+    name: String?,
     lastSet: WorkoutSet?,
-    onClick: () -> Unit
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier
 ) {
-    Box(
-        modifier = Modifier
+    Row(
+        modifier = modifier
             .fillMaxWidth()
-            .height(25.duToDp())
-            .clickable(onClick = onClick)
+            .clickable(onClick = onClick),
+        verticalAlignment = Alignment.CenterVertically
     ) {
         Text(
-            text = exerciseName?.uppercase() ?: "SELECT EXERCISE",
-            style = TextStyle(
-                color = VitalColors.textPrimary,
-                fontSize = 17.duToSp(),
-                fontWeight = FontWeight.SemiBold,
-                fontFamily = VitalFonts.InterTight,
-                lineHeight = 17.duToSp(),
-                letterSpacing = 0.01.em,
-                platformStyle = PlatformTextStyle(includeFontPadding = false)
-            ),
+            text = name ?: "Select exercise",
+            color = VitalColors.ink,
+            fontFamily = VitalFonts.InterTight,
+            fontSize = 21.sp,
+            fontWeight = FontWeight.SemiBold,
+            letterSpacing = (-0.02).em,
             maxLines = 1,
             overflow = TextOverflow.Ellipsis,
-            modifier = Modifier
-                .align(Alignment.TopStart)
-                .padding(start = 1.duToDp())
-                .widthIn(max = 250.duToDp())
+            modifier = Modifier.weight(1f)
         )
         Text(
-            text = lastSet?.let { "LAST ${formatLiftWeight(it.weightKg)} × ${it.reps}" } ?: "LAST —",
-            style = TextStyle(
-                color = VitalColors.textMuted,
-                fontSize = 10.duToSp(),
-                fontWeight = FontWeight.Medium,
-                fontFamily = VitalFonts.JetBrainsMonoMedium,
-                lineHeight = 10.duToSp(),
-                platformStyle = PlatformTextStyle(includeFontPadding = false)
-            ),
-            maxLines = 1,
-            modifier = Modifier
-                .align(Alignment.TopEnd)
-                .padding(end = 3.duToDp(), top = 5.duToDp())
+            text = lastSet?.let { "${formatLiftWeight(it.weightKg)} × ${it.reps}" } ?: "—",
+            color = VitalColors.inkMuted,
+            fontFamily = VitalFonts.JetBrainsMonoRegular,
+            fontSize = 11.sp
         )
     }
 }
 
-// ---- weight / reps / log set ---------------------------------------------------------------
+// ---- weight / reps -------------------------------------------------------------------------
 
 @Composable
-private fun WeightRepsRow(
+private fun WeightRepsGrid(
     weightText: String,
     repsText: String,
     onWeightChange: (String) -> Unit,
     onRepsChange: (String) -> Unit,
-    canLog: Boolean,
-    onLogSet: () -> Unit
+    modifier: Modifier = Modifier
 ) {
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .height(54.duToDp()),
-        horizontalArrangement = Arrangement.spacedBy(8.duToDp())
-    ) {
-        LiftValueWell(
-            label = "WEIGHT KG",
-            value = weightText,
-            onValueChange = onWeightChange,
-            keyboardType = KeyboardType.Decimal,
-            imeAction = ImeAction.Next,
-            modifier = Modifier.weight(1f)
-        )
-        LiftValueWell(
-            label = "REPS",
-            value = repsText,
-            onValueChange = onRepsChange,
-            keyboardType = KeyboardType.Number,
-            imeAction = ImeAction.Done,
-            modifier = Modifier.weight(1f)
-        )
-        LogSetButton(
-            enabled = canLog,
-            onClick = onLogSet,
+    Column(modifier = modifier.fillMaxWidth()) {
+        Hairline()
+        Row(
             modifier = Modifier
-                .width(92.duToDp())
-                .fillMaxHeight()
-        )
+                .fillMaxWidth()
+                .height(IntrinsicSize.Min)
+        ) {
+            FieldCell(
+                label = "Weight · kg",
+                value = weightText,
+                onValueChange = onWeightChange,
+                keyboardType = KeyboardType.Decimal,
+                imeAction = ImeAction.Next,
+                startPadding = 0.dp,
+                modifier = Modifier.weight(1f)
+            )
+            Box(
+                modifier = Modifier
+                    .fillMaxHeight()
+                    .width(1.dp)
+                    .background(VitalColors.rule)
+            )
+            FieldCell(
+                label = "Reps",
+                value = repsText,
+                onValueChange = onRepsChange,
+                keyboardType = KeyboardType.Number,
+                imeAction = ImeAction.Done,
+                startPadding = 20.dp,
+                modifier = Modifier.weight(1f)
+            )
+        }
+        Hairline()
     }
 }
 
 @Composable
-private fun LiftValueWell(
+private fun FieldCell(
     label: String,
     value: String,
     onValueChange: (String) -> Unit,
     keyboardType: KeyboardType,
     imeAction: ImeAction,
+    startPadding: androidx.compose.ui.unit.Dp,
     modifier: Modifier = Modifier
 ) {
-    Surface(
-        modifier = modifier
-            .fillMaxHeight()
-            .insetShadow(
-                elevation = 2.dp,
-                cornerRadius = 10.duToDp(),
-                shadowColor = VitalColors.black.copy(alpha = 0.4f)
-            ),
-        color = VitalColors.wellFill,
-        shape = RoundedCornerShape(10.duToDp()),
-        border = BorderStroke(1.5f.duToDp(), VitalColors.wellStroke)
+    Column(
+        modifier = modifier.padding(
+            start = startPadding,
+            top = 15.dp,
+            bottom = 15.dp
+        )
     ) {
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(start = 14.duToDp(), top = 6.duToDp())
-        ) {
-            Text(
-                text = label,
-                style = TextStyle(
-                    color = VitalColors.textMuted,
-                    fontSize = 10.duToSp(),
-                    fontWeight = FontWeight.Bold,
-                    fontFamily = VitalFonts.JetBrainsMonoBold,
-                    letterSpacing = 0.12.em,
-                    lineHeight = 10.duToSp(),
-                    platformStyle = PlatformTextStyle(includeFontPadding = false)
-                ),
-                maxLines = 1
-            )
-            Spacer(Modifier.height(5.duToDp()))
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(24.duToDp())
-            ) {
-                if (value.isEmpty()) {
-                    Text(
-                        text = "—",
-                        style = TextStyle(
-                            color = VitalColors.textMuted,
-                            fontSize = 24.duToSp(),
-                            fontWeight = FontWeight.SemiBold,
-                            fontFamily = VitalFonts.InterTight,
-                            lineHeight = 24.duToSp(),
-                            platformStyle = PlatformTextStyle(includeFontPadding = false)
-                        )
-                    )
-                }
-                BasicTextField(
-                    value = value,
-                    onValueChange = onValueChange,
-                    singleLine = true,
-                    textStyle = TextStyle(
-                        color = VitalColors.textPrimary,
-                        fontSize = 24.duToSp(),
-                        fontWeight = FontWeight.SemiBold,
-                        fontFamily = VitalFonts.InterTight,
-                        lineHeight = 24.duToSp(),
-                        platformStyle = PlatformTextStyle(includeFontPadding = false)
-                    ),
-                    cursorBrush = SolidColor(VitalColors.orange),
-                    keyboardOptions = KeyboardOptions(
-                        keyboardType = keyboardType,
-                        imeAction = imeAction
-                    ),
-                    modifier = Modifier.fillMaxSize()
+        Text(
+            text = label,
+            color = VitalColors.inkMuted,
+            fontFamily = VitalFonts.InterTight,
+            fontSize = 11.sp,
+            fontWeight = FontWeight.Medium
+        )
+        Box(modifier = Modifier.padding(top = 7.dp)) {
+            if (value.isEmpty()) {
+                Text(
+                    text = "—",
+                    color = VitalColors.inkMuted,
+                    fontFamily = VitalFonts.InterTight,
+                    fontSize = 26.sp,
+                    fontWeight = FontWeight.SemiBold
                 )
             }
-        }
-    }
-}
-
-@Composable
-private fun LogSetButton(
-    enabled: Boolean,
-    onClick: () -> Unit,
-    modifier: Modifier = Modifier
-) {
-    Surface(
-        modifier = modifier.clickable(enabled = enabled, onClick = onClick),
-        color = if (enabled) VitalColors.orange else VitalColors.orange.copy(alpha = 0.35f),
-        shape = RoundedCornerShape(10.duToDp())
-    ) {
-        Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-            Text(
-                text = "LOG SET",
-                style = TextStyle(
-                    color = VitalColors.black.copy(alpha = if (enabled) 1f else 0.5f),
-                    fontSize = 12.duToSp(),
-                    fontWeight = FontWeight.Bold,
-                    fontFamily = VitalFonts.JetBrainsMonoBold,
-                    letterSpacing = 0.08.em,
-                    lineHeight = 12.duToSp(),
-                    platformStyle = PlatformTextStyle(includeFontPadding = false)
-                )
+            BasicTextField(
+                value = value,
+                onValueChange = onValueChange,
+                singleLine = true,
+                textStyle = TextStyle(
+                    color = VitalColors.ink,
+                    fontFamily = VitalFonts.InterTight,
+                    fontSize = 26.sp,
+                    fontWeight = FontWeight.SemiBold,
+                    letterSpacing = (-0.02).em
+                ),
+                cursorBrush = SolidColor(VitalColors.orange),
+                keyboardOptions = KeyboardOptions(
+                    keyboardType = keyboardType,
+                    imeAction = imeAction
+                ),
+                modifier = Modifier.fillMaxWidth()
             )
         }
     }
@@ -423,62 +448,47 @@ private fun LogSetButton(
 // ---- rest presets --------------------------------------------------------------------------
 
 @Composable
-private fun RestPresetRow(
+private fun RestPresetTabs(
     presets: List<Int>,
-    onSelect: (Int) -> Unit
-) {
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .height(36.duToDp()),
-        horizontalArrangement = Arrangement.spacedBy(8.duToDp())
-    ) {
-        presets.forEachIndexed { index, seconds ->
-            RestPresetButton(
-                label = formatRestTime(seconds),
-                selected = index == 1,
-                onClick = { onSelect(seconds) },
-                modifier = Modifier
-                    .weight(1f)
-                    .fillMaxHeight()
-            )
-        }
-    }
-}
-
-@Composable
-private fun RestPresetButton(
-    label: String,
-    selected: Boolean,
-    onClick: () -> Unit,
+    selectedSeconds: Int,
+    onSelect: (Int) -> Unit,
     modifier: Modifier = Modifier
 ) {
-    Surface(
-        modifier = modifier.clickable(onClick = onClick),
-        color = if (selected) VitalColors.orange else VitalColors.wellFill,
-        shape = RoundedCornerShape(6.duToDp()),
-        border = if (selected) null else BorderStroke(1.5f.duToDp(), VitalColors.wellStroke)
-    ) {
-        Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-            Text(
-                text = label,
-                style = TextStyle(
-                    color = if (selected) VitalColors.black else VitalColors.textPrimary,
-                    fontSize = 12.duToSp(),
-                    fontWeight = FontWeight.Bold,
-                    fontFamily = VitalFonts.JetBrainsMonoBold,
-                    lineHeight = 12.duToSp(),
-                    platformStyle = PlatformTextStyle(includeFontPadding = false)
-                )
-            )
+    Column(modifier = modifier.fillMaxWidth()) {
+        Row(horizontalArrangement = Arrangement.spacedBy(28.dp)) {
+            presets.forEach { seconds ->
+                val selected = seconds == selectedSeconds
+                Column(
+                    modifier = Modifier
+                        .width(IntrinsicSize.Min)
+                        .clickable { onSelect(seconds) }
+                ) {
+                    Text(
+                        text = formatRestTime(seconds),
+                        color = if (selected) VitalColors.ink else VitalColors.inkMuted,
+                        fontFamily = VitalFonts.JetBrainsMonoRegular,
+                        fontSize = 13.sp,
+                        modifier = Modifier.padding(bottom = 10.dp)
+                    )
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(2.dp)
+                            .background(
+                                if (selected) VitalColors.orange else Color.Transparent
+                            )
+                    )
+                }
+            }
         }
+        Hairline()
     }
 }
 
-// ---- plate panel ---------------------------------------------------------------------------
+// ---- plate calculator ----------------------------------------------------------------------
 
 @Composable
-private fun PlatePanel(
+private fun PlateBlock(
     targetWeight: Double?,
     modifier: Modifier = Modifier
 ) {
@@ -487,198 +497,151 @@ private fun PlatePanel(
         if (exactLoad == null) targetWeight?.let { PlateCalculator.nearestLoadable(it) } else null
     val load = exactLoad ?: nearestLoad
     val perSide = load?.perSideKg.orEmpty()
-    val isExact = exactLoad != null
-
-    val header = if (targetWeight == null) {
-        "PLATES · TARGET — KG · BAR 20 KG"
-    } else {
-        "PLATES · TARGET ${formatLiftWeight(targetWeight)} KG · BAR 20 KG"
-    }
 
     val result = when {
         perSide.isNotEmpty() -> perSide.joinToString(" + ") { formatLiftWeight(it) }
-        targetWeight != null && targetWeight >= PlateCalculator.DEFAULT_BAR_KG -> "BAR"
+        targetWeight != null && targetWeight >= PlateCalculator.DEFAULT_BAR_KG -> "Bar"
         else -> "—"
     }
-
     val caption = when {
-        targetWeight == null -> "KG PER SIDE"
-        perSide.isEmpty() && targetWeight >= PlateCalculator.DEFAULT_BAR_KG -> "KG PER SIDE · EXACT"
-        else -> "KG PER SIDE · ${if (isExact) "EXACT" else "NEAREST"}"
+        targetWeight == null -> "per side · bar 20 kg"
+        else -> "per side · ${if (exactLoad != null) "exact" else "nearest"}"
     }
 
-    Surface(
-        modifier = modifier.insetShadow(
-            elevation = 7.dp,
-            cornerRadius = 8.duToDp(),
-            shadowColor = VitalColors.panelGreyShadow
-        ),
-        color = VitalColors.panelGrey,
-        shape = RoundedCornerShape(8.duToDp())
-    ) {
-        Box(Modifier.fillMaxSize()) {
-            Canvas(Modifier.fillMaxSize()) {
-                val u = size.height / 159f
-                val barCenterY = 95.5f * u
-                val barHeight = 8f * u
-
-                // Bar line, bleeding to both panel edges.
-                drawRect(
-                    color = Color.Black,
-                    topLeft = Offset(0f, barCenterY - barHeight / 2f),
-                    size = Size(size.width, barHeight)
-                )
-
-                // Collar to the left of the plates.
-                drawRoundRect(
-                    color = Color.Black,
-                    topLeft = Offset(18f * u, 79f * u),
-                    size = Size(10f * u, 33f * u),
-                    cornerRadius = CornerRadius(2f * u)
-                )
-
-                var x = 34f * u
-                perSide.forEach { plate ->
-                    val plateWidth = if (plate >= 25.0) 16f * u else 13f * u
-                    val plateHeight =
-                        ((27.0 + 2.5 * plate).coerceIn(24.0, 90.0) * u).toFloat()
-                    drawRoundRect(
-                        color = if (plate >= 25.0) Color.Black else VitalColors.orange,
-                        topLeft = Offset(x, barCenterY - plateHeight / 2f),
-                        size = Size(plateWidth, plateHeight),
-                        cornerRadius = CornerRadius(3f * u)
-                    )
-                    x += plateWidth + 2f * u
-                }
-            }
-
-            Text(
-                text = header,
-                style = TextStyle(
-                    color = VitalColors.black,
-                    fontSize = 10.duToSp(),
-                    fontWeight = FontWeight.Bold,
-                    fontFamily = VitalFonts.JetBrainsMonoBold,
-                    letterSpacing = 0.1.em,
-                    lineHeight = 10.duToSp(),
-                    platformStyle = PlatformTextStyle(includeFontPadding = false)
-                ),
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis,
-                modifier = Modifier
-                    .align(Alignment.TopStart)
-                    .padding(start = 10.duToDp(), top = 10.duToDp())
-            )
-
-            Column(
-                modifier = Modifier
-                    .align(Alignment.TopEnd)
-                    .padding(end = 16.duToDp(), top = 30.duToDp()),
-                horizontalAlignment = Alignment.End
-            ) {
-                Text(
-                    text = result,
-                    style = TextStyle(
-                        color = VitalColors.textPrimary,
-                        fontSize = resultFontSize(result).duToSp(),
-                        fontWeight = FontWeight.Bold,
-                        fontFamily = VitalFonts.InterTight,
-                        lineHeight = resultFontSize(result).duToSp(),
-                        platformStyle = PlatformTextStyle(includeFontPadding = false)
-                    ),
-                    maxLines = 1,
-                    textAlign = TextAlign.End
-                )
-                Spacer(Modifier.height(40.duToDp()))
-                Text(
-                    text = caption,
-                    style = TextStyle(
-                        color = VitalColors.textPrimary,
-                        fontSize = 10.duToSp(),
-                        fontWeight = FontWeight.Bold,
-                        fontFamily = VitalFonts.JetBrainsMonoBold,
-                        lineHeight = 10.duToSp(),
-                        platformStyle = PlatformTextStyle(includeFontPadding = false)
-                    ),
-                    maxLines = 1,
-                    textAlign = TextAlign.End
-                )
-            }
-        }
+    Column(modifier = modifier.fillMaxWidth()) {
+        EditorialSectionHeader(
+            title = "Plate calculator",
+            trailing = caption
+        )
+        Text(
+            text = result,
+            color = VitalColors.ink,
+            fontFamily = VitalFonts.InterTight,
+            fontSize = 24.sp,
+            fontWeight = FontWeight.SemiBold,
+            letterSpacing = (-0.02).em,
+            modifier = Modifier.padding(top = 6.dp, bottom = 14.dp)
+        )
+        Hairline()
     }
 }
 
-private fun resultFontSize(result: String): Float = when {
-    result.length <= 7 -> 38f
-    result.length <= 10 -> 30f
-    else -> 24f
-}
-
-// ---- session row ---------------------------------------------------------------------------
+// ---- session -------------------------------------------------------------------------------
 
 @Composable
-private fun SessionRow(
-    setsCount: Int,
+private fun SessionBlock(
+    sets: List<WorkoutSet>,
+    exerciseNames: Map<String, String>,
     volume: Double,
     onClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    Surface(
-        modifier = modifier.clickable(onClick = onClick),
-        color = VitalColors.wellFill,
-        shape = RoundedCornerShape(10.duToDp()),
-        border = BorderStroke(1.5f.duToDp(), VitalColors.wellStroke)
-    ) {
+    Column(modifier = modifier.fillMaxWidth()) {
         Row(
             modifier = Modifier
-                .fillMaxSize()
-                .padding(start = 16.duToDp(), end = 19.duToDp()),
+                .fillMaxWidth()
+                .clickable(onClick = onClick)
+                .padding(bottom = 2.dp),
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
             Text(
-                text = "SESSION · $setsCount ${if (setsCount == 1) "SET" else "SETS"}",
-                style = TextStyle(
-                    color = VitalColors.textMuted,
-                    fontSize = 10.duToSp(),
-                    fontWeight = FontWeight.Bold,
-                    fontFamily = VitalFonts.JetBrainsMonoBold,
-                    letterSpacing = 0.12.em,
-                    lineHeight = 10.duToSp(),
-                    platformStyle = PlatformTextStyle(includeFontPadding = false)
-                ),
-                maxLines = 1
+                text = "THIS SESSION",
+                color = VitalColors.inkMuted,
+                fontFamily = VitalFonts.InterTight,
+                fontSize = 10.sp,
+                fontWeight = FontWeight.Bold,
+                letterSpacing = 0.16.em
             )
-            Row(verticalAlignment = Alignment.Bottom) {
+            Text(
+                text = "${formatEditorialNumber(volume)} kg",
+                color = VitalColors.inkMuted,
+                fontFamily = VitalFonts.JetBrainsMonoRegular,
+                fontSize = 11.sp
+            )
+        }
+        if (sets.isEmpty()) {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .heightIn(min = 44.dp)
+                    .padding(vertical = 13.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
                 Text(
-                    text = formatLiftVolume(volume),
-                    style = TextStyle(
-                        color = VitalColors.textPrimary,
-                        fontSize = 20.duToSp(),
-                        fontWeight = FontWeight.Bold,
-                        fontFamily = VitalFonts.InterTight,
-                        lineHeight = 20.duToSp(),
-                        platformStyle = PlatformTextStyle(includeFontPadding = false)
-                    ),
-                    maxLines = 1
+                    text = "No sets yet",
+                    color = VitalColors.inkMuted,
+                    fontFamily = VitalFonts.InterTight,
+                    fontSize = 13.sp
                 )
-                Spacer(Modifier.width(3.duToDp()))
-                Text(
-                    text = "KG",
-                    style = TextStyle(
-                        color = VitalColors.textMuted,
-                        fontSize = 10.duToSp(),
-                        fontWeight = FontWeight.Bold,
-                        fontFamily = VitalFonts.JetBrainsMonoBold,
-                        lineHeight = 10.duToSp(),
-                        platformStyle = PlatformTextStyle(includeFontPadding = false)
-                    ),
-                    modifier = Modifier.padding(bottom = 2.duToDp())
+            }
+            Hairline()
+        } else {
+            sets.forEach { set ->
+                SessionSetRow(
+                    set = set,
+                    exerciseName = exerciseNames[set.exerciseId]
                 )
             }
         }
     }
 }
+
+@Composable
+private fun SessionSetRow(
+    set: WorkoutSet,
+    exerciseName: String?
+) {
+    Column(modifier = Modifier.fillMaxWidth()) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .heightIn(min = 44.dp)
+                .padding(vertical = 13.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text(
+                text = "Set ${set.setIndex}",
+                color = VitalColors.inkMuted,
+                fontFamily = VitalFonts.InterTight,
+                fontSize = 13.sp,
+                modifier = Modifier.width(92.dp)
+            )
+            Text(
+                text = "${formatLiftWeight(set.weightKg)} × ${set.reps}",
+                color = VitalColors.ink,
+                fontFamily = VitalFonts.JetBrainsMonoRegular,
+                fontSize = 13.sp,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+                modifier = Modifier.weight(1f)
+            )
+            if (exerciseName != null) {
+                Text(
+                    text = exerciseName,
+                    color = VitalColors.inkMuted,
+                    fontFamily = VitalFonts.InterTight,
+                    fontSize = 11.sp,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                    modifier = Modifier.padding(horizontal = 10.dp)
+                )
+            }
+            Text(
+                text = formatSetTime(set.updatedAt),
+                color = VitalColors.inkMuted,
+                fontFamily = VitalFonts.JetBrainsMonoRegular,
+                fontSize = 11.sp
+            )
+        }
+        Hairline()
+    }
+}
+
+private fun formatSetTime(millis: Long): String =
+    Instant.ofEpochMilli(millis)
+        .atZone(ZoneId.systemDefault())
+        .format(DateTimeFormatter.ofPattern("HH:mm", Locale.US))
 
 // ---- dialogs -------------------------------------------------------------------------------
 
@@ -694,6 +657,11 @@ private fun ExercisePickerDialog(
         if (query.isBlank()) exercises
         else exercises.filter { it.name.contains(query, ignoreCase = true) }
     }
+    val listState = rememberLazyListState(
+        initialFirstVisibleItemIndex = filtered
+            .indexOfFirst { it.id == selectedId }
+            .coerceAtLeast(0)
+    )
 
     Dialog(onDismissRequest = onDismiss) {
         DialogShell {
@@ -701,25 +669,21 @@ private fun ExercisePickerDialog(
                 text = "SELECT EXERCISE",
                 style = dialogTitleStyle()
             )
-            Spacer(Modifier.height(10.duToDp()))
+            Spacer(Modifier.height(14.dp))
             SearchField(value = query, onValueChange = { query = it })
-            Spacer(Modifier.height(10.duToDp()))
+            Spacer(Modifier.height(10.dp))
             if (filtered.isEmpty()) {
                 Text(
-                    text = "NO MATCH",
-                    style = TextStyle(
-                        color = VitalColors.textMuted,
-                        fontSize = 11.duToSp(),
-                        fontFamily = VitalFonts.JetBrainsMonoBold,
-                        lineHeight = 11.duToSp(),
-                        platformStyle = PlatformTextStyle(includeFontPadding = false)
-                    )
+                    text = "No match",
+                    color = VitalColors.inkMuted,
+                    fontFamily = VitalFonts.InterTight,
+                    fontSize = 13.sp
                 )
-                Spacer(Modifier.height(12.duToDp()))
+                Spacer(Modifier.height(12.dp))
             } else {
                 LazyColumn(
-                    modifier = Modifier.heightIn(max = 300.duToDp()),
-                    verticalArrangement = Arrangement.spacedBy(6.duToDp())
+                    state = listState,
+                    modifier = Modifier.heightIn(max = 300.dp)
                 ) {
                     items(filtered, key = { it.id }) { option ->
                         ExerciseRow(
@@ -729,10 +693,10 @@ private fun ExercisePickerDialog(
                         )
                     }
                 }
-                Spacer(Modifier.height(12.duToDp()))
+                Spacer(Modifier.height(12.dp))
             }
             DialogButton(
-                text = "CLOSE",
+                text = "Close",
                 onClick = onDismiss,
                 modifier = Modifier.fillMaxWidth()
             )
@@ -746,65 +710,47 @@ private fun ExerciseRow(
     selected: Boolean,
     onClick: () -> Unit
 ) {
-    Surface(
+    Column(
         modifier = Modifier
             .fillMaxWidth()
-            .height(44.duToDp())
-            .clickable(onClick = onClick),
-        color = if (selected) VitalColors.orange.copy(alpha = 0.15f) else Color.Transparent,
-        shape = RoundedCornerShape(8.duToDp()),
-        border = BorderStroke(
-            1.duToDp(),
-            if (selected) VitalColors.orange else VitalColors.wellStroke
-        )
+            .clickable(onClick = onClick)
     ) {
         Row(
             modifier = Modifier
-                .fillMaxSize()
-                .padding(horizontal = 12.duToDp()),
+                .fillMaxWidth()
+                .heightIn(min = 44.dp)
+                .padding(vertical = 9.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
             Column(modifier = Modifier.weight(1f)) {
                 Text(
-                    text = exercise.name.uppercase(),
-                    style = TextStyle(
-                        color = if (selected) VitalColors.orange else VitalColors.textPrimary,
-                        fontSize = 13.duToSp(),
-                        fontWeight = FontWeight.SemiBold,
-                        fontFamily = VitalFonts.InterTight,
-                        lineHeight = 13.duToSp(),
-                        platformStyle = PlatformTextStyle(includeFontPadding = false)
-                    ),
+                    text = exercise.name,
+                    color = if (selected) VitalColors.orange else VitalColors.ink,
+                    fontFamily = VitalFonts.InterTight,
+                    fontSize = 13.sp,
+                    fontWeight = FontWeight.Medium,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis
                 )
                 Text(
                     text = exerciseSubtitle(exercise),
-                    style = TextStyle(
-                        color = VitalColors.textMuted,
-                        fontSize = 9.duToSp(),
-                        fontFamily = VitalFonts.JetBrainsMonoBold,
-                        lineHeight = 9.duToSp(),
-                        platformStyle = PlatformTextStyle(includeFontPadding = false)
-                    ),
+                    color = VitalColors.inkMuted,
+                    fontFamily = VitalFonts.JetBrainsMonoRegular,
+                    fontSize = 9.sp,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis
                 )
             }
             if (selected) {
                 Text(
-                    text = "SELECTED",
-                    style = TextStyle(
-                        color = VitalColors.orange,
-                        fontSize = 9.duToSp(),
-                        fontWeight = FontWeight.Bold,
-                        fontFamily = VitalFonts.JetBrainsMonoBold,
-                        lineHeight = 9.duToSp(),
-                        platformStyle = PlatformTextStyle(includeFontPadding = false)
-                    )
+                    text = "Selected",
+                    color = VitalColors.orange,
+                    fontFamily = VitalFonts.JetBrainsMonoRegular,
+                    fontSize = 9.sp
                 )
             }
         }
+        Hairline()
     }
 }
 
@@ -822,88 +768,68 @@ private fun SessionDetailDialog(
                 text = "SESSION",
                 style = dialogTitleStyle()
             )
-            Spacer(Modifier.height(4.duToDp()))
+            Spacer(Modifier.height(6.dp))
             Text(
-                text = "${sets.size} ${if (sets.size == 1) "SET" else "SETS"} · ${formatLiftVolume(volume)} KG",
-                style = TextStyle(
-                    color = VitalColors.textMuted,
-                    fontSize = 10.duToSp(),
-                    fontWeight = FontWeight.Bold,
-                    fontFamily = VitalFonts.JetBrainsMonoBold,
-                    lineHeight = 10.duToSp(),
-                    platformStyle = PlatformTextStyle(includeFontPadding = false)
-                )
+                text = "${sets.size} ${if (sets.size == 1) "set" else "sets"} · " +
+                    "${formatLiftVolume(volume)} kg",
+                color = VitalColors.inkMuted,
+                fontFamily = VitalFonts.JetBrainsMonoRegular,
+                fontSize = 11.sp
             )
-            Spacer(Modifier.height(12.duToDp()))
+            Spacer(Modifier.height(14.dp))
             if (sets.isEmpty()) {
                 Text(
-                    text = "NO SETS YET",
-                    style = TextStyle(
-                        color = VitalColors.textMuted,
-                        fontSize = 11.duToSp(),
-                        fontFamily = VitalFonts.JetBrainsMonoBold,
-                        lineHeight = 11.duToSp(),
-                        platformStyle = PlatformTextStyle(includeFontPadding = false)
-                    )
+                    text = "No sets yet",
+                    color = VitalColors.inkMuted,
+                    fontFamily = VitalFonts.InterTight,
+                    fontSize = 13.sp
                 )
             } else {
-                LazyColumn(
-                    modifier = Modifier.heightIn(max = 320.duToDp()),
-                    verticalArrangement = Arrangement.spacedBy(8.duToDp())
-                ) {
+                LazyColumn(modifier = Modifier.heightIn(max = 320.dp)) {
                     items(sets, key = { it.id }) { set ->
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(vertical = 2.duToDp()),
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Column(modifier = Modifier.weight(1f)) {
-                                Text(
-                                    text = (exerciseNames[set.exerciseId] ?: "EXERCISE").uppercase(),
-                                    style = TextStyle(
-                                        color = VitalColors.textPrimary,
-                                        fontSize = 13.duToSp(),
-                                        fontWeight = FontWeight.SemiBold,
+                        Column(modifier = Modifier.fillMaxWidth()) {
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(vertical = 10.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Column(modifier = Modifier.weight(1f)) {
+                                    Text(
+                                        text = exerciseNames[set.exerciseId] ?: "Exercise",
+                                        color = VitalColors.ink,
                                         fontFamily = VitalFonts.InterTight,
-                                        lineHeight = 13.duToSp(),
-                                        platformStyle = PlatformTextStyle(includeFontPadding = false)
-                                    ),
-                                    maxLines = 1,
-                                    overflow = TextOverflow.Ellipsis
-                                )
-                                Text(
-                                    text = "SET ${set.setIndex} · ${formatLiftWeight(set.weightKg)} KG × ${set.reps}",
-                                    style = TextStyle(
-                                        color = VitalColors.textMuted,
-                                        fontSize = 10.duToSp(),
-                                        fontFamily = VitalFonts.JetBrainsMonoBold,
-                                        lineHeight = 10.duToSp(),
-                                        platformStyle = PlatformTextStyle(includeFontPadding = false)
+                                        fontSize = 13.sp,
+                                        fontWeight = FontWeight.Medium,
+                                        maxLines = 1,
+                                        overflow = TextOverflow.Ellipsis
                                     )
+                                    Text(
+                                        text = "Set ${set.setIndex} · " +
+                                            "${formatLiftWeight(set.weightKg)} kg × ${set.reps}",
+                                        color = VitalColors.inkMuted,
+                                        fontFamily = VitalFonts.JetBrainsMonoRegular,
+                                        fontSize = 10.sp
+                                    )
+                                }
+                                Text(
+                                    text = "Delete",
+                                    color = VitalColors.orange,
+                                    fontFamily = VitalFonts.JetBrainsMonoRegular,
+                                    fontSize = 10.sp,
+                                    modifier = Modifier
+                                        .clickable { onDelete(set) }
+                                        .padding(start = 8.dp, top = 6.dp, bottom = 6.dp)
                                 )
                             }
-                            Text(
-                                text = "DELETE",
-                                style = TextStyle(
-                                    color = VitalColors.orange,
-                                    fontSize = 10.duToSp(),
-                                    fontWeight = FontWeight.Bold,
-                                    fontFamily = VitalFonts.JetBrainsMonoBold,
-                                    lineHeight = 10.duToSp(),
-                                    platformStyle = PlatformTextStyle(includeFontPadding = false)
-                                ),
-                                modifier = Modifier
-                                    .clickable { onDelete(set) }
-                                    .padding(start = 8.duToDp(), top = 6.duToDp(), bottom = 6.duToDp())
-                            )
+                            Hairline()
                         }
                     }
                 }
             }
-            Spacer(Modifier.height(14.duToDp()))
+            Spacer(Modifier.height(16.dp))
             DialogButton(
-                text = "CLOSE",
+                text = "Close",
                 onClick = onDismiss,
                 modifier = Modifier.fillMaxWidth()
             )
@@ -919,22 +845,18 @@ private fun SearchField(
     Box(
         modifier = Modifier
             .fillMaxWidth()
-            .height(40.duToDp())
-            .background(VitalColors.black, RoundedCornerShape(8.duToDp()))
-            .border(1.duToDp(), VitalColors.wellStroke, RoundedCornerShape(8.duToDp())),
+            .height(44.dp)
+            .background(VitalColors.paper, RoundedCornerShape(4.dp))
+            .border(1.dp, VitalColors.ruleStrong, RoundedCornerShape(4.dp)),
         contentAlignment = Alignment.CenterStart
     ) {
         if (value.isEmpty()) {
             Text(
-                text = "SEARCH",
-                style = TextStyle(
-                    color = VitalColors.textMuted,
-                    fontSize = 11.duToSp(),
-                    fontFamily = VitalFonts.JetBrainsMonoBold,
-                    lineHeight = 11.duToSp(),
-                    platformStyle = PlatformTextStyle(includeFontPadding = false)
-                ),
-                modifier = Modifier.padding(horizontal = 12.duToDp())
+                text = "Search",
+                color = VitalColors.inkMuted,
+                fontFamily = VitalFonts.InterTight,
+                fontSize = 13.sp,
+                modifier = Modifier.padding(horizontal = 12.dp)
             )
         }
         BasicTextField(
@@ -942,30 +864,28 @@ private fun SearchField(
             onValueChange = onValueChange,
             singleLine = true,
             textStyle = TextStyle(
-                color = VitalColors.textPrimary,
-                fontSize = 13.duToSp(),
+                color = VitalColors.ink,
                 fontFamily = VitalFonts.InterTight,
-                platformStyle = PlatformTextStyle(includeFontPadding = false)
+                fontSize = 13.sp
             ),
             cursorBrush = SolidColor(VitalColors.orange),
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = 12.duToDp())
+                .padding(horizontal = 12.dp)
         )
     }
 }
 
 @Composable
 private fun DialogShell(content: @Composable () -> Unit) {
-    Surface(
-        modifier = Modifier.fillMaxWidth(),
-        color = VitalColors.wellFill,
-        shape = RoundedCornerShape(18.duToDp()),
-        border = BorderStroke(1.5f.duToDp(), VitalColors.wellStroke)
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .background(VitalColors.sheet, RoundedCornerShape(12.dp))
+            .border(1.dp, VitalColors.ruleStrong, RoundedCornerShape(12.dp))
+            .padding(20.dp)
     ) {
-        Column(modifier = Modifier.padding(18.duToDp())) {
-            content()
-        }
+        content()
     }
 }
 
@@ -975,40 +895,30 @@ private fun DialogButton(
     onClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    Surface(
+    Box(
         modifier = modifier
-            .height(46.duToDp())
+            .height(50.dp)
+            .background(VitalColors.orange, RoundedCornerShape(4.dp))
             .clickable(onClick = onClick),
-        color = Color.Transparent,
-        shape = RoundedCornerShape(10.duToDp()),
-        border = BorderStroke(1.5f.duToDp(), VitalColors.orange)
+        contentAlignment = Alignment.Center
     ) {
-        Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-            Text(
-                text = text,
-                style = TextStyle(
-                    color = VitalColors.orange,
-                    fontSize = 12.duToSp(),
-                    fontWeight = FontWeight.Bold,
-                    fontFamily = VitalFonts.JetBrainsMonoBold,
-                    letterSpacing = 0.08.em,
-                    lineHeight = 12.duToSp(),
-                    platformStyle = PlatformTextStyle(includeFontPadding = false)
-                )
-            )
-        }
+        Text(
+            text = text,
+            color = VitalColors.black,
+            fontFamily = VitalFonts.InterTight,
+            fontSize = 15.sp,
+            fontWeight = FontWeight.SemiBold
+        )
     }
 }
 
 @Composable
 private fun dialogTitleStyle(): TextStyle = TextStyle(
-    color = VitalColors.textPrimary,
-    fontSize = 13.duToSp(),
+    color = VitalColors.inkMuted,
+    fontFamily = VitalFonts.InterTight,
+    fontSize = 10.sp,
     fontWeight = FontWeight.Bold,
-    fontFamily = VitalFonts.JetBrainsMonoBold,
-    letterSpacing = 0.15.em,
-    lineHeight = 13.duToSp(),
-    platformStyle = PlatformTextStyle(includeFontPadding = false)
+    letterSpacing = 0.16.em
 )
 
 private fun exerciseSubtitle(exercise: Exercise): String {
