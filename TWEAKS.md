@@ -52,8 +52,8 @@ surprises.
 
 - **Date pickers.** Meals, Lift, Cardio, Today, Summary and Weeks are all today-only (or
   "trailing window" only). Back-logging or editing a past day is not possible. Design first.
-- **Light theme coverage.** Progress, AI coach and Debug showcase are the old dark-only
-  designs. Porcelain covers the five tabs plus Summary, Weeks and Settings.
+- **Light theme coverage.** Progress and Debug showcase are the old dark-only designs.
+  Porcelain covers the five tabs plus Summary, Weeks, Settings and the AI coach.
 - **Accent colour.** `Settings.themeColor` is stored but unused; there is no independent
   accent picker and no auto/system light-dark mode.
 - **Body weight / rest preset** are shown in Settings but not editable there.

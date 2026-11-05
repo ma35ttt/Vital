@@ -567,4 +567,45 @@ chip.
   `MANAGE_APP_OPS_MODES`, so the "Not allowed" state and the deep-link round-trip were not
   exercised by hand.
 
+### M5 — AI coach: editorial rebuild, real replies, photo attach (2026-11-05)
+
+Mocked first (`tmp/concepts/coach.html` / `.png`): empty state, conversation, no-key, error,
+composer states and the attach chooser. Decisions from the mock: keep the "Try asking" starters
+**and** the context chips on replies; camera on the left, ghost send on the right that only turns
+orange when there is text or a photo; the API key can be entered in both the coach (first-run
+"Connect a model") and Settings.
+
+- **Screen.** `CoachChatScreen` is rewritten in the editorial Porcelain theme (light and dark):
+  `‹ More` + provider label, eyebrow/title, empty state with starter prompts, thread, composer,
+  inline error row, no-key Connect panel and an attach `ModalBottomSheet`.
+- **State.** New `CoachViewModel` owns the visible message list, maps the Room `AiProvider` to
+  the SDK one, builds a `CoachContext` from today's meals/sessions/goals, appends the reply and
+  the two context chips (`N KCAL LEFT`, `N G PROTEIN`), and handles retry/connect/setProvider.
+  `MainViewModel` no longer carries the legacy coach fields.
+- **Backend.** `CoachChatService` is stateless again: `respond(...)` returns a `CoachReply`, so
+  the UI owns history. `GeminiClient` / `OpenRouterClient` accept an optional `imageBase64` and
+  return a shared `AiChatResult`; provider error text is surfaced in the error row instead of a
+  generic message. `ImageEncoding` downscales a `Bitmap`/`Uri` to a JPEG base64.
+- **Gemini model fallback.** `gemini-3.8-flash` → `gemini-3.5-flash` → `gemini-3-flash-preview`
+  → `gemini-3.1-flash-lite`. It advances on `404` (retired / not available to new users), `429`
+  (per-model free-tier quota) and `503` (high demand), and stops on `400`/`403` (bad key).
+  Root cause found with the user's key: `gemini-1.5-flash` is retired (404) and
+  `gemini-2.5-flash` is "no longer available to new users" (404); `3.5-flash` and
+  `3-flash-preview` both answer 200.
+- **API key.** Settings → AI row opens an editable dialog (add / replace / remove / reveal) via
+  `SettingsViewModel.setAiApiKey`; the coach's no-key panel writes the same value.
+- **Camera without CameraX.** The attach sheet uses system intents — `PickVisualMedia` for the
+  library and `TakePicturePreview` for the camera — so there is no build-file or manifest
+  change; `CAMERA` was already declared and is requested at runtime.
+- **Nav label tightening.** The bottom-nav icon→label ink gap was 46 px (~15.5 dp) against the
+  mock's ~12 dp. Android's `includeFontPadding` was adding ~7 dp above the label on top of the
+  5 dp spacer; `VitalBottomNav` now sets `includeFontPadding = false`, `lineHeight = 10.sp` and
+  a 3 dp spacer, bringing it to ~7 dp (deliberately snug).
+- **Device check (e281c7).** The coach screen matches the mock. Asking "Am I on track for
+  today?" fell through the model chain and rendered a real Gemini reply with the two chips. The
+  attach sheet opens with `ADD A PHOTO / Take photo / Choose from library`. The nav gap was
+  measured before/after the fix.
+- **Not tested.** Sending a photo end to end, the error row's `RETRY`, the no-key Connect panel
+  and the Settings key dialog were not exercised by hand in this pass.
+
 

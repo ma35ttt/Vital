@@ -47,8 +47,13 @@ class OpenRouterClient(private val client: OkHttpClient) {
         }
     }
 
-    suspend fun chat(messages: List<ChatMessage>, apiKey: String, model: String = "meta-llama/llama-3.1-8b-instruct:free"): String? = withContext(Dispatchers.IO) {
-        val requestBody = buildChatRequest(messages, model)
+    suspend fun chat(
+        messages: List<ChatMessage>,
+        apiKey: String,
+        model: String = "meta-llama/llama-3.1-8b-instruct:free",
+        imageBase64: String? = null
+    ): AiChatResult = withContext(Dispatchers.IO) {
+        val requestBody = buildChatRequest(messages, model, imageBase64)
         val request = Request.Builder()
             .url(baseUrl)
             .addHeader("Authorization", "Bearer $apiKey")
@@ -58,13 +63,28 @@ class OpenRouterClient(private val client: OkHttpClient) {
             .build()
 
         try {
-            val response = client.newCall(request).execute()
-            if (!response.isSuccessful) return@withContext null
-            val body = response.body?.string() ?: return@withContext null
-            parseChatResponse(body)
+            client.newCall(request).execute().use { response ->
+                val body = response.body?.string().orEmpty()
+                if (!response.isSuccessful) {
+                    return@withContext AiChatResult.Failure(
+                        parseError(body) ?: "HTTP ${response.code}"
+                    )
+                }
+                val parsed = parseChatResponse(body)
+                    ?: return@withContext AiChatResult.Failure("Empty response")
+                AiChatResult.Ok(parsed)
+            }
         } catch (e: Exception) {
-            null
+            AiChatResult.Failure(e.message ?: "Network error")
         }
+    }
+
+    private fun parseError(body: String): String? = try {
+        JsonParser.parseString(body).asJsonObject
+            .getAsJsonObject("error")
+            .get("message")?.asString
+    } catch (e: Exception) {
+        null
     }
 
     private fun buildFoodPrompt(context: String?): String {
@@ -107,7 +127,11 @@ Return ONLY the JSON, no markdown, no extra text."""
         return gson.toJson(json).toRequestBody("application/json".toMediaType())
     }
 
-    private fun buildChatRequest(messages: List<ChatMessage>, model: String): okhttp3.RequestBody {
+    private fun buildChatRequest(
+        messages: List<ChatMessage>,
+        model: String,
+        imageBase64: String?
+    ): okhttp3.RequestBody {
         val systemPrompt = """You are a knowledgeable fitness and nutrition coach. Be concise, encouraging, and actionable.
 Give practical advice for meals, workouts, recovery."""
         val chatMessages = mutableListOf<JsonObject>()
@@ -115,11 +139,27 @@ Give practical advice for meals, workouts, recovery."""
             addProperty("role", "system")
             addProperty("content", systemPrompt)
         })
-        messages.forEach { msg ->
-            chatMessages.add(JsonObject().apply {
-                addProperty("role", msg.role)
-                addProperty("content", msg.content)
-            })
+        val lastUserIndex = messages.indexOfLast { it.role == "user" }
+        messages.forEachIndexed { index, msg ->
+            val entry = JsonObject().apply { addProperty("role", msg.role) }
+            // An attached photo rides on the newest user turn as an image_url part.
+            if (index == lastUserIndex && !imageBase64.isNullOrBlank()) {
+                val content = mutableListOf<JsonObject>()
+                content.add(JsonObject().apply {
+                    addProperty("type", "text")
+                    addProperty("text", msg.content)
+                })
+                content.add(JsonObject().apply {
+                    addProperty("type", "image_url")
+                    add("image_url", JsonObject().apply {
+                        addProperty("url", "data:image/jpeg;base64,$imageBase64")
+                    })
+                })
+                entry.add("content", gson.toJsonTree(content))
+            } else {
+                entry.addProperty("content", msg.content)
+            }
+            chatMessages.add(entry)
         }
         val json = JsonObject().apply {
             addProperty("model", model)

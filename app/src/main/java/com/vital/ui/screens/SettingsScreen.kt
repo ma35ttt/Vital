@@ -95,6 +95,7 @@ fun SettingsScreen(
     val user by viewModel.user.collectAsStateWithLifecycle()
     val context = LocalContext.current
     var editingTargets by remember { mutableStateOf(false) }
+    var editingKey by remember { mutableStateOf(false) }
     var keyRevealed by remember { mutableStateOf(false) }
 
     LaunchedEffect(settings.aiApiKeyEncrypted) { keyRevealed = false }
@@ -240,11 +241,12 @@ fun SettingsScreen(
                 ValueRow(
                     label = "API key",
                     value = when {
-                        !hasKey -> "No key set"
+                        !hasKey -> "Tap to add"
                         keyRevealed -> settings.aiApiKeyEncrypted.orEmpty()
                         else -> MASKED_KEY
                     },
                     mono = true,
+                    onClick = { editingKey = true },
                     trailing = if (hasKey) {
                         {
                             Text(
@@ -259,7 +261,7 @@ fun SettingsScreen(
                             )
                         }
                     } else {
-                        null
+                        { Chevron() }
                     }
                 )
             }
@@ -415,6 +417,18 @@ fun SettingsScreen(
             onSave = { kcal, protein, carbs, fat ->
                 viewModel.setDailyTargets(kcal, protein, carbs, fat)
                 editingTargets = false
+            }
+        )
+    }
+
+    if (editingKey) {
+        ApiKeyDialog(
+            provider = settings.aiProvider,
+            currentKey = settings.aiApiKeyEncrypted.orEmpty(),
+            onDismiss = { editingKey = false },
+            onSave = { key ->
+                viewModel.setAiApiKey(key)
+                editingKey = false
             }
         )
     }
@@ -965,6 +979,103 @@ private fun TargetsEditorDialog(
                         if (valid) onSave(kcalValue!!, proteinValue!!, carbsValue!!, fatValue!!)
                     },
                     enabled = valid,
+                    filled = true,
+                    modifier = Modifier.weight(1f)
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun ApiKeyDialog(
+    provider: AiProvider,
+    currentKey: String,
+    onDismiss: () -> Unit,
+    onSave: (String) -> Unit
+) {
+    var draft by remember(currentKey) { mutableStateOf(currentKey) }
+    val providerName = if (provider == AiProvider.GEMINI) "Gemini" else "OpenRouter"
+
+    Dialog(onDismissRequest = onDismiss) {
+        DialogShell {
+            Text(
+                text = "AI API KEY",
+                color = VitalColors.inkMuted,
+                fontFamily = VitalFonts.InterTight,
+                fontSize = 10.sp,
+                fontWeight = FontWeight.Bold,
+                letterSpacing = 0.16.em
+            )
+            Spacer(Modifier.height(6.dp))
+            Text(
+                text = "$providerName key. Stored on this device and used only for your messages.",
+                color = VitalColors.inkMuted,
+                fontFamily = VitalFonts.JetBrainsMonoRegular,
+                fontSize = 11.sp,
+                lineHeight = 16.sp
+            )
+            Spacer(Modifier.height(16.dp))
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(46.dp)
+                    .border(1.dp, VitalColors.rule, RoundedCornerShape(8.dp))
+                    .padding(horizontal = 14.dp),
+                contentAlignment = Alignment.CenterStart
+            ) {
+                BasicTextField(
+                    value = draft,
+                    onValueChange = { draft = it },
+                    singleLine = true,
+                    textStyle = TextStyle(
+                        color = VitalColors.ink,
+                        fontFamily = VitalFonts.JetBrainsMonoRegular,
+                        fontSize = 12.sp
+                    ),
+                    cursorBrush = SolidColor(VitalColors.orange),
+                    keyboardOptions = KeyboardOptions(
+                        keyboardType = KeyboardType.Password,
+                        imeAction = ImeAction.Done
+                    ),
+                    decorationBox = { inner ->
+                        if (draft.isEmpty()) {
+                            Text(
+                                text = "Paste API key...",
+                                color = VitalColors.inkMuted,
+                                fontFamily = VitalFonts.JetBrainsMonoRegular,
+                                fontSize = 12.sp
+                            )
+                        }
+                        inner()
+                    },
+                    modifier = Modifier.fillMaxWidth()
+                )
+            }
+            if (currentKey.isNotEmpty()) {
+                Spacer(Modifier.height(12.dp))
+                Text(
+                    text = "Remove key",
+                    color = VitalColors.orange,
+                    fontFamily = VitalFonts.InterTight,
+                    fontSize = 13.sp,
+                    fontWeight = FontWeight.Medium,
+                    modifier = Modifier
+                        .clickable { onSave("") }
+                        .padding(vertical = 4.dp)
+                )
+            }
+            Spacer(Modifier.height(18.dp))
+            Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                DialogButton(
+                    text = "Cancel",
+                    onClick = onDismiss,
+                    modifier = Modifier.weight(1f)
+                )
+                DialogButton(
+                    text = "Save",
+                    onClick = { onSave(draft) },
+                    enabled = draft.isNotBlank(),
                     filled = true,
                     modifier = Modifier.weight(1f)
                 )
