@@ -148,7 +148,8 @@ fun VitalNavigation() {
                         onNavigateToMeals = { navigateToTab(0) },
                         onNavigateToLift = { navigateToTab(1) },
                         onNavigateToCardio = { navigateToTab(3) },
-                        onNavigateToSettings = { openRoute("settings") }
+                        onNavigateToSettings = { openRoute("settings") },
+                        onBack = { navController.popBackStack() }
                     )
                 }
                 composable("settings") {

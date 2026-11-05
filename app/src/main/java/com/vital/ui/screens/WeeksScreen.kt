@@ -1,76 +1,60 @@
 package com.vital.ui.screens
 
+import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.IntrinsicSize
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.lazy.itemsIndexed
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.TrendingUp
-import androidx.compose.material.icons.filled.FitnessCenter
-import androidx.compose.material.icons.filled.MonitorWeight
-import androidx.compose.material3.Icon
-import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.drawscope.Stroke
-import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
-import androidx.compose.foundation.clickable
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.BorderStroke
-import androidx.compose.foundation.layout.wrapContentWidth
-import androidx.compose.foundation.layout.wrapContentHeight
-import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.unit.em
 import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.geometry.Size
-import androidx.compose.ui.geometry.CornerRadius
-import androidx.compose.ui.text.font.FontFamily
-import com.vital.ui.components.BigKcalDisplay
-import com.vital.ui.components.MacroRow
-import com.vital.ui.components.SectionHeader
-import com.vital.ui.components.capsuleRow
-import com.vital.ui.components.ShowMoreButton
-import com.vital.ui.components.HeroLineGraph
-import com.vital.ui.components.Sparkline
-import com.vital.ui.components.SummaryDial
-import com.vital.ui.components.Tag
-import com.vital.ui.components.QuickStat
-import com.vital.ui.components.SectionLabel
-import com.vital.ui.components.WellRow
-import com.vital.ui.components.CapsuleRow
-import com.vital.ui.components.GreyPanel
-import com.vital.ui.theme.VitalColors
-import com.vital.ui.theme.VitalTypography
-import com.vital.ui.theme.duToSp
-import com.vital.ui.theme.duToDp
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Path
+import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.graphics.StrokeJoin
+import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.buildAnnotatedString
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.withStyle
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.em
+import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import java.time.LocalDate
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.vital.ui.MainViewModel
-import com.vital.ui.components.ScreenScaffold
-import com.vital.ui.components.ScreenVariant
-import com.vital.ui.components.FabGlyph
+import com.vital.ui.components.EditorialHeader
+import com.vital.ui.components.EditorialSectionHeader
+import com.vital.ui.components.Hairline
+import com.vital.ui.theme.VitalColors
+import com.vital.ui.theme.VitalFonts
+import java.time.LocalDate
+import java.time.format.DateTimeFormatter
+import java.util.Locale
+import kotlin.math.roundToInt
 
+/**
+ * Weeks, restyled to the editorial-dark hybrid mock: adherence number over a rule,
+ * a bar chart and three sparkline trends. Still driven by the sample data in
+ * [MainViewModel].
+ */
 @Composable
 fun WeeksScreen(
     modifier: Modifier = Modifier,
@@ -80,6 +64,7 @@ fun WeeksScreen(
     onNavigateToLift: () -> Unit,
     onNavigateToCardio: () -> Unit,
     onNavigateToSettings: () -> Unit,
+    onBack: () -> Unit = {},
     viewModel: MainViewModel = viewModel()
 ) {
     val period by viewModel.weeksPeriod.collectAsStateWithLifecycle(WeeksPeriod.L)
@@ -89,351 +74,448 @@ fun WeeksScreen(
     val weeklyPrData by viewModel.weeklyPrData.collectAsStateWithLifecycle(emptyList())
     val weeklyLabels by viewModel.weeklyLabels12.collectAsStateWithLifecycle(emptyList())
 
-    // Current adherence value for display (last data point * 100)
-    val currentAdherence = (weeklyMacroData.lastOrNull() ?: 0f) * 100
+    val adherence = ((weeklyMacroData.lastOrNull() ?: 0f).toDouble() * 100)
+        .coerceIn(0.0, 100.0)
+    val days = when (period) {
+        WeeksPeriod.L -> 84
+        WeeksPeriod.M -> 28
+        WeeksPeriod.H -> 7
+    }
+    val adherentDays = (adherence / 100 * days).roundToInt()
+    val barCount = when (period) {
+        WeeksPeriod.L -> 12
+        WeeksPeriod.M -> 4
+        WeeksPeriod.H -> 7
+    }
+    val dateLabel = remember {
+        LocalDate.now()
+            .format(DateTimeFormatter.ofPattern("EEE dd.MM", Locale.US))
+            .uppercase()
+    }
 
-    ScreenScaffold(
-        variant = ScreenVariant.BlackPage,
-        title = "WEEKS"
+    Column(
+        modifier = modifier
+            .fillMaxSize()
+            .background(VitalColors.paper)
     ) {
-        Column(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalAlignment = Alignment.CenterHorizontally
+        LazyColumn(
+            modifier = Modifier.fillMaxSize(),
+            contentPadding = PaddingValues(
+                start = 24.dp,
+                end = 24.dp,
+                top = 18.dp,
+                bottom = 24.dp
+            )
         ) {
-            // Hero card - orange, radius ~18, at content top (y 98 from screen top)
-            // Content left/right edge 16 from ScreenScaffold, but design says 12/380 for weeks
-            // ScreenScaffold BlackPage uses 12dp horizontal padding, so we use that
-            Surface(
+            item {
+                EditorialHeader(
+                    title = "Weeks",
+                    dateLabel = dateLabel,
+                    onBack = onBack
+                )
+            }
+            item {
+                AdherenceHero(
+                    adherence = adherence,
+                    periodLabel = periodDescription(period),
+                    adherentDays = adherentDays,
+                    totalDays = days,
+                    modifier = Modifier.padding(top = 26.dp)
+                )
+            }
+            item {
+                PeriodTabs(
+                    selected = period,
+                    onSelect = viewModel::setWeeksPeriod,
+                    modifier = Modifier.padding(top = 22.dp)
+                )
+            }
+            item {
+                AdherenceMacros(
+                    values = weeklyMacroData,
+                    modifier = Modifier.padding(top = 18.dp)
+                )
+            }
+            item {
+                WeeklyBars(
+                    values = weeklyMacroData,
+                    labels = weeklyLabels,
+                    barCount = barCount,
+                    periodLabel = period.label,
+                    modifier = Modifier.padding(top = 0.dp)
+                )
+            }
+            item {
+                Trends(
+                    weight = weeklyWeightData,
+                    volume = weeklyVolumeData,
+                    prs = weeklyPrData,
+                    modifier = Modifier.padding(top = 0.dp)
+                )
+            }
+        }
+    }
+}
+
+private fun periodDescription(period: WeeksPeriod): String = when (period) {
+    WeeksPeriod.L -> "12 weeks"
+    WeeksPeriod.M -> "4 weeks"
+    WeeksPeriod.H -> "7 days"
+}
+
+// ---- hero ----------------------------------------------------------------------------------
+
+@Composable
+private fun AdherenceHero(
+    adherence: Double,
+    periodLabel: String,
+    adherentDays: Int,
+    totalDays: Int,
+    modifier: Modifier = Modifier
+) {
+    Column(modifier = modifier.fillMaxWidth()) {
+        Text(
+            text = "ADHERENCE",
+            color = VitalColors.orange,
+            fontFamily = VitalFonts.InterTight,
+            fontSize = 10.sp,
+            fontWeight = FontWeight.Bold,
+            letterSpacing = 0.18.em
+        )
+        Row(
+            verticalAlignment = Alignment.Bottom,
+            modifier = Modifier.padding(top = 14.dp)
+        ) {
+            Text(
+                text = adherence.roundToInt().toString(),
+                color = VitalColors.ink,
+                fontFamily = VitalFonts.InterTight,
+                fontSize = 72.sp,
+                fontWeight = FontWeight.Medium,
+                letterSpacing = (-0.055).em
+            )
+            Text(
+                text = "%",
+                color = VitalColors.inkMuted,
+                fontFamily = VitalFonts.InterTight,
+                fontSize = 30.sp,
+                fontWeight = FontWeight.Light,
+                modifier = Modifier.padding(start = 2.dp, bottom = 12.dp)
+            )
+        }
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(top = 20.dp)
+                .height(1.dp)
+                .background(VitalColors.rule)
+        ) {
+            Box(
                 modifier = Modifier
-                    .fillMaxWidth()
-                    .height(326.duToDp()),
-                color = VitalColors.orange,
-                shape = RoundedCornerShape(18.duToDp())
-            ) {
+                    .fillMaxHeight()
+                    .fillMaxWidth((adherence / 100f).toFloat().coerceIn(0f, 1f))
+                    .background(VitalColors.orange)
+            )
+        }
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(top = 10.dp),
+            horizontalArrangement = Arrangement.SpaceBetween
+        ) {
+            Text(
+                text = periodLabel,
+                color = VitalColors.inkMuted,
+                fontFamily = VitalFonts.JetBrainsMonoRegular,
+                fontSize = 11.sp
+            )
+            Text(
+                text = buildAnnotatedString {
+                    withStyle(SpanStyle(color = VitalColors.ink, fontWeight = FontWeight.Medium)) {
+                        append(adherentDays.toString())
+                    }
+                    append(" of ")
+                    append(totalDays.toString())
+                    append(" days")
+                },
+                color = VitalColors.inkMuted,
+                fontFamily = VitalFonts.JetBrainsMonoRegular,
+                fontSize = 11.sp
+            )
+        }
+    }
+}
+
+// ---- period tabs ---------------------------------------------------------------------------
+
+@Composable
+private fun PeriodTabs(
+    selected: WeeksPeriod,
+    onSelect: (WeeksPeriod) -> Unit,
+    modifier: Modifier = Modifier
+) {
+    Column(modifier = modifier.fillMaxWidth()) {
+        Row(horizontalArrangement = Arrangement.spacedBy(28.dp)) {
+            WeeksPeriod.entries.forEach { option ->
+                val isSelected = option == selected
                 Column(
                     modifier = Modifier
-                        .fillMaxSize()
-                        .padding(horizontal = 14.dp, vertical = 23.dp), // 26-12=14 from left edge, 121-98=23 from top
-                    horizontalAlignment = Alignment.Start
+                        .width(IntrinsicSize.Min)
+                        .clickable { onSelect(option) }
                 ) {
-                    // Tag: ADHERENCE · 4 WEEKS
                     Text(
-                        text = "ADHERENCE · 4 WEEKS",
-                        color = VitalColors.black,
-                        fontSize = 11.duToSp(),
-                        fontWeight = FontWeight.Bold,
-                        fontFamily = FontFamily.Monospace
+                        text = option.label,
+                        color = if (isSelected) VitalColors.ink else VitalColors.inkMuted,
+                        fontFamily = VitalFonts.JetBrainsMonoRegular,
+                        fontSize = 13.sp,
+                        modifier = Modifier.padding(bottom = 10.dp)
                     )
-
-                    // L / M / H switch row
-                    Row(
+                    Box(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(top = 15.dp), // y 113 - y 98 = 15, but accounting for tag height
-                            horizontalArrangement = Arrangement.End
-                    ) {
-                        WeeksPeriodSwitch(
-                            currentPeriod = period,
-                            onPeriodChange = { viewModel.setWeeksPeriod(it) }
-                        )
-                    }
-
-                    // Giant number with % superscript
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(top = 20.dp),
-                        verticalAlignment = Alignment.Top
-                    ) {
-                        Text(
-                            text = currentAdherence.toInt().toString(),
-                            color = VitalColors.black,
-                            fontSize = 94.duToSp(),
-                            fontWeight = FontWeight.Normal, // JetBrains Mono 300
-                            fontFamily = FontFamily.Monospace,
-                            letterSpacing = -0.06.em
-                        )
-                        Text(
-                            text = "%",
-                            color = VitalColors.black,
-                            fontSize = 36.duToSp(),
-                            fontWeight = FontWeight.Normal,
-                            fontFamily = FontFamily.Monospace,
-                            modifier = Modifier.padding(top = 2.dp, start = 4.dp)
-                        )
-                    }
-
-                    // P / C / F labels and values
-                    Column(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(top = 30.dp),
-                        horizontalAlignment = Alignment.Start
-                    ) {
-                        // Labels row
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.spacedBy(0.dp)
-                        ) {
-                            MacroLabel("PROTEIN", modifier = Modifier.width(113.duToDp()))
-                            MacroLabel("CARBS", modifier = Modifier.width(113.duToDp()))
-                            MacroLabel("FAT", modifier = Modifier.width(113.duToDp()))
-                        }
-                        // Values row - show dashes if no data
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(top = 4.dp),
-                            horizontalArrangement = Arrangement.spacedBy(0.dp)
-                        ) {
-                            if (weeklyMacroData.isNotEmpty()) {
-                                MacroValue("${(weeklyMacroData[0] * 100).toInt()}%", modifier = Modifier.width(113.duToDp()))
-                                MacroValue("${(weeklyMacroData[1] * 100).toInt()}%", modifier = Modifier.width(113.duToDp()))
-                                MacroValue("${(weeklyMacroData[2] * 100).toInt()}%", modifier = Modifier.width(113.duToDp()))
-                            } else {
-                                MacroValue("—%", modifier = Modifier.width(113.duToDp()))
-                                MacroValue("—%", modifier = Modifier.width(113.duToDp()))
-                                MacroValue("—%", modifier = Modifier.width(113.duToDp()))
-                            }
-                        }
-                    }
-
-                    // Chart panel - grey with inset shadow
-                    GreyPanel(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(122.duToDp())
-                            .padding(top = 8.dp) // 5 du gap from value row bottom
-                    ) {
-                        WeeksChartPanel(
-                            modifier = Modifier.fillMaxSize(),
-                            macroData = weeklyMacroData,
-                            labels = weeklyLabels,
-                            currentPeriod = period
-                        )
-                    }
+                            .height(2.dp)
+                            .background(
+                                if (isSelected) VitalColors.orange else Color.Transparent
+                            )
+                    )
                 }
             }
-
-            // TRENDS section
-            SectionLabel(title = "TRENDS")
-
-            // Show More button for trends (dark style)
-            Surface(
-                modifier = Modifier
-                    .width(123.dp)
-                    .height(42.dp)
-                    .align(Alignment.End)
-                    .padding(bottom = 8.dp),
-                color = Color.Transparent,
-                shape = RoundedCornerShape(6.dp),
-                border = BorderStroke(1.5.dp, VitalColors.chipDarkStroke)
-            ) {
-                Text(
-                    text = "SHOW MORE",
-                    color = VitalColors.textPrimary,
-                    fontSize = 12.duToSp(),
-                    fontWeight = FontWeight.Bold,
-                    fontFamily = FontFamily.Monospace,
-                    letterSpacing = 0.22.em,
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .wrapContentWidth(Alignment.CenterHorizontally)
-                        .wrapContentHeight(Alignment.CenterVertically)
-                )
-            }
-
-            // Three capsule rows - show dashes for empty state
-            // Row 1: BODY WEIGHT
-            CapsuleRow(
-                modifier = Modifier.fillMaxWidth(),
-                icon = { Icon(Icons.Default.MonitorWeight, "", tint = VitalColors.orange) },
-                label = "BODY WEIGHT",
-                value = if (weeklyWeightData.isNotEmpty()) "${weeklyWeightData.last()} kg" else "— kg",
-                secondaryText = "— · 4W",
-                sparklineData = if (weeklyWeightData.size >= 2) weeklyWeightData else null,
-                onClick = null
-            )
-
-            // Row 2: WEEKLY VOLUME
-            CapsuleRow(
-                modifier = Modifier.fillMaxWidth(),
-                icon = { Icon(Icons.Default.FitnessCenter, "", tint = VitalColors.orange) },
-                label = "WEEKLY VOLUME",
-                value = if (weeklyVolumeData.isNotEmpty()) "${(weeklyVolumeData.last() * 100).toInt() / 10}.0 t" else "— t",
-                secondaryText = "PEAK —",
-                sparklineData = if (weeklyVolumeData.size >= 2) weeklyVolumeData else null,
-                onClick = null
-            )
-
-            // Row 3: BENCH PR
-            CapsuleRow(
-                modifier = Modifier.fillMaxWidth(),
-                icon = { Icon(Icons.Default.TrendingUp, "", tint = VitalColors.orange) },
-                label = "BENCH PR",
-                value = "— × —",
-                secondaryText = "—",
-                sparklineData = if (weeklyPrData.size >= 2) weeklyPrData else null,
-                onClick = null
-            )
         }
+        Hairline()
     }
 }
 
+// ---- macro grid ----------------------------------------------------------------------------
+
 @Composable
-private fun WeeksPeriodSwitch(
-    currentPeriod: WeeksPeriod,
-    onPeriodChange: (WeeksPeriod) -> Unit
+private fun AdherenceMacros(
+    values: List<Float>,
+    modifier: Modifier = Modifier
 ) {
-    Row(
-        horizontalArrangement = Arrangement.spacedBy(4.dp)
-    ) {
-        WeeksPeriod.values().forEach { p ->
-            val isSelected = (p == currentPeriod)
-            Surface(
-                modifier = Modifier
-                    .width(95.duToDp())
-                    .height(31.duToDp())
-                    .clickable { onPeriodChange(p) },
-                color = if (isSelected) VitalColors.black else VitalColors.chipDark,
-                shape = RoundedCornerShape(6.duToDp()),
-                border = BorderStroke(1.dp, if (isSelected) Color.Transparent else VitalColors.chipDarkStroke)
-            ) {
-                Text(
-                    text = p.label,
-                    color = if (isSelected) VitalColors.orange else VitalColors.textPrimary,
-                    fontSize = 14.duToSp(),
-                    fontWeight = FontWeight.Bold,
-                    fontFamily = FontFamily.Monospace,
+    val cells = listOf("Protein", "Carbs", "Fat")
+    Column(modifier = modifier.fillMaxWidth()) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(IntrinsicSize.Min)
+        ) {
+            cells.forEachIndexed { index, label ->
+                if (index > 0) {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxHeight()
+                            .width(1.dp)
+                            .background(VitalColors.rule)
+                    )
+                }
+                Column(
                     modifier = Modifier
-                        .fillMaxSize()
-                        .wrapContentWidth(Alignment.CenterHorizontally)
-                        .wrapContentHeight(Alignment.CenterVertically)
-                )
+                        .weight(1f)
+                        .padding(
+                            start = if (index == 0) 0.dp else 20.dp,
+                            top = 15.dp,
+                            bottom = 15.dp
+                        )
+                ) {
+                    Text(
+                        text = label,
+                        color = VitalColors.inkMuted,
+                        fontFamily = VitalFonts.InterTight,
+                        fontSize = 11.sp,
+                        fontWeight = FontWeight.Medium
+                    )
+                    Text(
+                        text = values.getOrNull(index)
+                            ?.let { "${(it * 100).roundToInt()}" }
+                            ?: "—",
+                        color = VitalColors.ink,
+                        fontFamily = VitalFonts.InterTight,
+                        fontSize = 26.sp,
+                        fontWeight = FontWeight.SemiBold,
+                        letterSpacing = (-0.02).em,
+                        modifier = Modifier.padding(top = 7.dp)
+                    )
+                }
             }
         }
+        Hairline()
     }
 }
 
-@Composable
-private fun MacroLabel(text: String, modifier: Modifier = Modifier) {
-    Text(
-        text = text,
-        color = VitalColors.black.copy(alpha = 0.7f),
-        fontSize = 10.duToSp(),
-        fontWeight = FontWeight.Bold,
-        fontFamily = FontFamily.Monospace,
-        modifier = modifier
-            .fillMaxWidth()
-            .wrapContentWidth(Alignment.Start)
-    )
-}
+// ---- weekly bars ---------------------------------------------------------------------------
 
 @Composable
-private fun MacroValue(text: String, modifier: Modifier = Modifier) {
-    Text(
-        text = text,
-        color = VitalColors.black,
-        fontSize = 20.duToSp(),
-        fontWeight = FontWeight.Bold,
-        fontFamily = FontFamily.Monospace,
-        modifier = modifier
-            .fillMaxWidth()
-            .wrapContentWidth(Alignment.Start)
-    )
-}
-
-@Composable
-private fun WeeksChartPanel(
-    modifier: Modifier = Modifier,
-    macroData: List<Float>,
+private fun WeeklyBars(
+    values: List<Float>,
     labels: List<String>,
-    currentPeriod: WeeksPeriod
+    barCount: Int,
+    periodLabel: String,
+    modifier: Modifier = Modifier
 ) {
-    androidx.compose.foundation.Canvas(modifier = modifier.fillMaxSize()) {
-        if (macroData.size < 2) return@Canvas
-
-        val width = size.width
-        val height = size.height
-        val padding = 12.dp.toPx()
-        val graphWidth = width - 2 * padding
-        val graphHeight = height - 2 * padding
-        val barWidth = graphWidth / 12f // 12 bars max
-        val barRadius = 3.dp.toPx()
-
-        // Determine number of bars based on period
-        val numBars = when (currentPeriod) {
-            WeeksPeriod.L -> 12
-            WeeksPeriod.M -> 4
-            WeeksPeriod.H -> 7
+    val data = remember(values, barCount) { values.take(barCount) }
+    val tickLabels = remember(labels, barCount) {
+        when (barCount) {
+            12 -> labels.take(10).filterIndexed { index, _ -> index % 2 == 0 } + "THIS"
+            7 -> (6 downTo 1).map { "D-$it" } + "TODAY"
+            else -> labels.takeLast(barCount)
         }
-        val dataToShow = macroData.take(numBars)
-        val labelsToShow = labels.take(numBars)
+    }
 
-        val minValue = dataToShow.minOrNull() ?: 0f
-        val maxValue = dataToShow.maxOrNull() ?: 1f
-        val range = if (maxValue > minValue) maxValue - minValue else 1f
-
-        // Draw bars
-        dataToShow.forEachIndexed { index, value ->
-            val x = padding + index * barWidth + (barWidth - 16.dp.toPx()) / 2
-            val normalizedValue = (value - minValue) / range
-            val barHeight = normalizedValue * graphHeight
-            val y = padding + graphHeight - barHeight
-
-            val isCurrentWeek = (index == numBars - 1 && currentPeriod == WeeksPeriod.L)
-            val barColor = if (isCurrentWeek) VitalColors.orange else Color(0xFF171A1D) // #171A1D
-
-            // Bar
-            drawRoundRect(
-                color = barColor,
-                topLeft = Offset(x, y),
-                size = Size(16.dp.toPx(), barHeight),
-                cornerRadius = CornerRadius(barRadius, barRadius)
-            )
-
-            // Black stroke for current week bar
-            if (isCurrentWeek) {
-                drawRoundRect(
-                    color = VitalColors.black,
-                    topLeft = Offset(x - 2.dp.toPx(), y - 2.dp.toPx()),
-                    size = Size(20.dp.toPx(), barHeight + 4.dp.toPx()),
-                    cornerRadius = CornerRadius(barRadius + 2.dp.toPx(), barRadius + 2.dp.toPx()),
-                    style = Stroke(width = 2.dp.toPx())
+    Column(modifier = modifier.fillMaxWidth()) {
+        EditorialSectionHeader(
+            title = "Adherence by week",
+            trailing = periodLabel
+        )
+        BarChart(
+            values = data,
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(96.dp)
+                .padding(top = 14.dp)
+        )
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(top = 10.dp),
+            horizontalArrangement = Arrangement.SpaceBetween
+        ) {
+            tickLabels.forEach { label ->
+                Text(
+                    text = label,
+                    color = VitalColors.navInactive,
+                    fontFamily = VitalFonts.JetBrainsMonoRegular,
+                    fontSize = 8.sp,
+                    letterSpacing = 0.06.em
                 )
             }
         }
+        Hairline(modifier = Modifier.padding(top = 10.dp))
+    }
+}
 
-        // Tooltip pill for current week (W12)
-        if (currentPeriod == WeeksPeriod.L && dataToShow.isNotEmpty()) {
-            val lastIndex = numBars - 1
-            val lastValue = dataToShow[lastIndex]
-            val lastX = padding + lastIndex * barWidth + 8.dp.toPx() // center of bar
-            val pillWidth = 81.dp.toPx()
-            val pillHeight = 22.dp.toPx()
-            val pillX = (lastX - pillWidth / 2).coerceIn(padding, width - padding - pillWidth)
-            val pillY = padding + 10.dp.toPx() // near top of panel
+@Composable
+private fun BarChart(values: List<Float>, modifier: Modifier = Modifier) {
+    Canvas(modifier = modifier) {
+        if (values.isEmpty()) return@Canvas
 
-            // Pill background
-            drawRoundRect(
-                color = VitalColors.black,
-                topLeft = Offset(pillX, pillY),
-                size = Size(pillWidth, pillHeight),
-                cornerRadius = CornerRadius(11.dp.toPx(), 11.dp.toPx())
-            )
+        val slot = size.width / values.size
+        val barWidth = (slot * 0.55f).coerceAtMost(16.dp.toPx())
+        val gap = (slot - barWidth) / 2f
+        val min = values.min()
+        val max = values.max()
+        val range = (max - min).takeIf { it > 0.0001f } ?: 1f
 
-            // Text (simplified - would need TextMeasurer for precise centering)
-            // For now just draw the pill, text rendering would need more setup
-
-            // Leader line from pill right edge to bar left edge
-            val lineStartX = (pillX + pillWidth).coerceAtMost(lastX - 2.dp.toPx())
-            drawLine(
-                color = VitalColors.black,
-                start = Offset(lineStartX, pillY + pillHeight / 2),
-                end = Offset(lastX, pillY + pillHeight / 2),
-                strokeWidth = 1.dp.toPx()
+        values.forEachIndexed { index, raw ->
+            // Keep a floor so low weeks stay legible, then stretch across the real range.
+            val value = 0.45f + 0.55f * ((raw - min) / range).coerceIn(0f, 1f)
+            val barHeight = (value * size.height).coerceAtLeast(3.dp.toPx())
+            val x = index * slot + gap
+            drawRect(
+                color = if (index == values.lastIndex) {
+                    VitalColors.orange
+                } else {
+                    VitalColors.ruleStrong
+                },
+                topLeft = Offset(x, size.height - barHeight),
+                size = androidx.compose.ui.geometry.Size(barWidth, barHeight)
             )
         }
+    }
+}
+
+// ---- trends --------------------------------------------------------------------------------
+
+@Composable
+private fun Trends(
+    weight: List<Float>,
+    volume: List<Float>,
+    prs: List<Float>,
+    modifier: Modifier = Modifier
+) {
+    val weightValue = weight.lastOrNull()?.let {
+        String.format(Locale.US, "%.1f kg", 80.0 - it * 1.5)
+    } ?: "— kg"
+    val volumeValue = volume.lastOrNull()?.let {
+        String.format(Locale.US, "%.1f t", it * 10.0)
+    } ?: "— t"
+    val prValue = prs.lastOrNull()?.let {
+        String.format(Locale.US, "%.1f kg", 80.0 + it * 20.0)
+    } ?: "— kg"
+
+    Column(modifier = modifier.fillMaxWidth()) {
+        EditorialSectionHeader(
+            title = "Trends",
+            trailing = "4 weeks"
+        )
+        TrendRow(label = "Body weight", value = weightValue, spark = weight)
+        TrendRow(label = "Volume", value = volumeValue, spark = volume)
+        TrendRow(label = "Bench PR", value = prValue, spark = prs)
+    }
+}
+
+@Composable
+private fun TrendRow(label: String, value: String, spark: List<Float>) {
+    Column(modifier = Modifier.fillMaxWidth()) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(IntrinsicSize.Min)
+                .padding(vertical = 13.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text(
+                text = label,
+                color = VitalColors.inkMuted,
+                fontFamily = VitalFonts.InterTight,
+                fontSize = 13.sp,
+                modifier = Modifier.weight(1f)
+            )
+            Text(
+                text = value,
+                color = VitalColors.ink,
+                fontFamily = VitalFonts.JetBrainsMonoRegular,
+                fontSize = 13.sp,
+                modifier = Modifier.padding(end = 14.dp)
+            )
+            Sparkline(
+                values = spark.takeLast(6),
+                modifier = Modifier.size(width = 66.dp, height = 22.dp)
+            )
+        }
+        Hairline()
+    }
+}
+
+@Composable
+private fun Sparkline(values: List<Float>, modifier: Modifier = Modifier) {
+    Canvas(modifier = modifier) {
+        if (values.size < 2) return@Canvas
+        val min = values.min()
+        val max = values.max()
+        val range = (max - min).takeIf { it > 0f } ?: 1f
+        val stepX = size.width / (values.size - 1)
+
+        fun y(value: Float) =
+            size.height - 2.dp.toPx() - ((value - min) / range) * (size.height - 4.dp.toPx())
+
+        val path = Path()
+        values.forEachIndexed { index, value ->
+            if (index == 0) path.moveTo(0f, y(value)) else path.lineTo(index * stepX, y(value))
+        }
+        drawPath(
+            path = path,
+            color = VitalColors.ruleStrong,
+            style = Stroke(
+                width = 1.5.dp.toPx(),
+                cap = StrokeCap.Round,
+                join = StrokeJoin.Round
+            )
+        )
+        drawCircle(
+            color = VitalColors.orange,
+            radius = 2.4.dp.toPx(),
+            center = Offset(size.width, y(values.last()))
+        )
     }
 }
 

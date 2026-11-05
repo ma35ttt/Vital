@@ -338,3 +338,17 @@ The approved Summary option B (24-hour day ring) replaces the old dial Summary, 
 - **Still sample-only.** WEB and RECIPE tabs are labels only, as before.
 - **Not built yet.** No date picker (today only), no per-entry edit (delete only), the query is not cleared after a smart-text add.
 - **Not tested.** Visual comparison against `tmp/concepts/all-tabs.html` (user measures).
+
+### Weeks — editorial restyle (2026-11-05)
+
+`WeeksScreen.kt` rewritten to the approved all-tabs mock; the sample data in `MainViewModel` and the `WeeksPeriod` enum are unchanged.
+
+- **Layout.** Header (`Weeks` + `THU 05.11`, `‹ Back`), an adherence hero (orange `ADHERENCE`, 72 sp percent, orange rule at the adherence level, `12 weeks` / `77 of 84 days`), the 12W / 4W / 7D underlined period tabs, a three-cell protein / carbs / fat percentage grid, `Adherence by week` bars with this-week orange and tick labels, and `Trends` rows (body weight, volume, bench PR) with sparklines.
+- **Periods.** The period now drives the day count (`84`, `28`, `7`), the number of bars and the tick labels (`W-11 … THIS`, `W-3 … THIS`, `D-6 … TODAY`). Macro cells and the hero keep using the trailing sample values.
+- **Bars.** Heights are min-max stretched into a 45–100% band so small adherence differences stay visible; the first value is the shortest and the current week is the tallest and orange.
+- **Trend values.** The normalized sample series are mapped to plausible units: body weight `80 − 1.5·v` kg, volume `10·v` t, PR `80 + 20·v` kg, so the mock's `79.4 kg` reproduces.
+- **Navigation.** `WeeksScreen` gained an optional `onBack` (wired to `popBackStack` in `VitalNavigation`); it defaults to a no-op so the existing call sites still compile.
+- **Device check (e281c7, 1240 x 2772, density 476).** Rendered `92%`, `77 of 84 days`, the 12 bars with `THIS` orange, and the three trends; switching to 7D moved the meta to `6 of 7 days`, redrew seven bars and the `D-6 … TODAY` labels; Back returned to Today; no `AndroidRuntime:E`.
+- **Still sample-only.** Weeks does not read Room; the numbers do not change with real logs.
+- **Not built yet.** No tooltip on the bars, no tap-through from a trend to its detail.
+- **Not tested.** Visual comparison against `tmp/concepts/all-tabs.html` (user measures).
