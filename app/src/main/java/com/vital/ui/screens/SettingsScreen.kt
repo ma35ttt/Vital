@@ -5,31 +5,30 @@ import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Build
 import android.provider.Settings as AndroidSettings
-import androidx.compose.foundation.BorderStroke
-import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.BoxScope
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.IntrinsicSize
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.offset
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -39,22 +38,12 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.focus.onFocusChanged
-import androidx.compose.ui.geometry.CornerRadius
-import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.SolidColor
-import androidx.compose.ui.graphics.StrokeCap
-import androidx.compose.ui.graphics.StrokeJoin
-import androidx.compose.ui.graphics.drawscope.Stroke
-import androidx.compose.ui.graphics.drawscope.rotate
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.text.PlatformTextStyle
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
@@ -62,72 +51,29 @@ import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.em
+import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.vital.data.entity.AiProvider
 import com.vital.data.entity.Settings
 import com.vital.ui.SettingsViewModel
-import com.vital.ui.components.GreyPanel
-import com.vital.ui.components.ScreenScaffold
-import com.vital.ui.components.ScreenVariant
-import com.vital.ui.components.VitalToggle
-import com.vital.ui.components.WellRow
+import com.vital.ui.components.EditorialEyebrow
+import com.vital.ui.components.EditorialHeader
+import com.vital.ui.components.EditorialSectionHeader
+import com.vital.ui.components.Hairline
 import com.vital.ui.theme.VitalColors
 import com.vital.ui.theme.VitalFonts
-import com.vital.ui.theme.duToDp
-import com.vital.ui.theme.duToSp
+import java.time.LocalDate
+import java.time.format.DateTimeFormatter
 import java.util.Locale
 
-// Settings, built to design/tabs/settings.md (settings-top.png / settings-scrolled.png).
-//
-// Geometry: ScreenScaffold's BlackPage variant already places content at x 12..380 (369 wide)
-// and y 98, and reserves the bottom 100 du for the nav. Everything below is measured from that
-// content box, so this file adds no horizontal padding of its own and every offset is in du.
-//
-// Two deviations from the mock are deliberate and recorded in NOTES.md:
-//  1. The two-line notification rows are 54 du high with a 62 du pitch (settings.md FIX 0A.6),
-//     not the 46/53 the mock shows, so every section below NOTIFICATIONS sits 27 du lower.
-//  2. The hero kcal number is Inter Tight 700 76 du (md "~76") with -0.055em tracking, which
-//     reproduces the measured 198 du ink span of "2,500"; the md's KCAL size of 17 is an EST
-//     and the ink cap measures 20.5 du, which is what is used here.
-private const val HERO_HEIGHT = 228f
-private const val SECTION_LABEL_HEIGHT = 13f
-private const val ROW_ONE_LINE = 47f
-private const val ROW_TWO_LINE = 54f
-private const val ROW_PROFILE = 57f
-private const val ROW_KEY = 48f
-private const val ROW_BUTTON = 47f
-
-private const val GAP_AFTER_HERO = 20.7f
-private const val GAP_LABEL_TO_ROW = 11.3f
-private const val GAP_BETWEEN_ROWS = 8f // settings.md FIX 0A.6
-private const val GAP_BETWEEN_CELLS = 7f // BODY WEIGHT 12..193, REST PRESET 200..381
-private const val GAP_PROFILE_TO_LABEL = 17.7f
-private const val GAP_BEFORE_ROW = 10.3f
-private const val GAP_AFTER_LABEL = 12.3f
-private const val GAP_BEFORE_LABEL = 16.7f
-private const val GAP_TIGHT_ROWS = 6f
-private const val GAP_NOTIFICATION_ROWS = 8f
-private const val GAP_LABEL_TO_BUTTONS = 9.3f
-private const val GAP_BUTTONS_TO_NOTE = 7.7f
-
-private const val INSET_ROW_TEXT = 16f
-private const val INSET_SECTION_LABEL = 5f
-private const val INSET_TOGGLE = 15f
-private const val INSET_CHEVRON = 19f
-private const val INSET_KEY_TEXT = 17f
-
-private val DAY_NAMES = listOf("MON", "TUE", "WED", "THU", "FRI", "SAT", "SUN")
-
 /**
- * Settings tab.
- *
- * [modifier] is deliberately not applied: ScreenScaffold fills the window and anchors its own
- * content (y 98, bottom 100 du) and header, while the Scaffold in VitalNavigation already passes
- * its inner padding, which would double both insets. The parameter stays for call-site
- * compatibility and is reported as a follow-up in NOTES.md.
+ * Settings, restyled to the editorial-dark hybrid mock. The Room writes, the target
+ * editor, the name editor, the key reveal and the notification permission jump are
+ * unchanged from the M4 rebuild.
  */
 @Composable
 fun SettingsScreen(
@@ -138,6 +84,7 @@ fun SettingsScreen(
     onNavigateToCardio: () -> Unit,
     onNavigateToWeeks: () -> Unit,
     onOpenDebugShowcase: (() -> Unit)? = null,
+    onBack: () -> Unit = {},
     viewModel: SettingsViewModel = hiltViewModel()
 ) {
     val settings by viewModel.settings.collectAsStateWithLifecycle()
@@ -162,307 +109,263 @@ fun SettingsScreen(
         true
     }
 
-    ScreenScaffold(
-        variant = ScreenVariant.BlackPage,
-        title = "SETTINGS"
+    val dateLabel = remember {
+        LocalDate.now()
+            .format(DateTimeFormatter.ofPattern("EEE dd.MM", Locale.US))
+            .uppercase()
+    }
+
+    Column(
+        modifier = modifier
+            .fillMaxSize()
+            .background(VitalColors.paper)
     ) {
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .verticalScroll(rememberScrollState())
+        LazyColumn(
+            modifier = Modifier.fillMaxSize(),
+            contentPadding = PaddingValues(
+                start = 24.dp,
+                end = 24.dp,
+                top = 18.dp,
+                bottom = 24.dp
+            )
         ) {
-            // ---- DAILY TARGETS hero ------------------------------------------------
-            DailyTargetsHero(
-                settings = settings,
-                onEdit = { editingTargets = true }
-            )
-
-            Spacer(Modifier.height(GAP_AFTER_HERO.duToDp()))
-            SettingsSectionLabel("PROFILE")
-
-            // ---- PROFILE -----------------------------------------------------------
-            Spacer(Modifier.height(GAP_LABEL_TO_ROW.duToDp()))
-            NameRow(
-                currentName = user?.name.orEmpty(),
-                onCommit = viewModel::setDisplayName
-            )
-
-            Spacer(Modifier.height(GAP_BETWEEN_ROWS.duToDp()))
-            SettingsTwoLineRow(
-                label = "TRUE BLACK",
-                sub = "PURE #000 FOR AMOLED",
-                trailing = {
-                    VitalToggle(
-                        checked = settings.trueBlack,
-                        onCheckedChange = viewModel::setTrueBlack
-                    )
-                }
-            )
-
-            Spacer(Modifier.height(GAP_BETWEEN_ROWS.duToDp()))
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(ROW_PROFILE.duToDp()),
-                horizontalArrangement = Arrangement.spacedBy(GAP_BETWEEN_CELLS.duToDp())
-            ) {
-                SettingsValueRow(
-                    modifier = Modifier.weight(1f),
-                    label = "BODY WEIGHT",
-                    value = formatWeight(settings.bodyWeightKg),
-                    unit = "KG"
+            item {
+                EditorialHeader(
+                    title = "Settings",
+                    dateLabel = dateLabel,
+                    onBack = onBack
                 )
-                SettingsValueRow(
-                    modifier = Modifier.weight(1f),
-                    label = "REST PRESET",
-                    value = formatRest(settings.restPresetSec),
-                    unit = "MIN"
+            }
+            item {
+                TargetsHero(
+                    settings = settings,
+                    onEdit = { editingTargets = true },
+                    modifier = Modifier.padding(top = 26.dp)
+                )
+            }
+            item {
+                TargetsMacroGrid(
+                    settings = settings,
+                    modifier = Modifier.padding(top = 22.dp)
                 )
             }
 
-            // ---- AI COACH ----------------------------------------------------------
-            Spacer(Modifier.height(GAP_PROFILE_TO_LABEL.duToDp()))
-            SettingsSectionLabel("AI COACH")
+            item { SectionLabel("Profile", topPadding = 28.dp) }
+            item {
+                NameRow(
+                    currentName = user?.name.orEmpty(),
+                    onCommit = viewModel::setDisplayName
+                )
+            }
+            item {
+                ValueRow(
+                    label = "True black",
+                    value = "Pure #000 for AMOLED",
+                    trailing = {
+                        EditorialSwitch(
+                            checked = settings.trueBlack,
+                            onCheckedChange = viewModel::setTrueBlack
+                        )
+                    }
+                )
+            }
+            item {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(IntrinsicSize.Min)
+                ) {
+                    MetricCell(
+                        label = "Body weight",
+                        value = formatWeight(settings.bodyWeightKg),
+                        unit = "kg",
+                        startPadding = 0.dp,
+                        modifier = Modifier.weight(1f)
+                    )
+                    Box(
+                        modifier = Modifier
+                            .fillMaxHeight()
+                            .width(1.dp)
+                            .background(VitalColors.rule)
+                    )
+                    MetricCell(
+                        label = "Rest preset",
+                        value = formatRest(settings.restPresetSec),
+                        unit = "min",
+                        startPadding = 20.dp,
+                        modifier = Modifier.weight(1f)
+                    )
+                }
+                Hairline()
+            }
 
-            Spacer(Modifier.height(GAP_AFTER_LABEL.duToDp()))
-            ProviderSegmented(
-                selected = settings.aiProvider,
-                onSelect = viewModel::setAiProvider
-            )
-
-            Spacer(Modifier.height(GAP_NOTIFICATION_ROWS.duToDp()))
-            val hasKey = !settings.aiApiKeyEncrypted.isNullOrEmpty()
-            SettingsRow(height = ROW_KEY) {
-                MonoText(
-                    text = when {
-                        !hasKey -> "NO KEY SET"
+            item { SectionLabel("AI coach", topPadding = 28.dp) }
+            item {
+                ProviderTabs(
+                    selected = settings.aiProvider,
+                    onSelect = viewModel::setAiProvider
+                )
+            }
+            item {
+                val hasKey = !settings.aiApiKeyEncrypted.isNullOrEmpty()
+                ValueRow(
+                    label = "API key",
+                    value = when {
+                        !hasKey -> "No key set"
                         keyRevealed -> settings.aiApiKeyEncrypted.orEmpty()
                         else -> MASKED_KEY
                     },
-                    size = 13f,
-                    color = if (hasKey) VitalColors.textPrimary else VitalColors.textMuted,
-                    tracking = 0.02f,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
-                    modifier = Modifier
-                        .align(Alignment.CenterStart)
-                        .padding(start = INSET_KEY_TEXT.duToDp())
-                        .padding(end = if (hasKey) 62.duToDp() else 0.duToDp())
-                )
-                if (hasKey) {
-                    MonoText(
-                        text = if (keyRevealed) "HIDE" else "SHOW",
-                        size = 11f,
-                        color = VitalColors.orange,
-                        tracking = 0.08f,
-                        modifier = Modifier
-                            .align(Alignment.CenterEnd)
-                            .padding(end = INSET_KEY_TEXT.duToDp())
-                            .clickable { keyRevealed = !keyRevealed }
-                    )
-                }
-            }
-
-            // ---- SECURITY ----------------------------------------------------------
-            Spacer(Modifier.height(GAP_BEFORE_LABEL.duToDp()))
-            SettingsSectionLabel("SECURITY")
-
-            Spacer(Modifier.height(GAP_BEFORE_ROW.duToDp()))
-            SettingsRow(height = ROW_ONE_LINE) {
-                MonoText(
-                    text = "PIN LOCK",
-                    size = 12f,
-                    color = VitalColors.textPrimary,
-                    tracking = LABEL_TRACKING,
-                    modifier = Modifier
-                        .align(Alignment.CenterStart)
-                        .padding(start = INSET_ROW_TEXT.duToDp())
-                )
-                // Real state (User.pinHash), not interactive until the M6 auth gate.
-                Box(
-                    modifier = Modifier
-                        .align(Alignment.CenterEnd)
-                        .padding(end = INSET_TOGGLE.duToDp())
-                ) {
-                    VitalToggle(
-                        checked = user?.pinHash != null,
-                        onCheckedChange = {},
-                        enabled = false
-                    )
-                }
-            }
-
-            Spacer(Modifier.height(GAP_TIGHT_ROWS.duToDp()))
-            SettingsRow(height = ROW_ONE_LINE) {
-                MonoText(
-                    text = "BIOMETRIC UNLOCK",
-                    size = 12f,
-                    color = VitalColors.textPrimary,
-                    tracking = LABEL_TRACKING,
-                    modifier = Modifier
-                        .align(Alignment.CenterStart)
-                        .padding(start = INSET_ROW_TEXT.duToDp())
-                )
-                // Real state (User.biometricEnabled), not interactive until the M6 auth gate.
-                Box(
-                    modifier = Modifier
-                        .align(Alignment.CenterEnd)
-                        .padding(end = INSET_TOGGLE.duToDp())
-                ) {
-                    VitalToggle(
-                        checked = user?.biometricEnabled == true,
-                        onCheckedChange = {},
-                        enabled = false
-                    )
-                }
-            }
-
-            Spacer(Modifier.height(GAP_TIGHT_ROWS.duToDp()))
-            SettingsRow(height = ROW_ONE_LINE) {
-                MonoText(
-                    text = "CHANGE PIN",
-                    size = 12f,
-                    color = VitalColors.textPrimary,
-                    tracking = LABEL_TRACKING,
-                    modifier = Modifier
-                        .align(Alignment.CenterStart)
-                        .padding(start = INSET_ROW_TEXT.duToDp())
-                )
-                ChevronIcon(
-                    modifier = Modifier
-                        .align(Alignment.CenterEnd)
-                        .padding(end = INSET_CHEVRON.duToDp())
-                )
-            }
-
-            // ---- NOTIFICATIONS -----------------------------------------------------
-            Spacer(Modifier.height(GAP_BEFORE_LABEL.duToDp()))
-            SettingsSectionLabel("NOTIFICATIONS")
-
-            Spacer(Modifier.height(GAP_BEFORE_ROW.duToDp()))
-            SettingsTwoLineRow(
-                label = "ALLOW NOTIFICATIONS",
-                sub = if (notificationsGranted) "PERMISSION GRANTED" else "PERMISSION NOT GRANTED",
-                onClick = openNotificationSettings,
-                trailing = {
-                    VitalToggle(
-                        checked = settings.notificationsEnabled,
-                        onCheckedChange = viewModel::setNotificationsEnabled
-                    )
-                }
-            )
-
-            Spacer(Modifier.height(GAP_NOTIFICATION_ROWS.duToDp()))
-            SettingsTwoLineRow(
-                label = "MEAL REMINDERS",
-                sub = parseTimeList(settings.mealReminderTimesJson).joinToString(" · "),
-                trailing = {
-                    VitalToggle(
-                        checked = settings.mealRemindersEnabled,
-                        onCheckedChange = viewModel::setMealRemindersEnabled
-                    )
-                }
-            )
-
-            Spacer(Modifier.height(GAP_NOTIFICATION_ROWS.duToDp()))
-            SettingsTwoLineRow(
-                label = "WORKOUT",
-                sub = workoutSubtitle(settings),
-                trailing = {
-                    VitalToggle(
-                        checked = settings.workoutRemindersEnabled,
-                        onCheckedChange = viewModel::setWorkoutRemindersEnabled
-                    )
-                }
-            )
-
-            Spacer(Modifier.height(GAP_NOTIFICATION_ROWS.duToDp()))
-            SettingsTwoLineRow(
-                label = "WATER",
-                sub = waterSubtitle(settings.waterReminderIntervalMin),
-                trailing = {
-                    VitalToggle(
-                        checked = settings.waterRemindersEnabled,
-                        onCheckedChange = viewModel::setWaterRemindersEnabled
-                    )
-                }
-            )
-
-            // ---- DATA --------------------------------------------------------------
-            Spacer(Modifier.height(GAP_BEFORE_ROW.duToDp()))
-            SettingsSectionLabel("DATA")
-
-            Spacer(Modifier.height(GAP_LABEL_TO_BUTTONS.duToDp()))
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(ROW_BUTTON.duToDp()),
-                horizontalArrangement = Arrangement.spacedBy(GAP_BETWEEN_CELLS.duToDp())
-            ) {
-                // EXPORT JSON / IMPORT JSON are drawn to the mock; the file pickers and the
-                // export/import code arrive in the DATA step (NOTES.md), so neither is wired.
-                Surface(
-                    modifier = Modifier
-                        .weight(1f)
-                        .fillMaxSize(),
-                    color = VitalColors.orange,
-                    shape = RoundedCornerShape(10.duToDp())
-                ) {
-                    Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                        MonoText("EXPORT JSON", 12f, VitalColors.black, LABEL_TRACKING)
+                    mono = true,
+                    trailing = if (hasKey) {
+                        {
+                            Text(
+                                text = if (keyRevealed) "Hide" else "Show",
+                                color = VitalColors.orange,
+                                fontFamily = VitalFonts.InterTight,
+                                fontSize = 13.sp,
+                                fontWeight = FontWeight.Medium,
+                                modifier = Modifier
+                                    .clickable { keyRevealed = !keyRevealed }
+                                    .padding(vertical = 4.dp)
+                            )
+                        }
+                    } else {
+                        null
                     }
-                }
-                Surface(
-                    modifier = Modifier
-                        .weight(1f)
-                        .fillMaxSize(),
-                    color = Color.Transparent,
-                    shape = RoundedCornerShape(10.duToDp()),
-                    border = BorderStroke(2.duToDp(), VitalColors.orange)
-                ) {
-                    Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                        MonoText("IMPORT JSON", 12f, VitalColors.orange, LABEL_TRACKING)
+                )
+            }
+
+            item { SectionLabel("Security", topPadding = 28.dp) }
+            item {
+                ValueRow(
+                    label = "PIN lock",
+                    value = if (user?.pinHash != null) "Set" else "Not set",
+                    trailing = {
+                        EditorialSwitch(
+                            checked = user?.pinHash != null,
+                            onCheckedChange = {},
+                            enabled = false
+                        )
                     }
+                )
+            }
+            item {
+                ValueRow(
+                    label = "Biometric",
+                    value = if (user?.biometricEnabled == true) "On" else "Off",
+                    trailing = {
+                        EditorialSwitch(
+                            checked = user?.biometricEnabled == true,
+                            onCheckedChange = {},
+                            enabled = false
+                        )
+                    }
+                )
+            }
+            item {
+                ValueRow(
+                    label = "Change PIN",
+                    value = null,
+                    trailing = { Chevron() }
+                )
+            }
+
+            item { SectionLabel("Notifications", topPadding = 28.dp) }
+            item {
+                ValueRow(
+                    label = "Allow notifications",
+                    value = if (notificationsGranted) "Permission granted" else "Not granted",
+                    onClick = openNotificationSettings,
+                    trailing = {
+                        EditorialSwitch(
+                            checked = settings.notificationsEnabled,
+                            onCheckedChange = viewModel::setNotificationsEnabled
+                        )
+                    }
+                )
+            }
+            item {
+                ValueRow(
+                    label = "Meal reminders",
+                    value = parseTimeList(settings.mealReminderTimesJson).joinToString(" · "),
+                    trailing = {
+                        EditorialSwitch(
+                            checked = settings.mealRemindersEnabled,
+                            onCheckedChange = viewModel::setMealRemindersEnabled
+                        )
+                    }
+                )
+            }
+            item {
+                ValueRow(
+                    label = "Workout",
+                    value = workoutSubtitle(settings),
+                    trailing = {
+                        EditorialSwitch(
+                            checked = settings.workoutRemindersEnabled,
+                            onCheckedChange = viewModel::setWorkoutRemindersEnabled
+                        )
+                    }
+                )
+            }
+            item {
+                ValueRow(
+                    label = "Water",
+                    value = waterSubtitle(settings.waterReminderIntervalMin),
+                    trailing = {
+                        EditorialSwitch(
+                            checked = settings.waterRemindersEnabled,
+                            onCheckedChange = viewModel::setWaterRemindersEnabled
+                        )
+                    }
+                )
+            }
+
+            item { SectionLabel("Data", topPadding = 28.dp) }
+            item {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(top = 14.dp),
+                    horizontalArrangement = Arrangement.spacedBy(10.dp)
+                ) {
+                    // EXPORT / IMPORT are drawn to the mock; the pickers arrive with the
+                    // DATA step, so neither is wired yet.
+                    DataButton(
+                        text = "Export JSON",
+                        filled = true,
+                        modifier = Modifier.weight(1f)
+                    )
+                    DataButton(
+                        text = "Import JSON",
+                        filled = false,
+                        modifier = Modifier.weight(1f)
+                    )
+                }
+                Text(
+                    text = "AI keys and PIN are never exported or overwritten by an import.",
+                    color = VitalColors.inkMuted,
+                    fontFamily = VitalFonts.InterTight,
+                    fontSize = 11.sp,
+                    lineHeight = 16.sp,
+                    modifier = Modifier.padding(top = 14.dp, bottom = 4.dp)
+                )
+                Hairline()
+            }
+
+            if (onOpenDebugShowcase != null) {
+                item { SectionLabel("Debug", topPadding = 28.dp) }
+                item {
+                    ValueRow(
+                        label = "Debug showcase",
+                        value = null,
+                        onClick = onOpenDebugShowcase,
+                        trailing = { Chevron() }
+                    )
                 }
             }
 
-            Spacer(Modifier.height(GAP_BUTTONS_TO_NOTE.duToDp()))
-            MonoText(
-                text = "AI KEYS AND PIN ARE NEVER EXPORTED OR OVERWRITTEN BY AN\nIMPORT.",
-                size = 10.5f,
-                color = VitalColors.textMuted,
-                tracking = 0f,
-                lineHeight = 15f,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(start = INSET_SECTION_LABEL.duToDp())
-            )
-
-            // ---- DEBUG -------------------------------------------------------------
-            // WIDGETS in the mock is not built (brief 4.5). The debug entry point lives in this
-            // slot instead, so the screen keeps its only non-mock entry point.
-            Spacer(Modifier.height(GAP_BEFORE_LABEL.duToDp()))
-            SettingsSectionLabel("DEBUG")
-
-            Spacer(Modifier.height(GAP_BEFORE_ROW.duToDp()))
-            SettingsRow(height = ROW_ONE_LINE, onClick = onOpenDebugShowcase) {
-                MonoText(
-                    text = "DEBUG SHOWCASE",
-                    size = 12f,
-                    color = VitalColors.textPrimary,
-                    tracking = LABEL_TRACKING,
-                    modifier = Modifier
-                        .align(Alignment.CenterStart)
-                        .padding(start = INSET_ROW_TEXT.duToDp())
-                )
-                ChevronIcon(
-                    modifier = Modifier
-                        .align(Alignment.CenterEnd)
-                        .padding(end = INSET_CHEVRON.duToDp())
-                )
-            }
-
-            Spacer(Modifier.height(24.duToDp()))
+            item { Spacer(Modifier.height(24.dp)) }
         }
     }
 
@@ -478,355 +381,226 @@ fun SettingsScreen(
     }
 }
 
-// ---- hero ---------------------------------------------------------------------------------
+// ---- hero ----------------------------------------------------------------------------------
 
 @Composable
-private fun DailyTargetsHero(
+private fun TargetsHero(
     settings: Settings,
-    onEdit: () -> Unit
+    onEdit: () -> Unit,
+    modifier: Modifier = Modifier
 ) {
-    Box(
-        modifier = Modifier
+    Column(
+        modifier = modifier
             .fillMaxWidth()
-            .height(HERO_HEIGHT.duToDp())
-            .clip(RoundedCornerShape(18.duToDp()))
-            .background(VitalColors.orange)
             .clickable(onClick = onEdit)
     ) {
-        MonoText(
-            text = "DAILY TARGETS",
-            size = 11f,
-            color = VitalColors.black,
-            tracking = 0.15f,
-            modifier = Modifier.offset(x = 14.3f.duToDp(), y = 21.6f.duToDp())
-        )
-
-        InterText(
-            text = formatKcal(settings.kcalTarget),
-            size = 76f,
-            color = VitalColors.black,
-            weight = FontWeight.Bold,
-            tracking = -0.055f,
-            modifier = Modifier.offset(x = 10.2f.duToDp(), y = 32.1f.duToDp())
-        )
-
-        MonoText(
-            text = "KCAL",
-            size = 18f,
-            color = VitalColors.black,
-            tracking = 0.1f,
-            modifier = Modifier.offset(x = 218f.duToDp(), y = 87f.duToDp())
-        )
-
-        val columns = listOf(15f, 129f, 242f)
-        val macros = listOf(
-            "PROTEIN" to settings.proteinTarget,
-            "CARBS" to settings.carbsTarget,
-            "FAT" to settings.fatTarget
-        )
-        macros.forEachIndexed { index, (label, grams) ->
-            MonoText(
-                text = label,
-                size = 10f,
-                color = VitalColors.black.copy(alpha = 0.7f),
-                tracking = 0.12f,
-                modifier = Modifier.offset(
-                    x = columns[index].duToDp(),
-                    y = 123.7f.duToDp()
-                )
+        EditorialEyebrow(text = "Daily targets")
+        Row(
+            verticalAlignment = Alignment.Bottom,
+            modifier = Modifier.padding(top = 14.dp)
+        ) {
+            Text(
+                text = formatKcal(settings.kcalTarget),
+                color = VitalColors.ink,
+                fontFamily = VitalFonts.InterTight,
+                fontSize = 58.sp,
+                fontWeight = FontWeight.Medium,
+                letterSpacing = (-0.05).em
             )
-            InterText(
-                text = "$grams g",
-                size = 20f,
-                color = VitalColors.black,
-                weight = FontWeight.Bold,
-                modifier = Modifier.offset(
-                    x = columns[index].duToDp(),
-                    y = 141.1f.duToDp()
-                )
+            Text(
+                text = "kcal",
+                color = VitalColors.inkMuted,
+                fontFamily = VitalFonts.JetBrainsMonoRegular,
+                fontSize = 12.sp,
+                modifier = Modifier.padding(start = 8.dp, bottom = 9.dp)
             )
         }
-
-        MacroShareBar(
-            proteinG = settings.proteinTarget,
-            carbsG = settings.carbsTarget,
-            fatG = settings.fatTarget,
-            modifier = Modifier.offset(x = 12.duToDp(), y = 180.duToDp())
+        Text(
+            text = "tap to edit",
+            color = VitalColors.inkMuted,
+            fontFamily = VitalFonts.JetBrainsMonoRegular,
+            fontSize = 11.sp,
+            modifier = Modifier.padding(top = 6.dp)
         )
     }
 }
 
 @Composable
-private fun TargetsEditorDialog(
+private fun TargetsMacroGrid(
     settings: Settings,
-    onDismiss: () -> Unit,
-    onSave: (Int, Int, Int, Int) -> Unit
+    modifier: Modifier = Modifier
 ) {
-    var kcal by remember(settings.kcalTarget) { mutableStateOf(settings.kcalTarget.toString()) }
-    var protein by remember(settings.proteinTarget) { mutableStateOf(settings.proteinTarget.toString()) }
-    var carbs by remember(settings.carbsTarget) { mutableStateOf(settings.carbsTarget.toString()) }
-    var fat by remember(settings.fatTarget) { mutableStateOf(settings.fatTarget.toString()) }
-
-    val kcalValue = kcal.toIntOrNull()
-    val proteinValue = protein.toIntOrNull()
-    val carbsValue = carbs.toIntOrNull()
-    val fatValue = fat.toIntOrNull()
-    val valid = kcalValue != null && kcalValue in 1..20000 &&
-        proteinValue != null && proteinValue in 0..2000 &&
-        carbsValue != null && carbsValue in 0..2000 &&
-        fatValue != null && fatValue in 0..2000
-
-    Dialog(onDismissRequest = onDismiss) {
-        Surface(
-            modifier = Modifier.fillMaxWidth(),
-            color = VitalColors.wellFill,
-            shape = RoundedCornerShape(18.duToDp()),
-            border = BorderStroke(1.5f.duToDp(), VitalColors.wellStroke)
+    val macros = listOf(
+        "Protein" to settings.proteinTarget,
+        "Carbs" to settings.carbsTarget,
+        "Fat" to settings.fatTarget
+    )
+    Column(modifier = modifier.fillMaxWidth()) {
+        Hairline()
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(IntrinsicSize.Min)
         ) {
-            Column(modifier = Modifier.padding(18.duToDp())) {
-                MonoText("DAILY TARGETS", 13f, VitalColors.textPrimary, 0.15f)
-                Spacer(Modifier.height(6.duToDp()))
-                MonoText(
-                    "KCAL AND MACRO TARGETS. THE HERO AND THE DAY'S REMAINING NUMBERS FOLLOW THESE.",
-                    size = 10f,
-                    color = VitalColors.textMuted,
-                    tracking = 0.02f,
-                    lineHeight = 14f
-                )
-                Spacer(Modifier.height(16.duToDp()))
-                TargetField(label = "KCAL", value = kcal, onValueChange = { kcal = it })
-                Spacer(Modifier.height(10.duToDp()))
-                Row(horizontalArrangement = Arrangement.spacedBy(10.duToDp())) {
-                    TargetField("PROTEIN G", protein, { protein = it }, Modifier.weight(1f))
-                    TargetField("CARBS G", carbs, { carbs = it }, Modifier.weight(1f))
-                    TargetField("FAT G", fat, { fat = it }, Modifier.weight(1f))
+            macros.forEachIndexed { index, (label, grams) ->
+                if (index > 0) {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxHeight()
+                            .width(1.dp)
+                            .background(VitalColors.rule)
+                    )
                 }
-                Spacer(Modifier.height(18.duToDp()))
-                Row(horizontalArrangement = Arrangement.spacedBy(10.duToDp())) {
-                    DialogButton(
-                        text = "CANCEL",
-                        onClick = onDismiss,
-                        modifier = Modifier.weight(1f)
+                Column(
+                    modifier = Modifier
+                        .weight(1f)
+                        .padding(
+                            start = if (index == 0) 0.dp else 20.dp,
+                            top = 15.dp,
+                            bottom = 15.dp
+                        )
+                ) {
+                    Text(
+                        text = label,
+                        color = VitalColors.inkMuted,
+                        fontFamily = VitalFonts.InterTight,
+                        fontSize = 11.sp,
+                        fontWeight = FontWeight.Medium
                     )
-                    DialogButton(
-                        text = "SAVE",
-                        onClick = {
-                            if (valid) onSave(kcalValue!!, proteinValue!!, carbsValue!!, fatValue!!)
-                        },
-                        enabled = valid,
-                        filled = true,
-                        modifier = Modifier.weight(1f)
-                    )
+                    Row(
+                        verticalAlignment = Alignment.Bottom,
+                        modifier = Modifier.padding(top = 7.dp)
+                    ) {
+                        Text(
+                            text = grams.toString(),
+                            color = VitalColors.ink,
+                            fontFamily = VitalFonts.InterTight,
+                            fontSize = 26.sp,
+                            fontWeight = FontWeight.SemiBold,
+                            letterSpacing = (-0.02).em
+                        )
+                        Text(
+                            text = "g",
+                            color = VitalColors.inkMuted,
+                            fontFamily = VitalFonts.InterTight,
+                            fontSize = 12.sp,
+                            fontWeight = FontWeight.Medium,
+                            modifier = Modifier.padding(start = 3.dp, bottom = 3.dp)
+                        )
+                    }
                 }
             }
         }
+        Hairline()
     }
 }
 
+// ---- shared rows ---------------------------------------------------------------------------
+
 @Composable
-private fun TargetField(
+private fun SectionLabel(title: String, topPadding: androidx.compose.ui.unit.Dp) {
+    EditorialSectionHeader(
+        title = title,
+        modifier = Modifier.padding(top = topPadding)
+    )
+}
+
+@Composable
+private fun ValueRow(
     label: String,
-    value: String,
-    onValueChange: (String) -> Unit,
-    modifier: Modifier = Modifier
-) {
-    Column(modifier = modifier) {
-        MonoText(label, 9.5f, VitalColors.textMuted, 0.08f)
-        Spacer(Modifier.height(5.duToDp()))
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(44.duToDp())
-                .background(VitalColors.black, RoundedCornerShape(8.duToDp()))
-                .border(1.duToDp(), VitalColors.wellStroke, RoundedCornerShape(8.duToDp())),
-            contentAlignment = Alignment.Center
-        ) {
-            BasicTextField(
-                value = value,
-                onValueChange = { next ->
-                    if (next.length <= 5 && next.all { it.isDigit() }) onValueChange(next)
-                },
-                singleLine = true,
-                textStyle = TextStyle(
-                    color = VitalColors.textPrimary,
-                    fontSize = 22.duToSp(),
-                    fontWeight = FontWeight.Bold,
-                    fontFamily = VitalFonts.InterTight,
-                    textAlign = TextAlign.Center,
-                    platformStyle = PlatformTextStyle(includeFontPadding = false)
-                ),
-                cursorBrush = SolidColor(VitalColors.orange),
-                keyboardOptions = KeyboardOptions(
-                    keyboardType = KeyboardType.Number,
-                    imeAction = ImeAction.Next
-                ),
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 8.duToDp())
-            )
-        }
-    }
-}
-
-@Composable
-private fun DialogButton(
-    text: String,
-    onClick: () -> Unit,
+    value: String?,
     modifier: Modifier = Modifier,
-    enabled: Boolean = true,
-    filled: Boolean = false
+    mono: Boolean = false,
+    onClick: (() -> Unit)? = null,
+    trailing: (@Composable () -> Unit)? = null
 ) {
-    Surface(
+    Column(
         modifier = modifier
-            .height(46.duToDp())
-            .clickable(enabled = enabled, onClick = onClick),
-        color = if (filled) VitalColors.orange else Color.Transparent,
-        shape = RoundedCornerShape(10.duToDp()),
-        border = if (filled) null else BorderStroke(1.5f.duToDp(), VitalColors.orange)
-    ) {
-        Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-            MonoText(
-                text = text,
-                size = 12f,
-                color = when {
-                    !enabled -> VitalColors.textMuted
-                    filled -> VitalColors.black
-                    else -> VitalColors.orange
-                },
-                tracking = 0.08f
-            )
-        }
-    }
-}
-
-/** Grey `P 29%  C 40%  F 31%` bar, 345 x 36 at hero-relative (12, 180). */
-@Composable
-private fun MacroShareBar(
-    proteinG: Int,
-    carbsG: Int,
-    fatG: Int,
-    modifier: Modifier = Modifier
-) {
-    val proteinKcal = proteinG * KCAL_PER_G_PROTEIN
-    val carbsKcal = carbsG * KCAL_PER_G_CARBS
-    val fatKcal = fatG * KCAL_PER_G_FAT
-    val total = (proteinKcal + carbsKcal + fatKcal).coerceAtLeast(1)
-
-    GreyPanel(
-        modifier = modifier
-            .width(345.duToDp())
-            .height(36.duToDp())
+            .fillMaxWidth()
+            .then(if (onClick != null) Modifier.clickable(onClick = onClick) else Modifier)
     ) {
         Row(
             modifier = Modifier
-                .fillMaxSize()
-                .padding(horizontal = 12.duToDp()),
-            horizontalArrangement = Arrangement.SpaceBetween,
+                .fillMaxWidth()
+                .heightIn(min = 48.dp)
+                .padding(vertical = 13.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            MonoText("P ${share(proteinKcal, total)}%", 11f, VitalColors.textPrimary, 0.02f)
-            MonoText("C ${share(carbsKcal, total)}%", 11f, VitalColors.textPrimary, 0.02f)
-            MonoText("F ${share(fatKcal, total)}%", 11f, VitalColors.textPrimary, 0.02f)
-        }
-    }
-}
-
-// ---- rows ---------------------------------------------------------------------------------
-
-@Composable
-private fun SettingsRow(
-    height: Float,
-    onClick: (() -> Unit)? = null,
-    content: @Composable BoxScope.() -> Unit
-) {
-    WellRow(
-        modifier = Modifier
-            .height(height.duToDp())
-            .then(if (onClick == null) Modifier else Modifier.clickable(onClick = onClick))
-    ) {
-        Box(modifier = Modifier.fillMaxSize(), content = content)
-    }
-}
-
-/** 54 du row: label top padding 11, sub-label bottom padding 11 (settings.md FIX 0A.6). */
-@Composable
-private fun SettingsTwoLineRow(
-    label: String,
-    sub: String,
-    onClick: (() -> Unit)? = null,
-    trailing: @Composable (() -> Unit)? = null
-) {
-    SettingsRow(height = ROW_TWO_LINE, onClick = onClick) {
-        // TopStart, not CenterStart: centring a padded column makes the top padding only
-        // half-effective, which pushed the label ~7 du down (measured).
-        Column(
-            modifier = Modifier
-                .align(Alignment.TopStart)
-                .padding(start = INSET_ROW_TEXT.duToDp(), top = 11.duToDp())
-        ) {
-            // Boxes pinned to their nominal sizes: a 12 du Text lays out ~15.8 du because the
-            // font's ascent + descent exceeds lineHeight, which pushed the sub-label down and
-            // broke the md's "11 du top, 11 du bottom" geometry (FIX 0A.6).
-            MonoText(
-                label, 12f, VitalColors.textPrimary, LABEL_TRACKING,
-                modifier = Modifier.height(12.duToDp())
+            Text(
+                text = label,
+                color = VitalColors.ink,
+                fontFamily = VitalFonts.InterTight,
+                fontSize = 14.sp,
+                modifier = Modifier.weight(1f)
             )
-            Spacer(Modifier.height(9.5f.duToDp()))
-            MonoText(
-                sub, 10.5f, VitalColors.textMuted, SUB_TRACKING,
-                modifier = Modifier.height(10.5f.duToDp())
-            )
-        }
-        trailing?.let {
-            Box(
-                modifier = Modifier
-                    .align(Alignment.CenterEnd)
-                    .padding(end = INSET_TOGGLE.duToDp())
-            ) {
-                it()
+            if (value != null) {
+                Text(
+                    text = value,
+                    color = VitalColors.inkMuted,
+                    fontFamily = if (mono) VitalFonts.JetBrainsMonoRegular else VitalFonts.InterTight,
+                    fontSize = if (mono) 12.sp else 12.sp,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                    modifier = Modifier
+                        .padding(start = 12.dp)
+                        .then(if (trailing == null) Modifier else Modifier.padding(end = 12.dp))
+                )
             }
+            trailing?.invoke()
         }
+        Hairline()
     }
 }
 
-/** Half-width well (181 du): label at (13.5, 9.7), value + unit at (13.5, 27.4). */
 @Composable
-private fun SettingsValueRow(
+private fun MetricCell(
     label: String,
     value: String,
     unit: String,
+    startPadding: androidx.compose.ui.unit.Dp,
     modifier: Modifier = Modifier
 ) {
-    WellRow(modifier = modifier.height(ROW_PROFILE.duToDp())) {
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(start = 13.5f.duToDp(), top = 9.7f.duToDp())
+    Column(
+        modifier = modifier.padding(
+            start = startPadding,
+            top = 15.dp,
+            bottom = 15.dp
+        )
+    ) {
+        Text(
+            text = label,
+            color = VitalColors.inkMuted,
+            fontFamily = VitalFonts.InterTight,
+            fontSize = 11.sp,
+            fontWeight = FontWeight.Medium
+        )
+        Row(
+            verticalAlignment = Alignment.Bottom,
+            modifier = Modifier.padding(top = 7.dp)
         ) {
-            MonoText(
-                label, 10f, VitalColors.textMuted, SUB_TRACKING,
-                modifier = Modifier.height(10.duToDp())
+            Text(
+                text = value,
+                color = VitalColors.ink,
+                fontFamily = VitalFonts.InterTight,
+                fontSize = 22.sp,
+                fontWeight = FontWeight.SemiBold,
+                letterSpacing = (-0.02).em
             )
-            Spacer(Modifier.height(7.7f.duToDp()))
-            Row(verticalAlignment = Alignment.Bottom) {
-                InterText(value, 20f, VitalColors.textPrimary, FontWeight.Bold)
-                Spacer(Modifier.width(3.duToDp()))
-                MonoText(
-                    text = unit,
-                    size = 10f,
-                    color = VitalColors.textMuted,
-                    tracking = SUB_TRACKING,
-                    modifier = Modifier.padding(bottom = 3.5f.duToDp())
-                )
-            }
+            Text(
+                text = unit,
+                color = VitalColors.inkMuted,
+                fontFamily = VitalFonts.InterTight,
+                fontSize = 12.sp,
+                fontWeight = FontWeight.Medium,
+                modifier = Modifier.padding(start = 3.dp, bottom = 2.dp)
+            )
         }
     }
 }
 
 /**
- * NAME row. Tapping the pencil edits in place; the name is written on Done or when the field
- * loses focus. The mock draws no edit state, so the editor is the value itself with an orange
- * caret and nothing else added.
+ * NAME row. Tapping the value edits in place and commits on Done or focus loss. The mock
+ * draws no editor, so the field itself is the value.
  */
 @Composable
 private fun NameRow(
@@ -849,30 +623,32 @@ private fun NameRow(
         if (editing) focusRequester.requestFocus()
     }
 
-    val displayName = currentName.ifBlank { "—" }
-
-    SettingsRow(height = ROW_PROFILE) {
-        // TopStart for the same reason as SettingsTwoLineRow: the 9.7 du top padding must be
-        // measured from the row's top edge, not halved by centre alignment.
-        Column(
+    Column(modifier = Modifier.fillMaxWidth()) {
+        Row(
             modifier = Modifier
-                .align(Alignment.TopStart)
-                .padding(start = INSET_ROW_TEXT.duToDp(), top = 9.7f.duToDp())
+                .fillMaxWidth()
+                .heightIn(min = 48.dp)
+                .padding(vertical = 13.dp),
+            verticalAlignment = Alignment.CenterVertically
         ) {
-            MonoText("NAME", 10f, VitalColors.textMuted, SUB_TRACKING)
-            Spacer(Modifier.height(6.8f.duToDp()))
+            Text(
+                text = "Name",
+                color = VitalColors.ink,
+                fontFamily = VitalFonts.InterTight,
+                fontSize = 14.sp,
+                modifier = Modifier.weight(1f)
+            )
             if (editing) {
                 BasicTextField(
                     value = draft,
                     onValueChange = { draft = it },
                     singleLine = true,
                     textStyle = TextStyle(
-                        color = VitalColors.textPrimary,
-                        fontSize = 19.duToSp(),
-                        fontWeight = FontWeight.SemiBold,
+                        color = VitalColors.ink,
                         fontFamily = VitalFonts.InterTight,
-                        lineHeight = 19.duToSp(),
-                        platformStyle = PlatformTextStyle(includeFontPadding = false)
+                        fontSize = 14.sp,
+                        fontWeight = FontWeight.Medium,
+                        textAlign = TextAlign.End
                     ),
                     cursorBrush = SolidColor(VitalColors.orange),
                     keyboardOptions = KeyboardOptions(
@@ -881,7 +657,7 @@ private fun NameRow(
                     ),
                     keyboardActions = KeyboardActions(onDone = { commit() }),
                     modifier = Modifier
-                        .width(240.duToDp())
+                        .width(220.dp)
                         .focusRequester(focusRequester)
                         .onFocusChanged { state ->
                             if (hadFocus && !state.isFocused) commit()
@@ -889,270 +665,362 @@ private fun NameRow(
                         }
                 )
             } else {
-                InterText(
-                    text = displayName,
-                    size = 19f,
-                    color = if (currentName.isBlank()) VitalColors.textMuted
-                    else VitalColors.textPrimary,
-                    weight = FontWeight.SemiBold
+                Text(
+                    text = currentName.ifBlank { "—" },
+                    color = if (currentName.isBlank()) VitalColors.inkMuted else VitalColors.inkMuted,
+                    fontFamily = VitalFonts.JetBrainsMonoRegular,
+                    fontSize = 12.sp,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                    modifier = Modifier
+                        .padding(start = 12.dp, end = 12.dp)
+                        .clickable {
+                            draft = currentName
+                            editing = true
+                        }
+                )
+                Text(
+                    text = "edit",
+                    color = VitalColors.orange,
+                    fontFamily = VitalFonts.InterTight,
+                    fontSize = 13.sp,
+                    fontWeight = FontWeight.Medium,
+                    modifier = Modifier
+                        .clickable {
+                            draft = currentName
+                            editing = true
+                        }
+                        .padding(vertical = 4.dp)
                 )
             }
         }
-
-        Box(
-            modifier = Modifier
-                .align(Alignment.CenterEnd)
-                .padding(end = 19.duToDp())
-                .clickable {
-                    if (editing) {
-                        commit()
-                    } else {
-                        draft = currentName
-                        editing = true
-                    }
-                }
-        ) {
-            PencilIcon()
-        }
+        Hairline()
     }
 }
 
-// ---- segmented control --------------------------------------------------------------------
+// ---- controls ------------------------------------------------------------------------------
 
 @Composable
-private fun ProviderSegmented(
+private fun EditorialSwitch(
+    checked: Boolean,
+    onCheckedChange: (Boolean) -> Unit,
+    enabled: Boolean = true
+) {
+    Box(
+        modifier = Modifier
+            .size(width = 42.dp, height = 24.dp)
+            .background(
+                color = when {
+                    !enabled -> Color.Transparent
+                    checked -> VitalColors.orange
+                    else -> Color.Transparent
+                },
+                shape = RoundedCornerShape(12.dp)
+            )
+            .border(
+                width = 1.dp,
+                color = when {
+                    !enabled -> VitalColors.rule
+                    checked -> VitalColors.orange
+                    else -> VitalColors.ruleStrong
+                },
+                shape = RoundedCornerShape(12.dp)
+            )
+            .clickable(enabled = enabled) { onCheckedChange(!checked) },
+        contentAlignment = if (checked) Alignment.CenterEnd else Alignment.CenterStart
+    ) {
+        // Inset the knob by 4 dp with padding rather than offset, so the border stays 1 dp.
+        Spacer(
+            modifier = Modifier
+                .padding(horizontal = 4.dp)
+                .size(16.dp)
+                .background(
+                    color = if (checked) VitalColors.black else VitalColors.inkMuted,
+                    shape = CircleShape
+                )
+        )
+    }
+}
+
+@Composable
+private fun ProviderTabs(
     selected: AiProvider,
     onSelect: (AiProvider) -> Unit
 ) {
-    Surface(
-        modifier = Modifier
-            .fillMaxWidth()
-            .height(44.duToDp()),
-        color = VitalColors.wellFill,
-        shape = RoundedCornerShape(10.duToDp()),
-        border = BorderStroke(1.5f.duToDp(), VitalColors.wellStroke)
-    ) {
+    val options = listOf(
+        AiProvider.GEMINI to "Gemini",
+        AiProvider.OPENROUTER to "OpenRouter"
+    )
+    Column(modifier = Modifier.fillMaxWidth()) {
         Row(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(6.duToDp())
+            modifier = Modifier.padding(top = 10.dp),
+            horizontalArrangement = Arrangement.spacedBy(28.dp)
         ) {
-            SegmentCell(
-                label = "GEMINI",
-                selected = selected == AiProvider.GEMINI,
-                modifier = Modifier.weight(1f),
-                onClick = { onSelect(AiProvider.GEMINI) }
-            )
-            SegmentCell(
-                label = "OPENROUTER",
-                selected = selected == AiProvider.OPENROUTER,
-                modifier = Modifier.weight(1f),
-                onClick = { onSelect(AiProvider.OPENROUTER) }
-            )
+            options.forEach { (provider, label) ->
+                val isSelected = provider == selected
+                Column(
+                    modifier = Modifier
+                        .width(IntrinsicSize.Min)
+                        .clickable { onSelect(provider) }
+                ) {
+                    Text(
+                        text = label,
+                        color = if (isSelected) VitalColors.ink else VitalColors.inkMuted,
+                        fontFamily = VitalFonts.JetBrainsMonoRegular,
+                        fontSize = 13.sp,
+                        modifier = Modifier.padding(bottom = 10.dp)
+                    )
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(2.dp)
+                            .background(if (isSelected) VitalColors.orange else Color.Transparent)
+                    )
+                }
+            }
         }
+        Hairline()
     }
 }
 
 @Composable
-private fun SegmentCell(
-    label: String,
-    selected: Boolean,
-    modifier: Modifier = Modifier,
-    onClick: () -> Unit
+private fun DataButton(
+    text: String,
+    filled: Boolean,
+    modifier: Modifier = Modifier
 ) {
     Box(
         modifier = modifier
-            .fillMaxSize()
-            .clip(RoundedCornerShape(8.duToDp()))
-            .background(if (selected) VitalColors.orange else Color.Transparent)
-            .clickable(onClick = onClick),
+            .height(50.dp)
+            .then(
+                if (filled) {
+                    Modifier.background(VitalColors.orange, RoundedCornerShape(4.dp))
+                } else {
+                    Modifier.border(1.dp, VitalColors.orange, RoundedCornerShape(4.dp))
+                }
+            ),
         contentAlignment = Alignment.Center
     ) {
-        MonoText(
-            text = label,
-            size = 11f,
-            color = if (selected) VitalColors.black else VitalColors.textMuted,
-            tracking = 0.06f
+        Text(
+            text = text,
+            color = if (filled) VitalColors.black else VitalColors.orange,
+            fontFamily = VitalFonts.InterTight,
+            fontSize = 14.sp,
+            fontWeight = FontWeight.SemiBold
         )
     }
 }
 
-// ---- text ---------------------------------------------------------------------------------
-
-private const val LABEL_TRACKING = 0.06f
-private const val SUB_TRACKING = 0.06f
-private const val MASKED_KEY = "••••••••••••••••••••••"
-private const val KCAL_PER_G_PROTEIN = 4
-private const val KCAL_PER_G_CARBS = 4
-private const val KCAL_PER_G_FAT = 9
-
-/**
- * Section label pinned to its nominal 13 du box. A `Text` with `lineHeight = 13` still lays
- * out ~16.7 du, because JetBrains Mono's ascent + descent is ~1.32 em and the font's own line
- * box wins over a smaller lineHeight. That extra 3.7 du pushed every row below a label down,
- * and is what made PROFILE / AI COACH read 3-6 du low against settings.md. The 2.5 du lift is
- * the measured ink offset of the small mono glyphs inside their box.
- */
 @Composable
-private fun SettingsSectionLabel(title: String) {
-    MonoText(
-        text = title,
-        size = SECTION_LABEL_HEIGHT,
-        color = VitalColors.textPrimary,
-        tracking = 0.24f,
-        modifier = Modifier
-            .fillMaxWidth()
-            .height(SECTION_LABEL_HEIGHT.duToDp())
-            .offset(y = (-2.5f).duToDp())
-            .padding(start = INSET_SECTION_LABEL.duToDp())
-    )
-}
-
-@Composable
-private fun MonoText(
-    text: String,
-    size: Float,
-    color: Color,
-    tracking: Float,
-    modifier: Modifier = Modifier,
-    lineHeight: Float = size,
-    textAlign: TextAlign = TextAlign.Start,
-    maxLines: Int = Int.MAX_VALUE,
-    overflow: TextOverflow = TextOverflow.Clip
-) {
+private fun Chevron() {
     Text(
-        text = text,
-        modifier = modifier,
-        color = color,
-        fontSize = size.duToSp(),
-        fontWeight = FontWeight.Bold,
-        fontFamily = VitalFonts.JetBrainsMonoBold,
-        letterSpacing = tracking.em,
-        textAlign = textAlign,
-        lineHeight = lineHeight.duToSp(),
-        maxLines = maxLines,
-        overflow = overflow,
-        style = TextStyle(platformStyle = PlatformTextStyle(includeFontPadding = false))
+        text = "›",
+        color = VitalColors.inkMuted,
+        fontFamily = VitalFonts.InterTight,
+        fontSize = 20.sp,
+        modifier = Modifier.padding(start = 4.dp)
     )
 }
 
+// ---- targets dialog ------------------------------------------------------------------------
+
 @Composable
-private fun InterText(
-    text: String,
-    size: Float,
-    color: Color,
-    weight: FontWeight,
-    tracking: Float = 0f,
+private fun TargetsEditorDialog(
+    settings: Settings,
+    onDismiss: () -> Unit,
+    onSave: (Int, Int, Int, Int) -> Unit
+) {
+    var kcal by remember(settings.kcalTarget) { mutableStateOf(settings.kcalTarget.toString()) }
+    var protein by remember(settings.proteinTarget) { mutableStateOf(settings.proteinTarget.toString()) }
+    var carbs by remember(settings.carbsTarget) { mutableStateOf(settings.carbsTarget.toString()) }
+    var fat by remember(settings.fatTarget) { mutableStateOf(settings.fatTarget.toString()) }
+
+    val kcalValue = kcal.toIntOrNull()
+    val proteinValue = protein.toIntOrNull()
+    val carbsValue = carbs.toIntOrNull()
+    val fatValue = fat.toIntOrNull()
+    val valid = kcalValue != null && kcalValue in 1..20000 &&
+        proteinValue != null && proteinValue in 0..2000 &&
+        carbsValue != null && carbsValue in 0..2000 &&
+        fatValue != null && fatValue in 0..2000
+
+    Dialog(onDismissRequest = onDismiss) {
+        DialogShell {
+            Text(
+                text = "DAILY TARGETS",
+                color = VitalColors.inkMuted,
+                fontFamily = VitalFonts.InterTight,
+                fontSize = 10.sp,
+                fontWeight = FontWeight.Bold,
+                letterSpacing = 0.16.em
+            )
+            Spacer(Modifier.height(6.dp))
+            Text(
+                text = "Kcal and macro targets. The hero and the day's remaining numbers follow these.",
+                color = VitalColors.inkMuted,
+                fontFamily = VitalFonts.JetBrainsMonoRegular,
+                fontSize = 11.sp,
+                lineHeight = 16.sp
+            )
+            Spacer(Modifier.height(16.dp))
+            TargetField(label = "Kcal", value = kcal, onValueChange = { kcal = it })
+            Spacer(Modifier.height(12.dp))
+            Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                TargetField("Protein g", protein, { protein = it }, Modifier.weight(1f))
+                TargetField("Carbs g", carbs, { carbs = it }, Modifier.weight(1f))
+                TargetField("Fat g", fat, { fat = it }, Modifier.weight(1f))
+            }
+            Spacer(Modifier.height(18.dp))
+            Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                DialogButton(
+                    text = "Cancel",
+                    onClick = onDismiss,
+                    modifier = Modifier.weight(1f)
+                )
+                DialogButton(
+                    text = "Save",
+                    onClick = {
+                        if (valid) onSave(kcalValue!!, proteinValue!!, carbsValue!!, fatValue!!)
+                    },
+                    enabled = valid,
+                    filled = true,
+                    modifier = Modifier.weight(1f)
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun TargetField(
+    label: String,
+    value: String,
+    onValueChange: (String) -> Unit,
     modifier: Modifier = Modifier
 ) {
-    Text(
-        text = text,
-        modifier = modifier,
-        color = color,
-        fontSize = size.duToSp(),
-        fontWeight = weight,
-        fontFamily = VitalFonts.InterTight,
-        letterSpacing = tracking.em,
-        lineHeight = size.duToSp(),
-        style = TextStyle(platformStyle = PlatformTextStyle(includeFontPadding = false))
-    )
-}
-
-// ---- icons (stroke only, 1.8 du round caps) ------------------------------------------------
-
-/** Outlined pencil, 14 x 14, tip to the lower left. */
-@Composable
-private fun PencilIcon(modifier: Modifier = Modifier) {
-    val size14 = 14.duToDp()
-    Canvas(modifier = modifier.size(size14)) {
-        // 1 du in pixels: the canvas is exactly 14 du on a side.
-        val u = size.width / 14f
-        val stroke = Stroke(
-            width = 1.8f * u,
-            cap = StrokeCap.Round,
-            join = StrokeJoin.Round
+    Column(modifier = modifier) {
+        Text(
+            text = label,
+            color = VitalColors.inkMuted,
+            fontFamily = VitalFonts.InterTight,
+            fontSize = 11.sp,
+            fontWeight = FontWeight.Medium
         )
-        rotate(degrees = -45f, pivot = center) {
-            // Body: a 8 x 4.8 bar in the upper half, tip: a triangle at its left end.
-            val bodyLeft = 5.2f * u
-            val bodyRight = 13.2f * u
-            val bodyTop = 4.6f * u
-            val bodyBottom = 9.4f * u
-            drawRoundRect(
-                color = VitalColors.textMuted,
-                topLeft = Offset(bodyLeft, bodyTop),
-                size = Size(bodyRight - bodyLeft, bodyBottom - bodyTop),
-                cornerRadius = CornerRadius(0.8f * u),
-                style = stroke
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(top = 7.dp)
+        ) {
+            BasicTextField(
+                value = value,
+                onValueChange = { next ->
+                    if (next.length <= 5 && next.all { it.isDigit() }) onValueChange(next)
+                },
+                singleLine = true,
+                textStyle = TextStyle(
+                    color = VitalColors.ink,
+                    fontSize = 24.sp,
+                    fontWeight = FontWeight.SemiBold,
+                    fontFamily = VitalFonts.InterTight,
+                    textAlign = TextAlign.Start
+                ),
+                cursorBrush = SolidColor(VitalColors.orange),
+                keyboardOptions = KeyboardOptions(
+                    keyboardType = KeyboardType.Number,
+                    imeAction = ImeAction.Next
+                ),
+                modifier = Modifier.fillMaxWidth()
             )
-            val tip = Path().apply {
-                moveTo(bodyLeft, bodyTop)
-                lineTo(bodyLeft, bodyBottom)
-                lineTo(0.9f * u, center.y)
-                close()
-            }
-            drawPath(tip, color = VitalColors.textMuted, style = stroke)
         }
+        Hairline()
     }
 }
 
-/** 6 x 11 chevron pointing right. */
 @Composable
-private fun ChevronIcon(modifier: Modifier = Modifier) {
-    val chevronSize = Modifier.size(width = 6.duToDp(), height = 11.duToDp())
-    Canvas(modifier = modifier.then(chevronSize)) {
-        val stroke = 1.8f * (size.height / 11f)
-        val inset = stroke / 2f
-        val path = Path().apply {
-            moveTo(inset, inset)
-            lineTo(size.width - inset, size.height / 2f)
-            lineTo(inset, size.height - inset)
-        }
-        drawPath(
-            path = path,
-            color = VitalColors.textMuted,
-            style = Stroke(
-                width = stroke,
-                cap = StrokeCap.Round,
-                join = StrokeJoin.Round
+private fun DialogShell(content: @Composable () -> Unit) {
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .background(VitalColors.sheet, RoundedCornerShape(12.dp))
+            .border(1.dp, VitalColors.ruleStrong, RoundedCornerShape(12.dp))
+            .padding(20.dp)
+    ) {
+        content()
+    }
+}
+
+@Composable
+private fun DialogButton(
+    text: String,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+    enabled: Boolean = true,
+    filled: Boolean = false
+) {
+    Box(
+        modifier = modifier
+            .height(50.dp)
+            .then(
+                if (filled) {
+                    Modifier.background(
+                        if (enabled) VitalColors.orange else VitalColors.orange.copy(alpha = 0.35f),
+                        RoundedCornerShape(4.dp)
+                    )
+                } else {
+                    Modifier.border(1.dp, VitalColors.orange, RoundedCornerShape(4.dp))
+                }
             )
+            .clickable(enabled = enabled, onClick = onClick),
+        contentAlignment = Alignment.Center
+    ) {
+        Text(
+            text = text,
+            color = when {
+                !enabled -> VitalColors.black.copy(alpha = 0.5f)
+                filled -> VitalColors.black
+                else -> VitalColors.orange
+            },
+            fontFamily = VitalFonts.InterTight,
+            fontSize = 15.sp,
+            fontWeight = FontWeight.SemiBold
         )
     }
 }
 
-// ---- formatting --------------------------------------------------------------------------
+// ---- helpers -------------------------------------------------------------------------------
+
+private const val MASKED_KEY = "••••••••••••••••••••••"
 
 private fun formatKcal(kcal: Int): String = String.format(Locale.US, "%,d", kcal)
 
 private fun formatWeight(kg: Double): String =
-    if (kg == kg.toLong().toDouble()) kg.toLong().toString()
-    else String.format(Locale.US, "%.1f", kg)
+    if (kg % 1.0 == 0.0) kg.toInt().toString() else String.format(Locale.US, "%.1f", kg)
 
 private fun formatRest(seconds: Int): String =
-    String.format(Locale.US, "%d:%02d", seconds / 60, seconds % 60)
-
-private fun share(part: Int, total: Int): Int = Math.round(part * 100f / total)
+    "%d:%02d".format(Locale.US, seconds / 60, seconds % 60)
 
 private fun workoutSubtitle(settings: Settings): String {
-    val days = parseIntList(settings.workoutReminderDaysJson).distinct().sorted()
-    val daysText = when {
-        days.isEmpty() -> null
-        days.size == 7 -> "EVERY DAY"
-        else -> days.mapNotNull { DAY_NAMES.getOrNull(it - 1) }.joinToString(" ")
+    val days = parseIntList(settings.workoutReminderDaysJson)
+        .mapNotNull { day -> dayNames.getOrNull(day - 1) }
+    val time = settings.workoutReminderTime.takeIf { it.isNotBlank() }
+    return when {
+        days.isEmpty() && time == null -> "Off"
+        days.isEmpty() -> time.orEmpty()
+        else -> "${days.joinToString(" ")} · ${time.orEmpty()}"
     }
-    return listOfNotNull(daysText, settings.workoutReminderTime).joinToString(" · ")
 }
+
+private val dayNames = listOf("Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun")
 
 private fun waterSubtitle(intervalMin: Int): String = when {
-    intervalMin <= 0 -> "OFF"
-    intervalMin % 60 == 0 -> "EVERY ${intervalMin / 60} H"
-    else -> "EVERY $intervalMin MIN"
+    intervalMin <= 0 -> "Off"
+    intervalMin % 60 == 0 -> "Every ${intervalMin / 60} h"
+    else -> "Every $intervalMin min"
 }
 
-// The reminder fields are seed-written JSON strings (Settings entity). These read them without
-// pulling the serialization runtime into the screen.
+/** Reads `["08:00","13:00"]` without pulling in a JSON dependency. */
 private fun parseTimeList(json: String): List<String> =
-    Regex("\"([^\"]+)\"").findAll(json).map { it.groupValues[1] }.toList()
+    Regex("\"([0-9]{2}:[0-9]{2})\"").findAll(json).map { it.groupValues[1] }.toList()
 
 private fun parseIntList(json: String): List<Int> =
-    Regex("\\d+").findAll(json).mapNotNull { it.value.toIntOrNull() }.toList()
+    Regex("\\d+").findAll(json).map { it.value.toInt() }.toList()
