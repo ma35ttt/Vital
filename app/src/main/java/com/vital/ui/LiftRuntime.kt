@@ -15,8 +15,38 @@ import javax.inject.Inject
 import javax.inject.Singleton
 
 /**
+ * One exercise in a planned workout, with the intensity, reps and RPE carried over from
+ * the user's last time doing it. Held in the draft until each entry is applied.
+ */
+data class LiftPlanEntry(
+    val exerciseId: String,
+    val weightText: String,
+    val repsText: String,
+    val rpeText: String
+)
+
+/** Position within the planned workout, for the "Next exercise" control. */
+data class PlanProgress(val position: Int, val total: Int)
+
+/** One row of the New workout sheet: an exercise plus its prefilled values. */
+data class WorkoutPlanItem(
+    val exerciseId: String,
+    val name: String,
+    val weightText: String,
+    val repsText: String,
+    val rpeText: String,
+    val setCount: Int
+)
+
+/** The New workout sheet's contents: the prefilled exercises and how old the source is. */
+data class NewWorkoutPlan(
+    val items: List<WorkoutPlanItem>,
+    val ageLabel: String?
+)
+
+/**
  * The in-progress Lift draft. Lift's nav entry (and therefore its ViewModel) is destroyed
- * when the user switches tabs, so the selected exercise and the two fields live here until
+ * when the user switches tabs, so the selected exercise and the fields live here until
  * the app process dies. Logged sets are in Room.
  */
 @Singleton
@@ -24,6 +54,14 @@ class LiftDraftStore @Inject constructor() {
     val selectedExerciseId = MutableStateFlow<String?>(null)
     val weightText = MutableStateFlow("")
     val repsText = MutableStateFlow("")
+    val rpeText = MutableStateFlow("")
+
+    /** A workout started from "New workout"; Lift walks it with the Next exercise control. */
+    val plan = MutableStateFlow<List<LiftPlanEntry>>(emptyList())
+    val planIndex = MutableStateFlow(0)
+
+    /** Set from the More sheet so Lift can open its creator on arrival. */
+    val newWorkoutRequested = MutableStateFlow(false)
 }
 
 /**
