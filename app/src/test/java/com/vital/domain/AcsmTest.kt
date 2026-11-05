@@ -2,6 +2,7 @@ package com.vital.domain
 
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
+import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class AcsmTest {
@@ -18,8 +19,17 @@ class AcsmTest {
     }
 
     @Test
-    fun `faster than walking limit returns null`() {
-        assertNull(Acsm.kcal(6.1, 0.0, 68.0, 1800))
+    fun `above walking limit uses the running equation`() {
+        // 10 km/h, flat, 68 kg, 30 min: VO2 = 3.5 + 0.2*(10000/60) = 36.83 -> ~12.52 kcal/min.
+        val kcal = Acsm.kcal(10.0, 0.0, 68.0, 30 * 60)!!
+        assertEquals(375.7, kcal, 1.0)
+    }
+
+    @Test
+    fun `running burns more than walking at the same speed boundary`() {
+        val walk = Acsm.kcal(6.0, 0.0, 70.0, 1800)!!
+        val run = Acsm.kcal(6.1, 0.0, 70.0, 1800)!!
+        assertTrue(run > walk)
     }
 
     @Test

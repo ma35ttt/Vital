@@ -6,6 +6,7 @@ import android.content.pm.PackageManager
 import android.os.Build
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.gestures.detectHorizontalDragGestures
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
@@ -15,10 +16,13 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -46,6 +50,7 @@ import com.vital.ui.screens.TodayScreen
 import com.vital.ui.screens.TutorialScreen
 import com.vital.ui.screens.WeeksScreen
 import com.vital.ui.theme.VitalColors
+import kotlin.math.abs
 
 @Composable
 fun VitalNavigation() {
@@ -101,6 +106,29 @@ fun VitalNavigation() {
         }
     }
 
+    // Swipe left/right to step through the four content tabs. "More" is a sheet, not a page, so
+    // it is skipped and the ends clamp. The index is read at gesture time (not from the composed
+    // value) so a swipe that closely follows another never acts on a stale route.
+    val tabRoutes = setOf("meals", "lift", "today", "cardio")
+    fun currentTabIndex(): Int = when (navController.currentBackStackEntry?.destination?.route) {
+        "meals" -> 0
+        "lift" -> 1
+        "today" -> 2
+        "cardio" -> 3
+        else -> -1
+    }
+    val swipeModifier = Modifier.tabSwipe(
+        enabled = !moreOpen && currentRoute in tabRoutes,
+        onSwipeLeft = {
+            val index = currentTabIndex()
+            if (index in 0..2) navigateToTab(index + 1)
+        },
+        onSwipeRight = {
+            val index = currentTabIndex()
+            if (index in 1..3) navigateToTab(index - 1)
+        }
+    )
+
     val openRoute: (String) -> Unit = { route ->
         moreOpen = false
         navController.navigate(route) { launchSingleTop = true }
@@ -152,10 +180,12 @@ fun VitalNavigation() {
             NavHost(
                 navController = navController,
                 startDestination = "today",
-                modifier = Modifier.padding(
-                    top = innerPadding.calculateTopPadding(),
-                    bottom = innerPadding.calculateBottomPadding()
-                )
+                modifier = Modifier
+                    .padding(
+                        top = innerPadding.calculateTopPadding(),
+                        bottom = innerPadding.calculateBottomPadding()
+                    )
+                    .then(swipeModifier)
             ) {
                 composable("today") {
                     TodayScreen(
@@ -270,6 +300,40 @@ fun VitalNavigation() {
                 onNavigate = openRoute,
                 showDebug = isDebuggable
             )
+        }
+    }
+}
+
+/**
+ * Horizontal swipe to step through the content tabs. It is attached to the NavHost rather than to
+ * each screen, so it only listens on the tab routes and a horizontal scroller inside a screen
+ * (for example Cardio's row) still wins: that child consumes the drag before this detector ever
+ * passes the touch slop, which cancels it.
+ */
+@Composable
+private fun Modifier.tabSwipe(
+    enabled: Boolean,
+    onSwipeLeft: () -> Unit,
+    onSwipeRight: () -> Unit
+): Modifier {
+    val swipeLeft by rememberUpdatedState(onSwipeLeft)
+    val swipeRight by rememberUpdatedState(onSwipeRight)
+    return this.pointerInput(enabled) {
+        if (!enabled) return@pointerInput
+        val threshold = 72.dp.toPx()
+        var travel = 0f
+        detectHorizontalDragGestures(
+            onDragStart = { travel = 0f },
+            onDragCancel = { travel = 0f },
+            onDragEnd = {
+                if (abs(travel) >= threshold) {
+                    if (travel < 0f) swipeLeft() else swipeRight()
+                }
+                travel = 0f
+            }
+        ) { change, dragAmount ->
+            travel += dragAmount
+            change.consume()
         }
     }
 }

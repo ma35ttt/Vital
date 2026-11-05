@@ -183,10 +183,10 @@ internal fun estimateCardioKcal(
     durationSeconds: Int
 ): Double? {
     val speed = speedKmh?.takeIf { it > 0.0 } ?: return null
-    // The ACSM walking equation is only defined up to 6 km/h. Above that we still show an
-    // estimate, clamped at the limit, and the footer switches to OUT OF RANGE.
+    // The ACSM walking equation covers a walk; faster speeds fall through to the running
+    // equation inside Acsm, so the estimate keeps working at jog/run pace.
     return Acsm.kcal(
-        speedKmh = speed.coerceAtMost(Acsm.MAX_SPEED_KMH),
+        speedKmh = speed,
         inclinePercent = inclinePercent,
         weightKg = weightKg,
         durationSeconds = durationSeconds
