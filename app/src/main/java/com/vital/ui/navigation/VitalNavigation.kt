@@ -72,7 +72,7 @@ fun VitalNavigation() {
     val tutorialViewModel: TutorialViewModel = hiltViewModel()
     val showTutorial by tutorialViewModel.showTutorial.collectAsStateWithLifecycle()
     if (showTutorial) {
-        TutorialScreen(onFinish = tutorialViewModel::finish)
+        TutorialScreen(viewModel = tutorialViewModel)
         return
     }
 
