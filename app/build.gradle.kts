@@ -63,6 +63,10 @@ dependencies {
     implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.8.7")
     implementation("androidx.lifecycle:lifecycle-viewmodel-ktx:2.8.7")
     implementation("androidx.activity:activity-compose:1.9.3")
+    // Navigation Compose: explicit 2.8.9 (hilt-navigation-compose only pulls 2.5.1, which predates
+    // transition support). Verified on Google Maven; needs Compose 1.7.2 / activity-compose 1.8.0,
+    // both already present.
+    implementation("androidx.navigation:navigation-compose:2.8.9")
     implementation("androidx.constraintlayout:constraintlayout-compose:1.1.0")
     // Material Components for base theme (required for Compose Material3)
     implementation("com.google.android.material:material:1.12.0")
