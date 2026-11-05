@@ -128,7 +128,7 @@ fun VitalNavigation() {
                 composable("cardio") {
                     CardioScreen(
                         modifier = Modifier.padding(innerPadding),
-                        onShowMore = { navController.navigate("summary") },
+                        onShowSummary = { navController.navigate("summary") },
                         onNavigateToToday = { navigateToTab(0) },
                         onNavigateToMeals = { navigateToTab(1) },
                         onNavigateToLift = { navigateToTab(2) },

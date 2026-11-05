@@ -8,9 +8,6 @@ import kotlinx.coroutines.launch
 import javax.inject.Inject
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.LocalFireDepartment
-import androidx.compose.material.icons.filled.DirectionsRun
-import androidx.compose.material.icons.filled.DirectionsBike
 import androidx.compose.material.icons.filled.Favorite
 import com.vital.ui.theme.VitalColors
 import com.vital.ui.screens.WeeksPeriod
@@ -55,10 +52,6 @@ class MainViewModel @Inject constructor() : ViewModel() {
     // Meals screen data
     val consumedKcal = MutableStateFlow(0f)
     val mealsToday = MutableStateFlow<List<MealCapsule>>(emptyList())
-
-    // Cardio screen data
-    val cardioKcalToday = MutableStateFlow(0f)
-    val weeklyCardioData = MutableStateFlow(emptyList<Float>())
 
     // Coach chat data
     val coachMessages = MutableStateFlow<List<CoachMessage>>(emptyList())

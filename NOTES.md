@@ -260,3 +260,15 @@ Fixes the round left open at the end of the 2b entry: the hero number, the KCAL 
 - **Seed fix.** `SeedLoader.loadIfNeeded()` was never called, so the Food/Recipe/Exercise tables stayed empty. `VitalApplication` now calls it after `seedUserAndSettings()`. `DatabaseModule` gained the `MealLogDao` provider the new ViewModel needs.
 - **Device check (e281c7, 1240 x 2772, density 476).** Logged `rice 150g` → RAW/COOKED dialog → COOKED: LUNCH row `White Rice 150g`, hero `2,312`, dial `EATEN 188`; restarted the app and the row/hero persisted; soft delete returned the hero to `2,500` / `EATEN 0`; no `AndroidRuntime:E`.
 - **Not built yet.** WEB and RECIPE tiles select but have no flow; there is no date picker (today only); QUICK ADD and the keyboard-open state are still design-only. Search results render inline when a query matches, which the mock does not draw.
+
+### M4 Cardio — Room-backed manual entry (2026-11-05)
+
+`CardioScreen.kt` rebuilt to `docs/measurements/cardio.md` and wired to Room through a new `CardioViewModel`; the old `MainViewModel` cardio samples are gone.
+
+- **Layout.** Sheet content starts at 416 du (scaffold 8 du + 11 du list padding). Type tiles 54 du, scan row 46 du, field rows 44 du at a 52 du pitch, footer/SAVE row 36 du, RECENT label and 56 du capsules, all 8 du apart. The list has 96 du bottom padding so the last capsule finishes above the glass nav.
+- **Live data.** Hero `CARDIO KCAL` is today's `CardioSession.kcal` sum; RECENT shows the last three sessions across days as `TYPE · dd.MM`, distance (or duration when distance is blank) and kcal. Tapping a capsule opens a detail dialog with soft delete.
+- **Estimate.** Manual entry has no kcal field, so calories always come from `Acsm.kcal` using the stored `Settings.bodyWeightKg`. A speed above 6 km/h is clamped to 6 for the estimate and the footer switches to `OUT OF RANGE · ACSM ≤ 6 KM/H`. When DISTANCE is left blank it is filled from speed × duration.
+- **Bug fixed during device check.** The settings `StateFlow` was never collected, so `save()` read its 75 kg fallback while the profile stored 80 kg. `save()` now reads `Settings` with `first()`; `6.0 km/h · 2.0% · 32:10` at 80 kg gives 220 kcal.
+- **Device check (e281c7, 1240 x 2772, density 476).** Saved a run (`3.22 km`, 220 kcal) and a bike session (`4 km`, 205 kcal); hero summed to 425; the type switch moved the dial highlight to B; 8.0 km/h showed OUT OF RANGE; tab switch kept the draft; force-stop + relaunch kept the sessions; soft delete returned the hero to 0; no `AndroidRuntime:E`.
+- **Not built yet.** `SCAN TREADMILL` and the camera FAB are visual only; the ML Kit OCR snap flow is M7 per ROADMAP, not M4. There is no date picker (today only).
+- **Not tested.** Visual comparison against `design/tabs/cardio.png` (user measures).
