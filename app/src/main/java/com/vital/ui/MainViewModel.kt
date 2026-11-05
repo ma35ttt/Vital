@@ -46,9 +46,6 @@ class MainViewModel @Inject constructor() : ViewModel() {
     val consumedKcal = MutableStateFlow(0f)
     val mealsToday = MutableStateFlow<List<MealCapsule>>(emptyList())
 
-    // Coach chat data
-    val coachMessages = MutableStateFlow<List<CoachMessage>>(emptyList())
-    val coachLoading = MutableStateFlow(false)
     val proteinPercent = MutableStateFlow(0.3f)
     val carbsPercent = MutableStateFlow(0.4f)
     val fatPercent = MutableStateFlow(0.3f)
@@ -95,9 +92,4 @@ data class MealCapsule(
     val accentColor: androidx.compose.ui.graphics.Color,
     val sparklineData: List<Float>,
     val slot: String = ""
-)
-
-data class CoachMessage(
-    val text: String,
-    val isUser: Boolean
 )

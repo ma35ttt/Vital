@@ -45,6 +45,10 @@ class SettingsViewModel @Inject constructor(
 
     fun setAiProvider(provider: AiProvider) = updateSettings { it.copy(aiProvider = provider) }
 
+    /** Stored on device and used only to call the chosen provider. Blank clears the key. */
+    fun setAiApiKey(key: String) =
+        updateSettings { it.copy(aiApiKeyEncrypted = key.trim().ifBlank { null }) }
+
     fun setKcalTarget(kcal: Int) = updateSettings { it.copy(kcalTarget = kcal) }
 
     /** One write for the hero editor: kcal and all three macro targets move together. */

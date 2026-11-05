@@ -19,6 +19,7 @@ import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.material3.LocalTextStyle
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -30,6 +31,7 @@ import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.StrokeJoin
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.text.PlatformTextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.em
@@ -109,14 +111,20 @@ fun VitalBottomNav(
                             }
                         }
                     }
-                    Spacer(modifier = Modifier.height(5.dp))
+                    Spacer(modifier = Modifier.height(3.dp))
                     Text(
                         text = tab.label,
                         color = color,
                         fontFamily = VitalFonts.InterTight,
                         fontSize = 10.sp,
                         fontWeight = if (active) FontWeight.SemiBold else FontWeight.Medium,
-                        letterSpacing = 0.01.em
+                        letterSpacing = 0.01.em,
+                        // Tighten the glyph-to-label gap to match the mock: drop Android's
+                        // extra font padding and pin the line box to the font size.
+                        lineHeight = 10.sp,
+                        style = LocalTextStyle.current.copy(
+                            platformStyle = PlatformTextStyle(includeFontPadding = false)
+                        )
                     )
                 }
             }

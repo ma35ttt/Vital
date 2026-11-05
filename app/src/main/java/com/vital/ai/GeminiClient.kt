@@ -13,7 +13,17 @@ import okhttp3.RequestBody.Companion.toRequestBody
 class GeminiClient(private val client: OkHttpClient) {
 
     private val gson = Gson()
-    private val baseUrl = "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent"
+
+    // Gemini 1.5 was retired; 3.x is the current generation. Try newest first so a key
+    // that cannot see the newest model still gets an answer from an older one.
+    private val models = listOf(
+        "gemini-3.8-flash",
+        "gemini-3.5-flash",
+        "gemini-3-flash-preview",
+        "gemini-3.1-flash-lite"
+    )
+    private fun generateUrl(model: String) =
+        "https://generativelanguage.googleapis.com/v1beta/models/$model:generateContent"
 
     data class FoodAnalysisResult(
         val foodName: String,
@@ -35,7 +45,8 @@ class GeminiClient(private val client: OkHttpClient) {
         val prompt = buildFoodPrompt(context)
         val requestBody = buildRequest(prompt, imageBase64)
         val request = Request.Builder()
-            .url("$baseUrl?key=$apiKey")
+            .url(generateUrl(models.first()))
+            .addHeader("x-goog-api-key", apiKey)
             .post(requestBody)
             .build()
 
@@ -49,22 +60,52 @@ class GeminiClient(private val client: OkHttpClient) {
         }
     }
 
-    suspend fun chat(messages: List<ChatMessage>, apiKey: String): String? = withContext(Dispatchers.IO) {
+    suspend fun chat(
+        messages: List<ChatMessage>,
+        apiKey: String,
+        imageBase64: String? = null
+    ): AiChatResult = withContext(Dispatchers.IO) {
         val prompt = buildChatPrompt(messages)
-        val requestBody = buildTextRequest(prompt)
-        val request = Request.Builder()
-            .url("$baseUrl?key=$apiKey")
-            .post(requestBody)
-            .build()
+        val requestBody = buildTextRequest(prompt, imageBase64)
+        var lastError = "Request failed"
 
-        try {
-            val response = client.newCall(request).execute()
-            if (!response.isSuccessful) return@withContext null
-            val body = response.body?.string() ?: return@withContext null
-            parseChatResponse(body)
-        } catch (e: Exception) {
-            null
+        for (model in models) {
+            val request = Request.Builder()
+                .url(generateUrl(model))
+                .addHeader("x-goog-api-key", apiKey)
+                .post(requestBody)
+                .build()
+
+            try {
+                client.newCall(request).execute().use { response ->
+                    val body = response.body?.string().orEmpty()
+                    if (response.isSuccessful) {
+                        val parsed = parseChatResponse(body)
+                        if (parsed != null) return@withContext AiChatResult.Ok(parsed)
+                        lastError = "Empty response from $model"
+                    } else {
+                        lastError = parseError(body) ?: "HTTP ${response.code} from $model"
+                        // Retry a missing/retired model, a transient spike, or a per-model
+                        // quota. A bad key (400) or blocked API (403) is the same everywhere.
+                        val retryable = response.code == 404 ||
+                            response.code == 429 ||
+                            response.code == 503
+                        if (!retryable) return@withContext AiChatResult.Failure(lastError)
+                    }
+                }
+            } catch (e: Exception) {
+                lastError = e.message ?: "Network error"
+            }
         }
+        AiChatResult.Failure(lastError)
+    }
+
+    private fun parseError(body: String): String? = try {
+        JsonParser.parseString(body).asJsonObject
+            .getAsJsonObject("error")
+            .get("message")?.asString
+    } catch (e: Exception) {
+        null
     }
 
     private fun buildFoodPrompt(context: String?): String {
@@ -115,9 +156,20 @@ Give practical advice for meals, workouts, recovery."""
         return gson.toJson(json).toRequestBody("application/json".toMediaType())
     }
 
-    private fun buildTextRequest(prompt: String): okhttp3.RequestBody {
+    private fun buildTextRequest(prompt: String, imageBase64: String?): okhttp3.RequestBody {
+        val parts = mutableListOf<JsonObject>()
+        parts.add(JsonObject().apply { addProperty("text", prompt) })
+        // A photo attached in the coach travels on the same turn as the text prompt.
+        if (!imageBase64.isNullOrBlank()) {
+            parts.add(JsonObject().apply {
+                add("inline_data", JsonObject().apply {
+                    addProperty("mime_type", "image/jpeg")
+                    addProperty("data", imageBase64)
+                })
+            })
+        }
         val contents = JsonObject().apply {
-            add("parts", gson.toJsonTree(listOf(JsonObject().apply { addProperty("text", prompt) })))
+            add("parts", gson.toJsonTree(parts))
         }
         val json = JsonObject().apply {
             add("contents", gson.toJsonTree(listOf(contents)))
@@ -147,12 +199,17 @@ Give practical advice for meals, workouts, recovery."""
     private fun parseChatResponse(body: String): String? = try {
         val json = JsonParser.parseString(body).asJsonObject
         val candidates = json.getAsJsonArray("candidates")
-        if (candidates.isEmpty()) {
+        if (candidates == null || candidates.isEmpty()) {
             null
         } else {
-            val content = candidates[0].asJsonObject.getAsJsonObject("content")
-            val parts = content.getAsJsonArray("parts")
-            parts[0].asJsonObject.get("text").asString
+            // Gemini 3.x can include reasoning parts; only join the visible answer text.
+            val parts = candidates[0].asJsonObject
+                .getAsJsonObject("content")
+                .getAsJsonArray("parts")
+            parts.mapNotNull { part ->
+                val obj = part.asJsonObject
+                if (obj.get("thought")?.asBoolean == true) null else obj.get("text")?.asString
+            }.joinToString("").ifBlank { null }
         }
     } catch (e: Exception) {
         null
