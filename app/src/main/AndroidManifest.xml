@@ -17,6 +17,9 @@
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
     <!-- Floating rest chip while the app is closed; the user grants it in system settings. -->
     <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW" />
+    <!-- Sideload updater: lets Vital hand a downloaded APK to the system installer.
+         Android still shows its own confirmation prompt; this only allows the hand-off. -->
+    <uses-permission android:name="android.permission.REQUEST_INSTALL_PACKAGES" />
 
     <!-- Camera feature (optional, for food photo capture) -->
     <uses-feature android:name="android.hardware.camera" android:required="false" />
@@ -78,6 +81,17 @@
                 <action android:name="android.intent.action.BOOT_COMPLETED" />
             </intent-filter>
         </receiver>
+
+        <!-- Serves the downloaded update APK to the system installer from app cache. -->
+        <provider
+            android:name="androidx.core.content.FileProvider"
+            android:authorities="${applicationId}.fileprovider"
+            android:exported="false"
+            android:grantUriPermissions="true">
+            <meta-data
+                android:name="android.support.FILE_PROVIDER_PATHS"
+                android:resource="@xml/file_paths" />
+        </provider>
 
     </application>
 </manifest>

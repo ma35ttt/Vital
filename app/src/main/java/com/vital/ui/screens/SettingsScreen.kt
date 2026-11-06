@@ -71,9 +71,11 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LifecycleEventEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.vital.BuildConfig
 import com.vital.auth.AccountState
 import com.vital.data.entity.AiProvider
 import com.vital.data.entity.Settings
+import com.vital.data.update.UpdateState
 import com.vital.ui.AccountViewModel
 import com.vital.ui.SettingsViewModel
 import com.vital.ui.SyncViewModel
@@ -85,6 +87,7 @@ import com.vital.ui.theme.ThemeSpec
 import com.vital.ui.theme.VitalColors
 import com.vital.ui.theme.VitalFonts
 import com.vital.ui.theme.VitalThemes
+import com.vital.ui.update.UpdateViewModel
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 import java.util.Locale
@@ -116,6 +119,11 @@ fun SettingsScreen(
     val syncing by syncViewModel.syncing.collectAsStateWithLifecycle()
     val syncError by syncViewModel.error.collectAsStateWithLifecycle()
     val lastSyncedAt by syncViewModel.lastSyncedAt.collectAsStateWithLifecycle()
+    val updateViewModel: UpdateViewModel = hiltViewModel()
+    val updateState by updateViewModel.state.collectAsStateWithLifecycle()
+    val updateMessage = (updateState as? UpdateState.Failed)
+        ?.takeIf { it.manifest == null }
+        ?.message
     val context = LocalContext.current
     var editingTargets by remember { mutableStateOf(false) }
     var editingKey by remember { mutableStateOf(false) }
@@ -496,6 +504,45 @@ fun SettingsScreen(
                     modifier = Modifier.padding(top = 14.dp, bottom = 4.dp)
                 )
                 Hairline()
+            }
+
+            item { SectionLabel("About", topPadding = 28.dp) }
+            item {
+                ValueRow(
+                    label = "Version",
+                    value = BuildConfig.VERSION_NAME,
+                    mono = true
+                )
+            }
+            item {
+                ValueRow(
+                    label = "Check for updates",
+                    value = when (val state = updateState) {
+                        is UpdateState.Checking -> "Checking…"
+                        is UpdateState.UpToDate -> "Up to date"
+                        is UpdateState.Available -> "Update available"
+                        is UpdateState.Downloading -> "Downloading…"
+                        is UpdateState.Ready -> "Ready to install"
+                        is UpdateState.NeedsPermission -> "Needs permission"
+                        is UpdateState.Failed ->
+                            if (state.manifest == null) "Couldn't check" else "Update available"
+                        else -> null
+                    },
+                    onClick = { updateViewModel.check(manual = true) },
+                    trailing = { Chevron() }
+                )
+            }
+            if (updateMessage != null) {
+                item {
+                    Text(
+                        text = updateMessage,
+                        color = VitalColors.inkMuted,
+                        fontFamily = VitalFonts.InterTight,
+                        fontSize = 11.sp,
+                        lineHeight = 16.sp,
+                        modifier = Modifier.padding(top = 10.dp)
+                    )
+                }
             }
 
             if (onOpenDebugShowcase != null) {

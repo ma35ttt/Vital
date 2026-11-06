@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- Local update testing only: debug builds may read a manifest and APK from a local
+         HTTP server (adb reverse). Release builds still require HTTPS. -->
+    <application android:usesCleartextTraffic="true" />
+</manifest>

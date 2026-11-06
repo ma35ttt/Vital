@@ -55,6 +55,7 @@ import com.vital.ui.screens.TodayScreen
 import com.vital.ui.screens.TutorialScreen
 import com.vital.ui.screens.WeeksScreen
 import com.vital.ui.theme.VitalColors
+import com.vital.ui.update.UpdateHost
 import kotlinx.coroutines.launch
 
 /** The four content tabs, in bottom-nav order. Each becomes a page of the tab pager. */
@@ -75,6 +76,9 @@ fun VitalNavigation() {
         TutorialScreen(viewModel = tutorialViewModel)
         return
     }
+
+    // Sideload updater: checks on launch and shows the release-notes dialog over any screen.
+    UpdateHost()
 
     val navController = rememberNavController()
     val scope = rememberCoroutineScope()
