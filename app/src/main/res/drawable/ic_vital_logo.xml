@@ -1,0 +1,13 @@
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="54dp"
+    android:height="54dp"
+    android:viewportWidth="54"
+    android:viewportHeight="54">
+    <!-- Transparent-background V mark, cropped to the artwork so it aligns with the text. -->
+    <path
+        android:fillColor="#FF4D00"
+        android:pathData="M0,0 L15,54 L27,36 L39,54 L54,0 L41,0 L27,20 L13,0 Z"/>
+    <path
+        android:fillColor="#FF4D00"
+        android:pathData="M0,5 L54,5 L54,8 L0,8 Z"/>
+</vector>

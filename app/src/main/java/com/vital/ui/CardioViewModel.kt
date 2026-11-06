@@ -2,6 +2,7 @@ package com.vital.ui
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.vital.ai.CardioScanService
 import com.vital.data.entity.CardioSession
 import com.vital.data.entity.CardioType
 import com.vital.data.entity.Intensity
@@ -44,6 +45,17 @@ class CardioDraftStore @Inject constructor() {
 }
 
 /**
+ * The treadmill-photo affordance. [Filled] carries how many inputs the read replaced so the
+ * screen can ask the user to check them before logging.
+ */
+sealed interface CardioPhotoState {
+    object Idle : CardioPhotoState
+    object Reading : CardioPhotoState
+    data class Filled(val fields: Int) : CardioPhotoState
+    data class Error(val message: String) : CardioPhotoState
+}
+
+/**
  * Cardio reads today's sessions for the hero total and the three most recent sessions for
  * the RECENT list. Walking and running estimate with ACSM; every other activity uses a MET
  * estimate. The app has no calorie field on this tab.
@@ -52,7 +64,8 @@ class CardioDraftStore @Inject constructor() {
 class CardioViewModel @Inject constructor(
     private val cardioRepository: CardioRepository,
     private val settingsRepository: SettingsRepository,
-    private val draft: CardioDraftStore
+    private val draft: CardioDraftStore,
+    private val scanService: CardioScanService
 ) : ViewModel() {
 
     private val date: String = LocalDate.now().toString()
@@ -77,6 +90,9 @@ class CardioViewModel @Inject constructor(
     val type: StateFlow<CardioType> = draft.type.asStateFlow()
     val values: StateFlow<Map<CardioField, String>> = draft.values.asStateFlow()
 
+    private val _photo = MutableStateFlow<CardioPhotoState>(CardioPhotoState.Idle)
+    val photo: StateFlow<CardioPhotoState> = _photo.asStateFlow()
+
     /** Current body weight, read once here so the note can preview the estimate. */
     private val weightKg: StateFlow<Double> =
         settingsRepository.getSettings(LOCAL_USER_ID)
@@ -91,6 +107,7 @@ class CardioViewModel @Inject constructor(
 
     fun setType(value: CardioType) {
         draft.type.value = value
+        _photo.value = CardioPhotoState.Idle
     }
 
     fun setValue(field: CardioField, text: String) {
@@ -101,12 +118,61 @@ class CardioViewModel @Inject constructor(
             CardioInput.PICKER -> return
         }
         draft.values.value = draft.values.value + (field to filtered)
+        _photo.value = CardioPhotoState.Idle
     }
 
     fun cycle(field: CardioField) {
         if (field.input != CardioInput.PICKER) return
         val next = cyclePicker(field, draft.values.value[field]) ?: return
         draft.values.value = draft.values.value + (field to next)
+        _photo.value = CardioPhotoState.Idle
+    }
+
+    /** Dismiss the photo status line without touching the typed values. */
+    fun dismissPhoto() {
+        _photo.value = CardioPhotoState.Idle
+    }
+
+    /**
+     * Reads a treadmill photo into the Run/Walk inputs. Ignored for the other activities,
+     * which have no console layout this can fill. A missing key is a normal, explainable
+     * state rather than a silent no-op.
+     */
+    fun scanPhoto(imageBase64: String) {
+        if (!draft.type.value.usesAcsm) return
+        if (_photo.value == CardioPhotoState.Reading) return
+        _photo.value = CardioPhotoState.Reading
+
+        viewModelScope.launch {
+            val settings = settingsRepository.getSettings(LOCAL_USER_ID).first() ?: fallback
+            val key = settings.aiApiKeyEncrypted?.takeIf { it.isNotBlank() }
+            if (key == null) {
+                _photo.value = CardioPhotoState.Error(
+                    "Add an AI key in Settings to scan a treadmill photo."
+                )
+                return@launch
+            }
+            // The user may have switched activity while the request was in flight.
+            if (!draft.type.value.usesAcsm) {
+                _photo.value = CardioPhotoState.Idle
+                return@launch
+            }
+            when (val result = scanService.scan(imageBase64, settings.aiProvider.toSdk(), key)) {
+                is CardioScanService.Result.Success -> {
+                    val filled = treadmillDraftValues(result.reading)
+                    if (filled.isEmpty()) {
+                        _photo.value = CardioPhotoState.Error(
+                            "No session numbers were visible. Fit the whole display in frame."
+                        )
+                    } else {
+                        draft.values.value = draft.values.value + filled
+                        _photo.value = CardioPhotoState.Filled(filled.size)
+                    }
+                }
+                is CardioScanService.Result.Error ->
+                    _photo.value = CardioPhotoState.Error(result.message)
+            }
+        }
     }
 
     fun save() {
@@ -144,6 +210,7 @@ class CardioViewModel @Inject constructor(
                     )
                 )
                 draft.values.value = emptyMap()
+                _photo.value = CardioPhotoState.Idle
             }
         }
     }
@@ -279,3 +346,9 @@ internal fun formatCardioKcal(value: Double): String =
 internal fun formatCardioDate(date: String): String = runCatching {
     LocalDate.parse(date).let { "%02d.%02d".format(Locale.US, it.dayOfMonth, it.monthValue) }
 }.getOrDefault(date)
+
+/** Stored AI provider (data) to the client provider (ai). */
+private fun com.vital.data.entity.AiProvider.toSdk(): com.vital.ai.AiProvider = when (this) {
+    com.vital.data.entity.AiProvider.GEMINI -> com.vital.ai.AiProvider.GEMINI
+    com.vital.data.entity.AiProvider.OPENROUTER -> com.vital.ai.AiProvider.OPENROUTER
+}

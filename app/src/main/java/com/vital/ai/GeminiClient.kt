@@ -60,6 +60,24 @@ class GeminiClient(private val client: OkHttpClient) {
         }
     }
 
+    suspend fun analyzeTreadmill(imageBase64: String, apiKey: String): TreadmillReading? = withContext(Dispatchers.IO) {
+        val requestBody = buildScanRequest(TREADMILL_PROMPT, imageBase64)
+        val request = Request.Builder()
+            .url(generateUrl(models.first()))
+            .addHeader("x-goog-api-key", apiKey)
+            .post(requestBody)
+            .build()
+
+        try {
+            val response = client.newCall(request).execute()
+            if (!response.isSuccessful) return@withContext null
+            val body = response.body?.string() ?: return@withContext null
+            parseScanResponse(body)
+        } catch (e: Exception) {
+            null
+        }
+    }
+
     suspend fun chat(
         messages: List<ChatMessage>,
         apiKey: String,
@@ -156,6 +174,29 @@ Give practical advice for meals, workouts, recovery."""
         return gson.toJson(json).toRequestBody("application/json".toMediaType())
     }
 
+    private fun buildScanRequest(prompt: String, imageBase64: String): okhttp3.RequestBody {
+        val parts = mutableListOf<JsonObject>()
+        parts.add(JsonObject().apply { addProperty("text", prompt) })
+        parts.add(JsonObject().apply {
+            add("inline_data", JsonObject().apply {
+                addProperty("mime_type", "image/jpeg")
+                addProperty("data", imageBase64)
+            })
+        })
+        val contents = JsonObject().apply {
+            add("parts", gson.toJsonTree(parts))
+        }
+        val json = JsonObject().apply {
+            add("contents", gson.toJsonTree(listOf(contents)))
+            add("generationConfig", JsonObject().apply {
+                addProperty("temperature", 0.1)
+                addProperty("maxOutputTokens", 300)
+                addProperty("responseMimeType", "application/json")
+            })
+        }
+        return gson.toJson(json).toRequestBody("application/json".toMediaType())
+    }
+
     private fun buildTextRequest(prompt: String, imageBase64: String?): okhttp3.RequestBody {
         val parts = mutableListOf<JsonObject>()
         parts.add(JsonObject().apply { addProperty("text", prompt) })
@@ -191,6 +232,26 @@ Give practical advice for meals, workouts, recovery."""
             val parts = content.getAsJsonArray("parts")
             val text = parts[0].asJsonObject.get("text").asString
             gson.fromJson(text, FoodAnalysisResult::class.java)
+        }
+    } catch (e: Exception) {
+        null
+    }
+
+    private fun parseScanResponse(body: String): TreadmillReading? = try {
+        val json = JsonParser.parseString(body).asJsonObject
+        val candidates = json.getAsJsonArray("candidates")
+        if (candidates == null || candidates.isEmpty()) {
+            null
+        } else {
+            // Gemini 3.x can include reasoning parts; only the visible text holds the JSON.
+            val parts = candidates[0].asJsonObject
+                .getAsJsonObject("content")
+                .getAsJsonArray("parts")
+            val text = parts.mapNotNull { part ->
+                val obj = part.asJsonObject
+                if (obj.get("thought")?.asBoolean == true) null else obj.get("text")?.asString
+            }.joinToString("").takeIf { it.isNotBlank() } ?: return null
+            gson.fromJson(text, TreadmillReading::class.java)
         }
     } catch (e: Exception) {
         null

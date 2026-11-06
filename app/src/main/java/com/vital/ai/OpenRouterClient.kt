@@ -47,6 +47,26 @@ class OpenRouterClient(private val client: OkHttpClient) {
         }
     }
 
+    suspend fun analyzeTreadmill(imageBase64: String, apiKey: String): TreadmillReading? = withContext(Dispatchers.IO) {
+        val requestBody = buildScanRequest(TREADMILL_PROMPT, imageBase64)
+        val request = Request.Builder()
+            .url(baseUrl)
+            .addHeader("Authorization", "Bearer $apiKey")
+            .addHeader("HTTP-Referer", "https://vital.app")
+            .addHeader("X-Title", "Vital")
+            .post(requestBody)
+            .build()
+
+        try {
+            val response = client.newCall(request).execute()
+            if (!response.isSuccessful) return@withContext null
+            val body = response.body?.string() ?: return@withContext null
+            parseScanResponse(body)
+        } catch (e: Exception) {
+            null
+        }
+    }
+
     suspend fun chat(
         messages: List<ChatMessage>,
         apiKey: String,
@@ -127,6 +147,30 @@ Return ONLY the JSON, no markdown, no extra text."""
         return gson.toJson(json).toRequestBody("application/json".toMediaType())
     }
 
+    private fun buildScanRequest(prompt: String, imageBase64: String): okhttp3.RequestBody {
+        val content = mutableListOf<JsonObject>()
+        content.add(JsonObject().apply { addProperty("type", "text"); addProperty("text", prompt) })
+        content.add(JsonObject().apply {
+            addProperty("type", "image_url")
+            add("image_url", JsonObject().apply {
+                addProperty("url", "data:image/jpeg;base64,$imageBase64")
+            })
+        })
+        val messages = listOf(JsonObject().apply {
+            addProperty("role", "user")
+            add("content", gson.toJsonTree(content))
+        })
+        val json = JsonObject().apply {
+            // A vision-capable free model; the same one the food analysis uses.
+            addProperty("model", "google/gemini-2.0-flash-exp:free")
+            add("messages", gson.toJsonTree(messages))
+            addProperty("temperature", 0.1)
+            addProperty("max_tokens", 300)
+            add("response_format", JsonObject().apply { addProperty("type", "json_object") })
+        }
+        return gson.toJson(json).toRequestBody("application/json".toMediaType())
+    }
+
     private fun buildChatRequest(
         messages: List<ChatMessage>,
         model: String,
@@ -180,6 +224,20 @@ Give practical advice for meals, workouts, recovery."""
             val message = choices[0].asJsonObject.getAsJsonObject("message")
             val content = message.get("content").asString
             gson.fromJson(content, FoodAnalysisResult::class.java)
+        }
+    } catch (e: Exception) {
+        null
+    }
+
+    private fun parseScanResponse(body: String): TreadmillReading? = try {
+        val json = JsonParser.parseString(body).asJsonObject
+        val choices = json.getAsJsonArray("choices")
+        if (choices == null || choices.isEmpty()) {
+            null
+        } else {
+            val message = choices[0].asJsonObject.getAsJsonObject("message")
+            val content = message.get("content").asString
+            gson.fromJson(content, TreadmillReading::class.java)
         }
     } catch (e: Exception) {
         null

@@ -1,7 +1,6 @@
 package com.vital.ui.components
 
 import androidx.compose.animation.animateColorAsState
-import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
@@ -27,9 +26,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.StrokeCap
@@ -62,8 +59,7 @@ fun VitalBottomNav(
     selectedIndex: Int,
     onTabSelected: (Int) -> Unit,
     modifier: Modifier = Modifier,
-    showMoreDot: Boolean = false,
-    restProgress: Float? = null
+    showMoreDot: Boolean = false
 ) {
     Column(
         modifier = modifier
@@ -71,7 +67,7 @@ fun VitalBottomNav(
             .background(VitalColors.paper)
             .navigationBarsPadding()
     ) {
-        RestIndicator(progress = restProgress)
+        Hairline()
         Row(
             modifier = Modifier
                 .fillMaxWidth()
@@ -149,38 +145,6 @@ fun VitalBottomNav(
             }
         }
     }
-}
-
-/**
- * The divider above the tabs doubles as the rest-timer track: while a rest runs, an orange
- * fill drains from the left as time runs out. It carries no controls — skip and +15 s live in
- * the notification and on the Lift screen — so it stays a quiet, glanceable line.
- *
- * [progress] is remaining/total, or null when no rest is running.
- */
-@Composable
-private fun RestIndicator(progress: Float?) {
-    val fill = animateFloatAsState(
-        targetValue = (progress ?: 0f).coerceIn(0f, 1f),
-        animationSpec = tween(durationMillis = 260, easing = LinearEasing),
-        label = "restFill"
-    )
-    Box(
-        modifier = Modifier
-            .fillMaxWidth()
-            .height(2.dp)
-            .background(VitalColors.rule)
-            // Redraw the drain instead of recomposing the nav every frame.
-            .drawBehind {
-                val value = fill.value
-                if (value > 0f) {
-                    drawRect(
-                        color = VitalColors.orange,
-                        size = Size(size.width * value, size.height)
-                    )
-                }
-            }
-    )
 }
 
 /** Custom stroke glyphs so the nav matches the editorial mocks, not Material icons. */
