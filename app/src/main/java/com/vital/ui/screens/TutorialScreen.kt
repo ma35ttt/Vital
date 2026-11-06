@@ -814,7 +814,7 @@ private fun WelcomeVisual() {
             painter = painterResource(id = R.drawable.ic_vital_status),
             contentDescription = null,
             colorFilter = ColorFilter.tint(VitalColors.orange),
-            modifier = Modifier.size(48.dp)
+            modifier = Modifier.size(64.dp)
         )
         Spacer(Modifier.height(24.dp))
         Text(
