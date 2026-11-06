@@ -164,7 +164,9 @@ You can also pass it at build time:
 ./gradlew assembleRelease -Pvital.updateManifestUrl=https://example.com/latest.json
 ```
 
-A blank value disables update checks. The manifest schema, signing rules and release checklist are in [`docs/UPDATES.md`](docs/UPDATES.md).
+A blank value disables update checks. The release assets must be publicly reachable, so the
+repository needs to be public (or the manifest and APK hosted elsewhere). The manifest schema,
+signing rules and release checklist are in [`docs/UPDATES.md`](docs/UPDATES.md).
 
 ### Release signing
 
