@@ -28,7 +28,7 @@ All notable changes to Vital are documented here. The format follows
 - Rest drain stays in sync when the app is backgrounded.
 - Cloud cleanup and local reset no longer leave stale test data behind.
 
-## [1.0.0] — 2026-10-31
+## 1.0.0 — 2026-10-31
 
 ### Added
 
@@ -41,5 +41,4 @@ All notable changes to Vital are documented here. The format follows
 - Reminder workers and a foreground rest timer.
 
 [Unreleased]: https://github.com/ma35ttt/Vital/compare/v1.1.0...HEAD
-[1.1.0]: https://github.com/ma35ttt/Vital/compare/v1.0.0...v1.1.0
-[1.0.0]: https://github.com/ma35ttt/Vital/releases/tag/v1.0.0
+[1.1.0]: https://github.com/ma35ttt/Vital/releases/tag/v1.1.0
