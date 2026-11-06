@@ -1,25 +1,39 @@
-build/
+# Gradle / Android build output
 .gradle/
-node_modules/
+build/
 app/build/
-tmp/
-Notes/
-.idea/
+baselineprofile/build/
+.kotlin/
 local.properties
+
+# IDE / OS
+.idea/
+*.iml
 .DS_Store
-screen_*.png
-current_ui*.png
-build/
-.gradle/
-.idea/
-local.properties
+Thumbs.db
+
+# Node tooling (icon generation only)
 node_modules/
-tmp/
-*.apk
-Notes/*.tar.gz
-Notes/old/
-.DS_Store
-design/*.zip
-# Firebase config (per-project; drop your own in app/)
+
+# Firebase config (per project; drop your own in app/)
 google-services.json
 app/google-services.json
+
+# Signing material — never commit
+keystore.properties
+*.jks
+*.keystore
+
+# Build artifacts
+*.apk
+*.aab
+*.ap_
+*.dex
+*.class
+
+# Local scratch
+tmp/
+Notes/
+screen_*.png
+current_ui*.png
+design/*.zip

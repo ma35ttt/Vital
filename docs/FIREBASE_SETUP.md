@@ -49,7 +49,7 @@ want to point at a specific OAuth web client.
 ## 5. Create Firestore
 
 Firestore Database → **Create database** → start in **production mode**. Then open the **Rules**
-tab and publish the contents of [`firestore.rules`](firestore.rules):
+tab and publish the contents of [`firestore.rules`](../firestore.rules):
 
 ```
 rules_version = '2';
