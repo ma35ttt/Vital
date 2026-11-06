@@ -54,7 +54,10 @@ jobs:
           EOF
 
       - name: Build and test
-        run: ./gradlew testDebugUnitTest assembleRelease --stacktrace
+        run: |
+          ./gradlew testDebugUnitTest assembleRelease \
+            -Pvital.updateManifestUrl="https://github.com/${GITHUB_REPOSITORY}/releases/latest/download/latest.json" \
+            --stacktrace
 
       - name: Prepare release assets
         id: assets
