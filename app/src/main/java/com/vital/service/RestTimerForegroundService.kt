@@ -11,9 +11,11 @@ import android.graphics.PixelFormat
 import android.graphics.Typeface
 import android.graphics.drawable.GradientDrawable
 import android.os.Build
+import android.os.Bundle
 import android.os.IBinder
 import android.os.SystemClock
 import android.provider.Settings
+import android.util.Log
 import android.view.Gravity
 import android.view.View
 import android.view.WindowManager
@@ -65,12 +67,14 @@ class RestTimerForegroundService : Service(), LifecycleOwner {
     private var endTimeMs: Long = 0
     private var totalSeconds: Int = 300
     private var isRunning = false
+    private var promotionLogged = false
 
     // The floating chip over other apps; null whenever it is not attached.
     private var overlayView: View? = null
     private var overlayTime: TextView? = null
 
     companion object {
+        private const val TAG = "RestTimer"
         const val CHANNEL_ID = "rest_timer_channel"
         const val NOTIFICATION_ID = 1001
         const val ACTION_START = "com.vital.ACTION_START_TIMER"
@@ -139,6 +143,7 @@ class RestTimerForegroundService : Service(), LifecycleOwner {
         timerJob?.cancel()
         endTimeMs = SystemClock.elapsedRealtime() + (durationSeconds * 1000L)
         isRunning = true
+        promotionLogged = false
 
         // A foreground service must post its notification promptly; do it before the loop.
         updateNotification(durationSeconds)
@@ -232,7 +237,28 @@ class RestTimerForegroundService : Service(), LifecycleOwner {
             builder.setProgress(100, fraction, false)
         }
 
+        // Android 16 Live Updates: ask the system to promote this ongoing notification, which
+        // gives it a chip in the status bar (no overlay permission needed). The framework
+        // setters are API 36.1, so at compileSdk 36 the documented string extras are used;
+        // setShortCriticalText itself is just the first extra. A standard style with progress
+        // is promotable, and the chip text must be short (the clock fits in 7 characters).
+        if (Build.VERSION.SDK_INT >= 36 && !isComplete) {
+            builder.addExtras(Bundle().apply {
+                putString("android.shortCriticalText", timeString)
+                putBoolean("android.requestPromotedOngoing", true)
+            })
+        }
+
         val notification = builder.build()
+
+        if (Build.VERSION.SDK_INT >= 36 && !isComplete && !promotionLogged) {
+            promotionLogged = true
+            Log.d(
+                TAG,
+                "rest notification promotable=${notification.hasPromotableCharacteristics()} " +
+                    "allowed=${notificationManager?.canPostPromotedNotifications() == true}"
+            )
+        }
         notificationManager?.notify(NOTIFICATION_ID, notification)
 
         // Update foreground service notification.
@@ -247,14 +273,28 @@ class RestTimerForegroundService : Service(), LifecycleOwner {
 
     /** Attaches, updates or removes the chip to match the current rest and app visibility. */
     private fun syncOverlay() {
+        // When the system is already showing the rest as a Live Update chip, the floating
+        // chip would just duplicate it. Prefer the native surface and keep the overlay as
+        // the fallback for devices/users without promotion.
         val shouldShow = isRunning && !appVisibility.isForeground.value &&
-            Settings.canDrawOverlays(this)
+            Settings.canDrawOverlays(this) && !isPromoted()
         if (!shouldShow) {
             hideOverlay()
             return
         }
         if (overlayView == null) showOverlay()
         overlayTime?.text = formatClock(currentRemaining())
+    }
+
+    /** True when the system has promoted our rest notification into a status-bar chip. */
+    private fun isPromoted(): Boolean {
+        if (Build.VERSION.SDK_INT < 36) return false
+        val active = runCatching { notificationManager?.activeNotifications }.getOrNull()
+            ?: return false
+        return active.any { entry ->
+            entry.id == NOTIFICATION_ID &&
+                (entry.notification.flags and Notification.FLAG_PROMOTED_ONGOING) != 0
+        }
     }
 
     private fun showOverlay() {

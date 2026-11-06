@@ -1,6 +1,7 @@
 package com.vital.ui.screens
 
 import android.Manifest
+import android.app.NotificationManager
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.net.Uri
@@ -158,6 +159,22 @@ fun SettingsScreen(
     var overlayAllowed by remember { mutableStateOf(AndroidSettings.canDrawOverlays(context)) }
     LifecycleEventEffect(Lifecycle.Event.ON_RESUME) {
         overlayAllowed = AndroidSettings.canDrawOverlays(context)
+    }
+
+    // Android 16 Live Updates: a system status-bar chip that works without the overlay
+    // permission. The user opts in per app in system settings, so surface the state and link
+    // there instead of pretending the chip is always available.
+    val openLiveUpdateSettings: () -> Unit = {
+        if (Build.VERSION.SDK_INT >= 36) {
+            val intent = Intent(AndroidSettings.ACTION_APP_NOTIFICATION_PROMOTION_SETTINGS)
+                .putExtra(AndroidSettings.EXTRA_APP_PACKAGE, context.packageName)
+            runCatching { context.startActivity(intent) }
+        }
+        Unit
+    }
+    var liveUpdatesAllowed by remember { mutableStateOf(canPostPromotedNotifications(context)) }
+    LifecycleEventEffect(Lifecycle.Event.ON_RESUME) {
+        liveUpdatesAllowed = canPostPromotedNotifications(context)
     }
 
     val dateLabel = remember {
@@ -437,6 +454,16 @@ fun SettingsScreen(
                     onClick = openOverlaySettings,
                     trailing = { Chevron() }
                 )
+            }
+            if (Build.VERSION.SDK_INT >= 36) {
+                item {
+                    ValueRow(
+                        label = "Live updates in status bar",
+                        value = if (liveUpdatesAllowed) "Allowed" else "Not allowed",
+                        onClick = openLiveUpdateSettings,
+                        trailing = { Chevron() }
+                    )
+                }
             }
 
             item { SectionLabel("Data", topPadding = 28.dp) }
@@ -1635,6 +1662,15 @@ private fun hasNotificationPermission(context: android.content.Context): Boolean
     Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU ||
         context.checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) ==
         PackageManager.PERMISSION_GRANTED
+
+/**
+ * Android 16+ only: whether the user lets this app promote ongoing notifications into Live
+ * Updates (the status-bar chip). Always false below API 36.
+ */
+private fun canPostPromotedNotifications(context: android.content.Context): Boolean =
+    Build.VERSION.SDK_INT >= 36 &&
+        (context.getSystemService(android.content.Context.NOTIFICATION_SERVICE) as NotificationManager)
+            .canPostPromotedNotifications()
 
 /** Reads `["08:00","13:00"]` without pulling in a JSON dependency. */
 private fun parseTimeList(json: String): List<String> =
