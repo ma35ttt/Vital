@@ -35,7 +35,7 @@ mlkitTextRecognition = "16.0.0"
 # Firebase / Google sign-in
 # Pinned for Kotlin 2.2 compatibility: newer Firebase/Google Identity artifacts are
 # published with Kotlin metadata 2.4, which the 2.2 compiler cannot read.
-firebaseBom = "33.7.0"
+firebaseBom = "35.1.0"
 credentials = "1.6.0"
 googleid = "1.1.1"
 googleServices = "4.5.0"
