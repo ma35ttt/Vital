@@ -22,7 +22,7 @@ workManager = "2.9.0"
 biometric = "1.2.0-alpha04"
 
 # Network & Serialization
-okhttp = "4.12.0"
+okhttp = "5.5.1"
 serialization = "1.7.2"
 gson = "2.11.0"
 coroutines = "1.8.1"
