@@ -6,8 +6,9 @@ Nothing here is required to build the app; it is the public-facing polish.
 ## 1. Create the repository
 
 - Name: **Vital**
-- Visibility: public if you are comfortable with the code and screenshots being public;
-  private otherwise.
+- Visibility: **public**. The in-app updater downloads release assets without credentials,
+  and GitHub requires authentication for assets on a private repository. Keep the source
+  private only if you host `latest.json` and the APK somewhere publicly reachable.
 - Do **not** initialise with a README, `.gitignore` or license — this repository already has
   them.
 

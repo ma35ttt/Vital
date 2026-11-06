@@ -39,6 +39,10 @@ https://github.com/OWNER/REPO/releases/latest/download/latest.json
 The release workflow uploads `latest.json` as an asset of every release, so the
 `releases/latest/download/...` URL always points at the newest one.
 
+> The repository must be **public**. GitHub requires authentication for release assets on a
+> private repository, and the app cannot present a token. If the source must stay private,
+> host the manifest and APK at a public URL instead.
+
 ```json
 {
   "versionCode": 2,
