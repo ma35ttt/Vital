@@ -1,3 +1,5 @@
+import java.util.Properties
+
 plugins {
     id("com.android.application")
     id("org.jetbrains.kotlin.plugin.serialization")
@@ -18,6 +20,30 @@ if (hasGoogleServices) {
     apply(plugin = "com.google.gms.google-services")
 }
 
+// Where the sideload updater looks for latest.json. Set `vital.updateManifestUrl` in
+// local.properties (or pass -Pvital.updateManifestUrl=...), so the real release URL is
+// not committed with the source. A blank value simply disables update checks.
+val localProperties = Properties().apply {
+    val file = rootProject.file("local.properties")
+    if (file.exists()) file.inputStream().use { load(it) }
+}
+val updateManifestUrl: String = (
+    providers.gradleProperty("vital.updateManifestUrl").orNull
+        ?: localProperties.getProperty("vital.updateManifestUrl")
+        ?: providers.environmentVariable("VITAL_UPDATE_MANIFEST_URL").orNull
+        ?: ""
+    ).trim()
+
+// Optional release signing. Create keystore.properties next to this file with
+// storeFile/storePassword/keyAlias/keyPassword to sign release builds with a stable key.
+// Without it, release builds fall back to the debug key so local builds stay installable.
+val keystorePropertiesFile = rootProject.file("keystore.properties")
+val keystoreProperties = Properties().apply {
+    if (keystorePropertiesFile.exists()) {
+        keystorePropertiesFile.inputStream().use { load(it) }
+    }
+}
+
 android {
     namespace = "com.vital"
     compileSdk = 36
@@ -25,11 +51,29 @@ android {
         applicationId = "com.vital"
         minSdk = 28
         targetSdk = 36
-        versionCode = 1
-        versionName = "1.0.0-debug"
+        versionCode = 2
+        versionName = "1.1.0"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables {
             useSupportLibrary = true
+        }
+        buildConfigField(
+            "String",
+            "UPDATE_MANIFEST_URL",
+            "\"${updateManifestUrl.replace("\\", "\\\\").replace("\"", "\\\"")}\""
+        )
+    }
+    buildFeatures {
+        buildConfig = true
+    }
+    signingConfigs {
+        if (keystorePropertiesFile.exists()) {
+            create("release") {
+                storeFile = rootProject.file(keystoreProperties.getProperty("storeFile"))
+                storePassword = keystoreProperties.getProperty("storePassword")
+                keyAlias = keystoreProperties.getProperty("keyAlias")
+                keyPassword = keystoreProperties.getProperty("keyPassword")
+            }
         }
     }
     buildTypes {
@@ -46,10 +90,14 @@ android {
             isMinifyEnabled = true
             isShrinkResources = true
             proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
-            // No release keystore is checked in, so sign with the debug key. This keeps
-            // local release builds installable (including Baseline Profile generation,
-            // which has to install the app). Swap in a real keystore before publishing.
-            signingConfig = signingConfigs.getByName("debug")
+            // Use the stable release key when keystore.properties is present; otherwise
+            // fall back to the debug key so local release builds stay installable
+            // (including Baseline Profile generation, which has to install the app).
+            signingConfig = if (keystorePropertiesFile.exists()) {
+                signingConfigs.getByName("release")
+            } else {
+                signingConfigs.getByName("debug")
+            }
         }
     }
     compileOptions {
