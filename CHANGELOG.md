@@ -40,6 +40,6 @@ All notable changes to Vital are documented here. The format follows
 - Multiple editorial themes, including true black.
 - Reminder workers and a foreground rest timer.
 
-[Unreleased]: https://github.com/OWNER/REPO/compare/v1.1.0...HEAD
-[1.1.0]: https://github.com/OWNER/REPO/compare/v1.0.0...v1.1.0
-[1.0.0]: https://github.com/OWNER/REPO/releases/tag/v1.0.0
+[Unreleased]: https://github.com/ma35ttt/Vital/compare/v1.1.0...HEAD
+[1.1.0]: https://github.com/ma35ttt/Vital/compare/v1.0.0...v1.1.0
+[1.0.0]: https://github.com/ma35ttt/Vital/releases/tag/v1.0.0

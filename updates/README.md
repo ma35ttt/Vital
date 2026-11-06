@@ -14,7 +14,7 @@ This folder holds the inputs for the sideload updater.
 3. Tag and push: `git tag v1.2.0 && git push origin v1.2.0`.
 4. The **Release** workflow builds the signed APK, computes its SHA-256 and publishes a GitHub
    Release containing the APK and `latest.json`.
-5. The app reads `https://github.com/OWNER/REPO/releases/latest/download/latest.json`.
+5. The app reads `https://github.com/ma35ttt/Vital/releases/latest/download/latest.json`.
 
 The manifest schema, signing rules and a local test recipe are in
 [`docs/UPDATES.md`](../docs/UPDATES.md).

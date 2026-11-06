@@ -17,7 +17,7 @@
   <img alt="Android 8.0+" src="https://img.shields.io/badge/Android-8.0%2B-3DDC84?logo=android&logoColor=white" />
   <img alt="Kotlin 2.2" src="https://img.shields.io/badge/Kotlin-2.2-7F52FF?logo=kotlin&logoColor=white" />
   <img alt="Jetpack Compose" src="https://img.shields.io/badge/Jetpack%20Compose-Material%203-4285F4?logo=jetpackcompose&logoColor=white" />
-  <img alt="CI" src="https://img.shields.io/badge/CI-GitHub%20Actions-2088FF?logo=githubactions&logoColor=white" />
+  <a href="https://github.com/ma35ttt/Vital/actions/workflows/android.yml"><img alt="Android CI" src="https://github.com/ma35ttt/Vital/actions/workflows/android.yml/badge.svg" /></a>
   <img alt="License: MIT" src="https://img.shields.io/badge/License-MIT-yellow.svg" />
 </p>
 
@@ -121,7 +121,7 @@ More detail: [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md).
 ### Build and install
 
 ```bash
-git clone https://github.com/OWNER/REPO.git
+git clone https://github.com/ma35ttt/Vital.git
 cd REPO
 ./gradlew assembleDebug
 adb install -r app/build/outputs/apk/debug/app-debug.apk
@@ -155,7 +155,7 @@ The updater reads a release manifest from a URL baked into the build:
 
 ```properties
 # local.properties
-vital.updateManifestUrl=https://github.com/OWNER/REPO/releases/latest/download/latest.json
+vital.updateManifestUrl=https://github.com/ma35ttt/Vital/releases/latest/download/latest.json
 ```
 
 You can also pass it at build time:

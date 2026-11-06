@@ -33,7 +33,7 @@ Vital** in system settings. The app deep-links to that screen when needed.
 `latest.json` is served from a stable URL. With GitHub Releases, the recommended URL is:
 
 ```
-https://github.com/OWNER/REPO/releases/latest/download/latest.json
+https://github.com/ma35ttt/Vital/releases/latest/download/latest.json
 ```
 
 The release workflow uploads `latest.json` as an asset of every release, so the
@@ -47,7 +47,7 @@ The release workflow uploads `latest.json` as an asset of every release, so the
 {
   "versionCode": 2,
   "versionName": "1.1.0",
-  "apkUrl": "https://github.com/OWNER/REPO/releases/download/v1.1.0/Vital-1.1.0.apk",
+  "apkUrl": "https://github.com/ma35ttt/Vital/releases/download/v1.1.0/Vital-1.1.0.apk",
   "sha256": "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef",
   "notes": [
     "In-app updates with release notes and a manual check.",
@@ -76,14 +76,14 @@ The URL is compiled into the app through `BuildConfig.UPDATE_MANIFEST_URL`.
 
 ```properties
 # local.properties (gitignored)
-vital.updateManifestUrl=https://github.com/OWNER/REPO/releases/latest/download/latest.json
+vital.updateManifestUrl=https://github.com/ma35ttt/Vital/releases/latest/download/latest.json
 ```
 
 Or pass it at build time:
 
 ```bash
 ./gradlew assembleRelease \
-  -Pvital.updateManifestUrl=https://github.com/OWNER/REPO/releases/latest/download/latest.json
+  -Pvital.updateManifestUrl=https://github.com/ma35ttt/Vital/releases/latest/download/latest.json
 ```
 
 The environment variable `VITAL_UPDATE_MANIFEST_URL` is also read. Priority is:

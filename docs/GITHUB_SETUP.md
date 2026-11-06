@@ -80,20 +80,19 @@ committed.
 
 ## 5. CI badge
 
-The README uses a static CI badge so it renders before the repository exists. Once Actions has
-run at least once, replace it with the live badge:
+The README uses the live Actions badge:
 
 ```markdown
-[![Android CI](https://github.com/OWNER/REPO/actions/workflows/android.yml/badge.svg)](https://github.com/OWNER/REPO/actions/workflows/android.yml)
+[![Android CI](https://github.com/ma35ttt/Vital/actions/workflows/android.yml/badge.svg)](https://github.com/ma35ttt/Vital/actions/workflows/android.yml)
 ```
 
-Replace `OWNER/REPO` with the real path.
+It starts reporting after the first push to `main`.
 
 ## 6. First release
 
 1. Make sure the app builds: `./gradlew testDebugUnitTest assembleDebug`.
 2. Set `vital.updateManifestUrl` in `local.properties` to
-   `https://github.com/OWNER/REPO/releases/latest/download/latest.json`.
+   `https://github.com/ma35ttt/Vital/releases/latest/download/latest.json`.
 3. Bump the version if needed.
 4. Commit, tag and push:
 
