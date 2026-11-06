@@ -40,6 +40,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.res.painterResource
@@ -810,8 +811,9 @@ private fun planSentence(
 private fun WelcomeVisual() {
     Column(modifier = Modifier.fillMaxWidth()) {
         Image(
-            painter = painterResource(id = R.drawable.ic_vital_logo),
+            painter = painterResource(id = R.drawable.ic_vital_status),
             contentDescription = null,
+            colorFilter = ColorFilter.tint(VitalColors.orange),
             modifier = Modifier.size(48.dp)
         )
         Spacer(Modifier.height(24.dp))
