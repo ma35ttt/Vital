@@ -6,18 +6,14 @@ import android.content.pm.PackageManager
 import android.os.Build
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInHorizontally
-import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutHorizontally
-import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.material3.Scaffold
@@ -29,10 +25,8 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -46,7 +40,6 @@ import com.vital.ui.ReminderStatusViewModel
 import com.vital.ui.TutorialViewModel
 import com.vital.ui.components.MoreSheet
 import com.vital.ui.components.QuickAddAction
-import com.vital.ui.components.RestIsland
 import com.vital.ui.components.VitalBottomNav
 import com.vital.ui.screens.CardioScreen
 import com.vital.ui.screens.CoachChatScreen
@@ -168,7 +161,9 @@ fun VitalNavigation() {
                         navigateToTab(index)
                     }
                 },
-                showMoreDot = moreDotVisible
+                showMoreDot = moreDotVisible,
+                // The nav divider is the only in-app rest surface; it drains as time runs out.
+                restProgress = if (islandState.isActive) islandState.progress else null
             )
         }
     ) { innerPadding ->
@@ -307,26 +302,6 @@ fun VitalNavigation() {
                         DebugShowcaseScreen(modifier = Modifier.fillMaxSize())
                     }
                 }
-            }
-
-            // Live rest pill: top-centre, in the status-bar row, matching the dynamic-island
-            // mock. It is read-only and taps through to Lift for the controls.
-            AnimatedVisibility(
-                visible = islandState.isActive,
-                enter = fadeIn(tween(180)) +
-                    slideInVertically(tween(220)) { -it / 2 },
-                exit = fadeOut(tween(160)) +
-                    slideOutVertically(tween(180)) { -it / 2 },
-                modifier = Modifier
-                    .align(Alignment.TopCenter)
-                    .statusBarsPadding()
-                    .padding(top = 6.dp)
-            ) {
-                RestIsland(
-                    remainingSeconds = islandState.restRemaining,
-                    totalSeconds = islandState.restTotal,
-                    onClick = { navigateToTab(1) }
-                )
             }
 
             MoreSheet(
