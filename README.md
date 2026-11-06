@@ -229,8 +229,7 @@ app/src/main/java/com/vital/
   ui/            Compose screens, components, theme, navigation
   workers/       Reminder workers
 baselineprofile/ Baseline Profile generator and benchmark
-design/          Tab specs and visual references
-docs/            Architecture, setup, measurements and audit notes
+docs/            Architecture, setup and update guides, screenshots
 updates/         Release manifest template and notes
 ```
 

@@ -128,8 +128,8 @@ fast JVM unit tests:
 ```
 
 The suite covers the nutrition parser, plate calculator, ACSM estimate, adherence windows,
-estimated 1RM, PR detection and rest-timer state. UI is verified manually on a device; the
-`design/` and `docs/measurements/` folders keep the visual references and measurements.
+estimated 1RM, PR detection and rest-timer state. UI is verified manually on a device;
+curated screenshots live in `docs/screenshots/`.
 
 ## Directory map
 
