@@ -7,6 +7,7 @@ import android.app.PendingIntent
 import android.app.Service
 import android.content.Context
 import android.content.Intent
+import android.graphics.BitmapFactory
 import android.graphics.PixelFormat
 import android.graphics.Typeface
 import android.graphics.drawable.GradientDrawable
@@ -68,6 +69,11 @@ class RestTimerForegroundService : Service(), LifecycleOwner {
     private var totalSeconds: Int = 300
     private var isRunning = false
     private var promotionLogged = false
+
+    // The orange version of the same transparent mark, shown in the expanded notification.
+    private val largeIcon by lazy {
+        BitmapFactory.decodeResource(resources, R.mipmap.ic_launcher_foreground)
+    }
 
     // The floating chip over other apps; null whenever it is not attached.
     private var overlayView: View? = null
@@ -214,7 +220,9 @@ class RestTimerForegroundService : Service(), LifecycleOwner {
         )
 
         val builder = NotificationCompat.Builder(this, CHANNEL_ID)
-            .setSmallIcon(R.drawable.ic_timer)
+            .setSmallIcon(R.drawable.ic_vital_status)
+            .setLargeIcon(largeIcon)
+            .setColor(0xFFFF4D00.toInt())
             .setContentTitle(contentTitle)
             .setContentText(contentText)
             .setContentIntent(pendingIntent)
