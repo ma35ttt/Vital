@@ -7,6 +7,8 @@ import android.net.Uri
 import android.os.Build
 import android.provider.Settings as AndroidSettings
 import androidx.activity.compose.BackHandler
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.spring
 import androidx.compose.foundation.background
@@ -128,11 +130,18 @@ fun SettingsScreen(
         Unit
     }
 
-    val notificationsGranted = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-        context.checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) ==
-            PackageManager.PERMISSION_GRANTED
-    } else {
-        true
+    // The switch is the app's intent; the OS permission is what actually delivers a banner.
+    // Ask for it the first time the user turns notifications on, and re-read it on resume so
+    // the row stays honest after a change made from system settings.
+    var notificationsGranted by remember { mutableStateOf(hasNotificationPermission(context)) }
+    val notificationPermission = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.RequestPermission()
+    ) { granted ->
+        notificationsGranted = granted
+        if (granted) viewModel.setNotificationsEnabled(true)
+    }
+    LifecycleEventEffect(Lifecycle.Event.ON_RESUME) {
+        notificationsGranted = hasNotificationPermission(context)
     }
 
     val openOverlaySettings: () -> Unit = {
@@ -366,8 +375,19 @@ fun SettingsScreen(
                     onClick = openNotificationSettings,
                     trailing = {
                         EditorialSwitch(
-                            checked = settings.notificationsEnabled,
-                            onCheckedChange = viewModel::setNotificationsEnabled
+                            // Reflect what actually delivers a banner: intent AND permission.
+                            checked = settings.notificationsEnabled && notificationsGranted,
+                            onCheckedChange = { want ->
+                                when {
+                                    !want -> viewModel.setNotificationsEnabled(false)
+                                    notificationsGranted -> viewModel.setNotificationsEnabled(true)
+                                    Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU ->
+                                        notificationPermission.launch(
+                                            Manifest.permission.POST_NOTIFICATIONS
+                                        )
+                                    else -> viewModel.setNotificationsEnabled(true)
+                                }
+                            }
                         )
                     }
                 )
@@ -1609,6 +1629,12 @@ private fun waterSubtitle(intervalMin: Int): String = when {
     intervalMin % 60 == 0 -> "Every ${intervalMin / 60} h"
     else -> "Every $intervalMin min"
 }
+
+/** True when the OS will actually post our banners (always true before Android 13). */
+private fun hasNotificationPermission(context: android.content.Context): Boolean =
+    Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU ||
+        context.checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) ==
+        PackageManager.PERMISSION_GRANTED
 
 /** Reads `["08:00","13:00"]` without pulling in a JSON dependency. */
 private fun parseTimeList(json: String): List<String> =

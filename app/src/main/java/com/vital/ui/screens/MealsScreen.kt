@@ -18,8 +18,13 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.WindowInsetsSides
 import androidx.compose.foundation.layout.imePadding
+import androidx.compose.foundation.layout.only
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.statusBars
+import androidx.compose.foundation.layout.union
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
@@ -29,6 +34,7 @@ import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Search
+import androidx.compose.material3.BottomSheetDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Text
@@ -496,7 +502,14 @@ private fun AddFoodSheet(
         onDismissRequest = onDismiss,
         sheetState = sheetState,
         containerColor = VitalColors.sheet,
-        dragHandle = { SheetHandle() }
+        dragHandle = { SheetHandle() },
+        // The default only pads the bottom, so a tall sheet (keyboard up, long list) slides
+        // its header under the status bar. Add the top inset back to keep it clear.
+        contentWindowInsets = {
+            BottomSheetDefaults.windowInsets.union(
+                WindowInsets.statusBars.only(WindowInsetsSides.Top)
+            )
+        }
     ) {
         if (selected == null) {
             SearchStep(
