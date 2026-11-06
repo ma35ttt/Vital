@@ -1,5 +1,10 @@
 package com.vital.ui.screens
 
+import android.Manifest
+import android.content.pm.PackageManager
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.PickVisualMediaRequest
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.animateContentSize
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -17,6 +22,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
@@ -24,6 +30,11 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.PhotoCamera
+import androidx.compose.material.icons.outlined.PhotoLibrary
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -35,6 +46,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.buildAnnotatedString
@@ -46,6 +58,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.em
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
+import androidx.core.content.ContextCompat
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.vital.data.entity.CardioSession
@@ -55,7 +68,9 @@ import com.vital.domain.Met
 import com.vital.ui.CardioField
 import com.vital.ui.CardioFieldSpec
 import com.vital.ui.CardioInput
+import com.vital.ui.CardioPhotoState
 import com.vital.ui.CardioViewModel
+import com.vital.ui.ImageEncoding
 import com.vital.ui.display
 import com.vital.ui.fieldSpecs
 import com.vital.ui.pickerDisplay
@@ -103,9 +118,37 @@ fun CardioScreen(
     val type by viewModel.type.collectAsStateWithLifecycle(CardioType.RUNNING)
     val values by viewModel.values.collectAsStateWithLifecycle()
     val estimateKcal by viewModel.estimateKcal.collectAsStateWithLifecycle()
+    val photoState by viewModel.photo.collectAsStateWithLifecycle()
 
     var detailSession by remember { mutableStateOf<CardioSession?>(null) }
     var showDetail by rememberSaveable { mutableStateOf(false) }
+    var showPhotoSource by rememberSaveable { mutableStateOf(false) }
+
+    val context = LocalContext.current
+    val gallery = rememberLauncherForActivityResult(
+        ActivityResultContracts.PickVisualMedia()
+    ) { uri ->
+        if (uri != null) {
+            ImageEncoding.uriToImage(context, uri)?.let { bitmap ->
+                viewModel.scanPhoto(ImageEncoding.toBase64Jpeg(bitmap))
+            }
+        }
+    }
+    val camera = rememberLauncherForActivityResult(
+        ActivityResultContracts.TakePicturePreview()
+    ) { bitmap ->
+        if (bitmap != null) {
+            viewModel.scanPhoto(ImageEncoding.toBase64Jpeg(bitmap))
+        }
+    }
+    val cameraPermission = rememberLauncherForActivityResult(
+        ActivityResultContracts.RequestPermission()
+    ) { granted -> if (granted) camera.launch(null) }
+    val launchCamera: () -> Unit = {
+        val granted = ContextCompat.checkSelfPermission(context, Manifest.permission.CAMERA) ==
+            PackageManager.PERMISSION_GRANTED
+        if (granted) camera.launch(null) else cameraPermission.launch(Manifest.permission.CAMERA)
+    }
 
     val durationSec = parseCardioDuration(values[CardioField.DURATION].orEmpty())
     val dateLabel = remember {
@@ -157,6 +200,16 @@ fun CardioScreen(
                     modifier = Modifier.padding(top = 18.dp)
                 )
             }
+            // Only Run and Walk have a console layout the reader can fill.
+            if (type.usesAcsm) {
+                item {
+                    ScanTreadmillRow(
+                        state = photoState,
+                        onPick = { showPhotoSource = true },
+                        onDismiss = viewModel::dismissPhoto
+                    )
+                }
+            }
             item {
                 EditorialButton(
                     text = "Log session",
@@ -194,6 +247,22 @@ fun CardioScreen(
                 showDetail = false
             },
             onDismiss = { showDetail = false }
+        )
+    }
+
+    if (showPhotoSource) {
+        PhotoSourceDialog(
+            onDismiss = { showPhotoSource = false },
+            onCamera = {
+                showPhotoSource = false
+                launchCamera()
+            },
+            onGallery = {
+                showPhotoSource = false
+                gallery.launch(
+                    PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)
+                )
+            }
         )
     }
 }
@@ -416,6 +485,207 @@ private fun CardioFieldCell(
                 )
             }
         }
+    }
+}
+
+// ---- treadmill photo ------------------------------------------------------------------------
+
+/**
+ * A quiet input row under the Run/Walk grid. Tapping opens the camera/gallery choice; the
+ * status line below says what happened without moving the form around.
+ */
+@Composable
+private fun ScanTreadmillRow(
+    state: CardioPhotoState,
+    onPick: () -> Unit,
+    onDismiss: () -> Unit
+) {
+    val reading = state is CardioPhotoState.Reading
+    Column(modifier = Modifier.fillMaxWidth()) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .heightIn(min = 54.dp)
+                .clickable(enabled = !reading, onClick = onPick),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Icon(
+                imageVector = Icons.Outlined.PhotoCamera,
+                contentDescription = null,
+                tint = if (reading) VitalColors.inkMuted else VitalColors.orange,
+                modifier = Modifier.size(18.dp)
+            )
+            Spacer(Modifier.width(12.dp))
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    text = "Scan treadmill",
+                    color = VitalColors.ink,
+                    fontFamily = VitalFonts.InterTight,
+                    fontSize = 13.sp,
+                    fontWeight = FontWeight.Medium
+                )
+                Text(
+                    text = "Fill the four fields from a photo of the console",
+                    color = VitalColors.inkMuted,
+                    fontFamily = VitalFonts.InterTight,
+                    fontSize = 10.sp,
+                    lineHeight = 14.sp
+                )
+            }
+            if (reading) {
+                CircularProgressIndicator(
+                    modifier = Modifier.size(14.dp),
+                    color = VitalColors.orange,
+                    strokeWidth = 1.5.dp
+                )
+                Spacer(Modifier.width(10.dp))
+            }
+            Text(
+                text = when (state) {
+                    is CardioPhotoState.Filled -> "FILLED"
+                    is CardioPhotoState.Error -> "RETRY"
+                    is CardioPhotoState.Reading -> "READING"
+                    else -> "PHOTO"
+                },
+                color = if (state is CardioPhotoState.Filled) {
+                    VitalColors.orange
+                } else {
+                    VitalColors.inkMuted
+                },
+                fontFamily = VitalFonts.JetBrainsMonoRegular,
+                fontSize = 9.sp,
+                fontWeight = FontWeight.Bold,
+                letterSpacing = 0.12.em
+            )
+        }
+
+        val note = when (state) {
+            is CardioPhotoState.Filled ->
+                "Read ${state.fields} fields from the photo — check them before logging."
+            is CardioPhotoState.Error -> state.message
+            is CardioPhotoState.Reading -> "Reading the console…"
+            else -> null
+        }
+        if (note != null) {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(bottom = 12.dp),
+                verticalAlignment = Alignment.Top
+            ) {
+                Text(
+                    text = note,
+                    color = VitalColors.inkMuted,
+                    fontFamily = VitalFonts.InterTight,
+                    fontSize = 11.sp,
+                    lineHeight = 16.sp,
+                    modifier = Modifier.weight(1f)
+                )
+                if (!reading) {
+                    Text(
+                        text = "Dismiss",
+                        color = VitalColors.orange,
+                        fontFamily = VitalFonts.JetBrainsMonoRegular,
+                        fontSize = 9.sp,
+                        fontWeight = FontWeight.Bold,
+                        letterSpacing = 0.1.em,
+                        modifier = Modifier
+                            .clickable(onClick = onDismiss)
+                            .padding(start = 12.dp, top = 2.dp, bottom = 8.dp)
+                    )
+                }
+            }
+        }
+        Hairline()
+    }
+}
+
+@Composable
+private fun PhotoSourceDialog(
+    onDismiss: () -> Unit,
+    onCamera: () -> Unit,
+    onGallery: () -> Unit
+) {
+    Dialog(onDismissRequest = onDismiss) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .background(VitalColors.sheet, RoundedCornerShape(16.dp))
+                .border(1.dp, VitalColors.ruleStrong, RoundedCornerShape(16.dp))
+                .padding(vertical = 8.dp)
+        ) {
+            Text(
+                text = "FILL FROM A PHOTO",
+                color = VitalColors.inkMuted,
+                fontFamily = VitalFonts.JetBrainsMonoRegular,
+                fontSize = 9.sp,
+                fontWeight = FontWeight.Bold,
+                letterSpacing = 0.14.em,
+                modifier = Modifier.padding(horizontal = 16.dp, vertical = 10.dp)
+            )
+            PhotoSourceRow(
+                icon = Icons.Outlined.PhotoCamera,
+                title = "Take photo",
+                trailing = "CAMERA",
+                onClick = onCamera
+            )
+            Hairline(modifier = Modifier.padding(horizontal = 16.dp))
+            PhotoSourceRow(
+                icon = Icons.Outlined.PhotoLibrary,
+                title = "Choose from gallery",
+                trailing = "GALLERY",
+                onClick = onGallery
+            )
+            Text(
+                text = "Run and Walk only. Every field stays editable after the read.",
+                color = VitalColors.inkMuted,
+                fontFamily = VitalFonts.JetBrainsMonoRegular,
+                fontSize = 9.sp,
+                lineHeight = 14.sp,
+                modifier = Modifier.padding(horizontal = 16.dp, vertical = 10.dp)
+            )
+        }
+    }
+}
+
+@Composable
+private fun PhotoSourceRow(
+    icon: androidx.compose.ui.graphics.vector.ImageVector,
+    title: String,
+    trailing: String,
+    onClick: () -> Unit
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(54.dp)
+            .clickable(onClick = onClick)
+            .padding(horizontal = 16.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Icon(
+            imageVector = icon,
+            contentDescription = null,
+            tint = VitalColors.orange,
+            modifier = Modifier.size(20.dp)
+        )
+        Spacer(Modifier.width(14.dp))
+        Text(
+            text = title,
+            color = VitalColors.ink,
+            fontFamily = VitalFonts.InterTight,
+            fontSize = 14.sp,
+            fontWeight = FontWeight.Medium,
+            modifier = Modifier.weight(1f)
+        )
+        Text(
+            text = trailing,
+            color = VitalColors.inkMuted,
+            fontFamily = VitalFonts.JetBrainsMonoRegular,
+            fontSize = 9.sp,
+            fontWeight = FontWeight.Bold,
+            letterSpacing = 0.12.em
+        )
     }
 }
 

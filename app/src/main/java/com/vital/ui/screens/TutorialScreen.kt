@@ -810,11 +810,9 @@ private fun planSentence(
 private fun WelcomeVisual() {
     Column(modifier = Modifier.fillMaxWidth()) {
         Image(
-            painter = painterResource(id = R.mipmap.ic_launcher_round),
+            painter = painterResource(id = R.drawable.ic_vital_logo),
             contentDescription = null,
-            modifier = Modifier
-                .size(92.dp)
-                .clip(CircleShape)
+            modifier = Modifier.size(48.dp)
         )
         Spacer(Modifier.height(24.dp))
         Text(
