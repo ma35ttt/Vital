@@ -25,18 +25,14 @@
 
 ## Screenshots
 
+https://github.com/user-attachments/assets/6a1d5c97-27a5-45f2-a189-1681d63cef02
+
 <p align="center">
   <img src="docs/screenshots/today.png" width="180" alt="Today dashboard" />
   <img src="docs/screenshots/meals.png" width="180" alt="Meals" />
   <img src="docs/screenshots/lift.png" width="180" alt="Lift" />
   <img src="docs/screenshots/cardio.png" width="180" alt="Cardio" />
   <img src="docs/screenshots/weeks.png" width="180" alt="Weeks" />
-</p>
-
-<p align="center">
-  <img src="docs/screenshots/tutorial.png" width="180" alt="Onboarding" />
-  <img src="docs/screenshots/live-update-chip.png" width="360" alt="Android 16 Live Update chip" />
-  <img src="docs/screenshots/live-update-card.png" width="360" alt="Rest timer notification" />
 </p>
 
 ---
