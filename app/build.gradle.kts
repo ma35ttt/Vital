@@ -131,7 +131,7 @@ baselineProfile {
 
 dependencies {
     // Core AndroidX
-    implementation("androidx.core:core-ktx:1.15.0")
+    implementation("androidx.core:core-ktx:1.19.1")
     implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.8.7")
     implementation("androidx.lifecycle:lifecycle-runtime-compose:2.8.7")
     implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.8.7")
@@ -140,10 +140,10 @@ dependencies {
     // Navigation Compose: explicit 2.8.9 (hilt-navigation-compose only pulls 2.5.1, which predates
     // transition support). Verified on Google Maven; needs Compose 1.7.2 / activity-compose 1.8.0,
     // both already present.
-    implementation("androidx.navigation:navigation-compose:2.8.9")
-    implementation("androidx.constraintlayout:constraintlayout-compose:1.1.0")
+    implementation("androidx.navigation:navigation-compose:2.10.2")
+    implementation("androidx.constraintlayout:constraintlayout-compose:1.1.2")
     // Material Components for base theme (required for Compose Material3)
-    implementation("com.google.android.material:material:1.12.0")
+    implementation("com.google.android.material:material:1.14.0")
 
     // Compose BOM & Material3
     val composeBom = platform("androidx.compose:compose-bom:2024.10.00")
@@ -166,17 +166,17 @@ dependencies {
 
     // Hilt
     implementation("com.google.dagger:hilt-android:2.60.1")
-    implementation("androidx.hilt:hilt-work:1.2.0")
-    implementation("androidx.hilt:hilt-navigation-compose:1.2.0")
+    implementation("androidx.hilt:hilt-work:1.4.0")
+    implementation("androidx.hilt:hilt-navigation-compose:1.4.0")
     implementation("androidx.hilt:hilt-lifecycle-viewmodel:1.4.0")
     ksp("com.google.dagger:hilt-compiler:2.60.1")
 
     // WorkManager
-    implementation("androidx.work:work-runtime-ktx:2.9.0")
+    implementation("androidx.work:work-runtime-ktx:2.12.0")
 
     // Biometric
-    implementation("androidx.biometric:biometric:1.2.0-alpha04")
-    implementation("androidx.biometric:biometric-ktx:1.2.0-alpha04")
+    implementation("androidx.biometric:biometric:1.4.0-alpha02")
+    implementation("androidx.biometric:biometric-ktx:1.4.0-alpha02")
 
     // Security (EncryptedSharedPreferences)
     implementation(libs.androidx.security.crypto)
