@@ -2,7 +2,7 @@
 # Core Android/Kotlin
 agp = "9.5.0"
 kotlin = "2.2.10"
-ksp = "2.2.10-2.0.2"
+ksp = "2.3.13"
 hilt = "2.60.1"
 compileSdk = "36"
 targetSdk = "36"
